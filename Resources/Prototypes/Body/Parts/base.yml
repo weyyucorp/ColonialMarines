@@ -95,7 +95,7 @@
     symmetry: Left
   - type: MovementBodyPart
     walkSpeed: 2.7
-    sprintSpeed: 5
+    sprintSpeed: 4
 
 - type: entity
   id: BaseRightLeg
@@ -108,7 +108,7 @@
     symmetry: Right
   - type: MovementBodyPart
     walkSpeed: 2.7
-    sprintSpeed: 5
+    sprintSpeed: 4
 
 - type: entity
   id: BaseLeftFoot
