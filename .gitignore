@@ -308,7 +308,7 @@ Resources/MapImages
 .direnv/
 
 .github
-dotnetsdk
-runserversdk.bat
-runclientsdk.bat
-buildsdk.bat
+.sdk
+.runserver.bat
+.runclient.bat
+.build.bat
