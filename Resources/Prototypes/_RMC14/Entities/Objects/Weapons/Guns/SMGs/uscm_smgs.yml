@@ -5,14 +5,14 @@
   description: The Armat Battlefield Systems M-39 submachinegun. Occasionally carried by light-infantry, scouts, engineers and medics.
   components:
     - type: Sprite
-      sprite: _CM14/Objects/Weapons/Guns/SMGs/m39.rsi
+      sprite: _RMC14/Objects/Weapons/Guns/SMGs/m39.rsi
       layers:
         - state: base
           map: ["enum.GunVisualLayers.Base"]
         - state: mag-0
           map: ["enum.GunVisualLayers.Mag"]
     - type: Clothing
-      sprite: _CM14/Objects/Weapons/Guns/SMGs/m39.rsi
+      sprite: _RMC14/Objects/Weapons/Guns/SMGs/m39.rsi
       quickEquip: false
       slots:
         - Back
@@ -30,7 +30,7 @@
         - Burst
         - FullAuto
       soundGunshot:
-        path: /Audio/_CM14/Weapons/Guns/Gunshots/m39.ogg
+        path: /Audio/_RMC14/Weapons/Guns/Gunshots/m39.ogg
     - type: GunWieldBonus
       minAngle: -5
       maxAngle: -5

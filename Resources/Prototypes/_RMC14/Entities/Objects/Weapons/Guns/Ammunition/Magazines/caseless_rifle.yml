@@ -14,7 +14,7 @@
     proto: CartridgeCaseless10x20mm
     capacity: 48
   - type: Sprite
-    sprite: _CM14/Objects/Weapons/Guns/Ammunition/Magazines/m39.rsi
+    sprite: _RMC14/Objects/Weapons/Guns/Ammunition/Magazines/m39.rsi
     layers:
     - state: base
       map: ["enum.GunVisualLayers.Base"]
