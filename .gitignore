@@ -309,4 +309,6 @@ Resources/MapImages
 
 .github
 dotnetsdk
-run.bat
+runserversdk.bat
+runclientsdk.bat
+buildsdk.bat
