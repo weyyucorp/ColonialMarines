@@ -33,14 +33,16 @@ public sealed partial class EntityStorageVisualsComponent : Component
     public string? StateDoorClosed;
 
     /// <summary>
-    /// The drawdepth the object has when it's open
+    /// The RSI state used for the lock indicator while the storage is locked.
     /// </summary>
-    [DataField, ViewVariables(VVAccess.ReadWrite)]
-    public int? OpenDrawDepth;
+    [DataField("stateLocked")]
+    [ViewVariables(VVAccess.ReadWrite)]
+    public string? StateLocked = "locked";
 
     /// <summary>
-    /// The drawdepth the object has when it's closed
+    /// The RSI state used for the lock indicator while the storage is unlocked.
     /// </summary>
-    [DataField, ViewVariables(VVAccess.ReadWrite)]
-    public int? ClosedDrawDepth;
+    [DataField("stateUnlocked")]
+    [ViewVariables(VVAccess.ReadWrite)]
+    public string? StateUnlocked = "unlocked";
 }

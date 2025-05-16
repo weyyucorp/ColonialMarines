@@ -1,15 +1,13 @@
 using System.Numerics;
 using Content.Shared.DoAfter;
-using Content.Client.UserInterface.Systems;
-using Content.Shared._RMC14.Stealth;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Shared.Enums;
+using Robust.Shared.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
-using Robust.Shared.Containers;
 
 namespace Content.Client.DoAfter;
 
@@ -20,11 +18,9 @@ public sealed class DoAfterOverlay : Overlay
     private readonly IPlayerManager _player;
     private readonly SharedTransformSystem _transform;
     private readonly MetaDataSystem _meta;
-    private readonly ProgressColorSystem _progressColor;
-    private readonly SharedContainerSystem _container;
 
     private readonly Texture _barTexture;
-    private readonly ShaderInstance _unshadedShader;
+    private readonly ShaderInstance _shader;
 
     /// <summary>
     ///     Flash time for cancelled DoAfters
@@ -44,12 +40,10 @@ public sealed class DoAfterOverlay : Overlay
         _player = player;
         _transform = _entManager.EntitySysManager.GetEntitySystem<SharedTransformSystem>();
         _meta = _entManager.EntitySysManager.GetEntitySystem<MetaDataSystem>();
-        _container = _entManager.EntitySysManager.GetEntitySystem<SharedContainerSystem>();
-        _progressColor = _entManager.System<ProgressColorSystem>();
         var sprite = new SpriteSpecifier.Rsi(new("/Textures/Interface/Misc/progress_bar.rsi"), "icon");
         _barTexture = _entManager.EntitySysManager.GetEntitySystem<SpriteSystem>().Frame0(sprite);
 
-        _unshadedShader = protoManager.Index<ShaderPrototype>("unshaded").Instance();
+        _shader = protoManager.Index<ShaderPrototype>("unshaded").Instance();
     }
 
     protected override void Draw(in OverlayDrawArgs args)
@@ -60,8 +54,9 @@ public sealed class DoAfterOverlay : Overlay
 
         // If you use the display UI scale then need to set max(1f, displayscale) because 0 is valid.
         const float scale = 1f;
-        var scaleMatrix = Matrix3Helpers.CreateScale(new Vector2(scale, scale));
-        var rotationMatrix = Matrix3Helpers.CreateRotation(-rotation);
+        var scaleMatrix = Matrix3.CreateScale(new Vector2(scale, scale));
+        var rotationMatrix = Matrix3.CreateRotation(-rotation);
+        handle.UseShader(_shader);
 
         var curTime = _timing.CurTime;
 
@@ -82,58 +77,30 @@ public sealed class DoAfterOverlay : Overlay
             if (!bounds.Contains(worldPosition))
                 continue;
 
-            // shades the do-after bar if the do-after bar belongs to other players
-            // does not shade do-afters belonging to the local player
-            if (uid != localEnt)
-                handle.UseShader(null);
-            else
-                handle.UseShader(_unshadedShader);
-
             // If the entity is paused, we will draw the do-after as it was when the entity got paused.
             var meta = metaQuery.GetComponent(uid);
             var time = meta.EntityPaused
                 ? curTime - _meta.GetPauseTime(uid, meta)
                 : curTime;
 
-            var worldMatrix = Matrix3Helpers.CreateTranslation(worldPosition);
-            var scaledWorld = Matrix3x2.Multiply(scaleMatrix, worldMatrix);
-            var matty = Matrix3x2.Multiply(rotationMatrix, scaledWorld);
+            var worldMatrix = Matrix3.CreateTranslation(worldPosition);
+            Matrix3.Multiply(scaleMatrix, worldMatrix, out var scaledWorld);
+            Matrix3.Multiply(rotationMatrix, scaledWorld, out var matty);
             handle.SetTransform(matty);
 
             var offset = 0f;
-
-            var isInContainer = _container.IsEntityOrParentInContainer(uid, meta, xform);
 
             foreach (var doAfter in comp.DoAfters.Values)
             {
                 // Hide some DoAfters from other players for stealthy actions (ie: thieving gloves)
                 var alpha = 1f;
-                if (doAfter.Args.Hidden || isInContainer)
+                if (doAfter.Args.Hidden)
                 {
                     if (uid != localEnt)
                         continue;
 
                     // Hints to the local player that this do-after is not visible to other players.
                     alpha = 0.5f;
-                }
-
-                //RMC14
-                if (!doAfter.Args.ForceVisible)
-                {
-                    // Don't show the doafter bar to other clients if the entity's sprite isn't visible.
-                    if(!sprite.Visible && uid != localEnt)
-                        continue;
-
-                    // Set the doafter bar alpha to the alpha of the sprite.
-                    alpha = sprite.Color.A;
-
-                    // The system using this component does not edit the sprite alpha, so we use separate logic for it.
-                    var invisibleQuery = _entManager.GetEntityQuery<EntityActiveInvisibleComponent>();
-                    invisibleQuery.TryGetComponent(uid, out var invisible);
-
-                    // Make the doafter bar alpha the same as the opacity of the invisibility.
-                    if (invisible != null)
-                        alpha = invisible.Opacity;
                 }
 
                 // Use the sprite itself if we know its bounds. This means short or tall sprites don't get overlapped
@@ -146,7 +113,7 @@ public sealed class DoAfterOverlay : Overlay
                     yOffset / scale + offset / EyeManager.PixelsPerMeter * scale);
 
                 // Draw the underlying bar texture
-                handle.DrawTexture(_barTexture, position, Color.White.WithAlpha(alpha));
+                handle.DrawTexture(_barTexture, position);
 
                 Color color;
                 float elapsedRatio;
@@ -158,7 +125,7 @@ public sealed class DoAfterOverlay : Overlay
                     elapsedRatio = (float) Math.Min(1, elapsed.TotalSeconds / doAfter.Args.Delay.TotalSeconds);
                     var cancelElapsed = (time - doAfter.CancelledTime.Value).TotalSeconds;
                     var flash = Math.Floor(cancelElapsed / FlashTime) % 2 == 0;
-                    color = GetProgressColor(0, flash ? alpha : 0);
+                    color = new Color(1f, 0f, 0f, flash ? alpha : 0f);
                 }
                 else
                 {
@@ -176,11 +143,17 @@ public sealed class DoAfterOverlay : Overlay
         }
 
         handle.UseShader(null);
-        handle.SetTransform(Matrix3x2.Identity);
+        handle.SetTransform(Matrix3.Identity);
     }
 
-    public Color GetProgressColor(float progress, float alpha = 1f)
+    public static Color GetProgressColor(float progress, float alpha = 1f)
     {
-        return _progressColor.GetProgressColor(progress).WithAlpha(alpha);
+        if (progress >= 1.0f)
+        {
+            return new Color(0f, 1f, 0f, alpha);
+        }
+        // lerp
+        var hue = (5f / 18f) * progress;
+        return Color.FromHsv((hue, 1f, 0.75f, alpha));
     }
 }

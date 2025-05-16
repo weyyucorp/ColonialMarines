@@ -6,15 +6,11 @@ using System.Threading.Tasks;
 using Content.Server.Administration.Managers;
 using Content.Server.Destructible;
 using Content.Server.NPC.Systems;
-using Content.Shared.Access.Components;
 using Content.Shared.Administration;
-using Content.Shared.Climbing.Components;
-using Content.Shared.Doors.Components;
 using Content.Shared.NPC;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Systems;
 using Robust.Shared.Player;
@@ -49,9 +45,7 @@ namespace Content.Server.NPC.Pathfinding
         [Dependency] private readonly EntityLookupSystem _lookup = default!;
         [Dependency] private readonly FixtureSystem _fixtures = default!;
         [Dependency] private readonly NPCSystem _npc = default!;
-        [Dependency] private readonly SharedMapSystem _maps = default!;
         [Dependency] private readonly SharedPhysicsSystem _physics = default!;
-        [Dependency] private readonly SharedTransformSystem _transform = default!;
 
         private readonly Dictionary<ICommonSession, PathfindingDebugMode> _subscribedSessions = new();
 
@@ -68,26 +62,9 @@ namespace Content.Server.NPC.Pathfinding
         private int _portalIndex;
         private readonly Dictionary<int, PathPortal> _portals = new();
 
-        private EntityQuery<AccessReaderComponent> _accessQuery;
-        private EntityQuery<DestructibleComponent> _destructibleQuery;
-        private EntityQuery<DoorComponent> _doorQuery;
-        private EntityQuery<ClimbableComponent> _climbableQuery;
-        private EntityQuery<FixturesComponent> _fixturesQuery;
-        private EntityQuery<MapGridComponent> _gridQuery;
-        private EntityQuery<TransformComponent> _xformQuery;
-
         public override void Initialize()
         {
             base.Initialize();
-
-            _accessQuery = GetEntityQuery<AccessReaderComponent>();
-            _destructibleQuery = GetEntityQuery<DestructibleComponent>();
-            _doorQuery = GetEntityQuery<DoorComponent>();
-            _climbableQuery = GetEntityQuery<ClimbableComponent>();
-            _fixturesQuery = GetEntityQuery<FixturesComponent>();
-            _gridQuery = GetEntityQuery<MapGridComponent>();
-            _xformQuery = GetEntityQuery<TransformComponent>();
-
             _playerManager.PlayerStatusChanged += OnPlayerChange;
             InitializeGrid();
             SubscribeNetworkEvent<RequestPathfindingDebugMessage>(OnBreadcrumbs);
@@ -98,7 +75,6 @@ namespace Content.Server.NPC.Pathfinding
             base.Shutdown();
             _subscribedSessions.Clear();
             _playerManager.PlayerStatusChanged -= OnPlayerChange;
-            _transform.OnGlobalMoveEvent -= OnMoveEvent;
         }
 
         public override void Update(float frameTime)
@@ -188,8 +164,8 @@ namespace Content.Server.NPC.Pathfinding
         /// </summary>
         public bool TryCreatePortal(EntityCoordinates coordsA, EntityCoordinates coordsB, out int handle)
         {
-            var mapUidA = _transform.GetMap(coordsA);
-            var mapUidB = _transform.GetMap(coordsB);
+            var mapUidA = coordsA.GetMapUid(EntityManager);
+            var mapUidB = coordsB.GetMapUid(EntityManager);
             handle = -1;
 
             if (mapUidA != mapUidB || mapUidA == null)
@@ -197,8 +173,8 @@ namespace Content.Server.NPC.Pathfinding
                 return false;
             }
 
-            var gridUidA = _transform.GetGrid(coordsA);
-            var gridUidB = _transform.GetGrid(coordsB);
+            var gridUidA = coordsA.GetGridUid(EntityManager);
+            var gridUidB = coordsB.GetGridUid(EntityManager);
 
             if (!TryComp<GridPathfindingComponent>(gridUidA, out var gridA) ||
                 !TryComp<GridPathfindingComponent>(gridUidB, out var gridB))
@@ -236,8 +212,8 @@ namespace Content.Server.NPC.Pathfinding
 
             _portals.Remove(handle);
 
-            var gridUidA = _transform.GetGrid(portal.CoordinatesA);
-            var gridUidB = _transform.GetGrid(portal.CoordinatesB);
+            var gridUidA = portal.CoordinatesA.GetGridUid(EntityManager);
+            var gridUidB = portal.CoordinatesB.GetGridUid(EntityManager);
 
             if (!TryComp<GridPathfindingComponent>(gridUidA, out var gridA) ||
                 !TryComp<GridPathfindingComponent>(gridUidB, out var gridB))
@@ -264,7 +240,7 @@ namespace Content.Server.NPC.Pathfinding
             int limit = 40,
             PathFlags flags = PathFlags.None)
         {
-            if (!TryComp(entity, out TransformComponent? start))
+            if (!TryComp<TransformComponent>(entity, out var start))
                 return new PathResultEvent(PathResult.NoPath, new List<PathPoly>());
 
             var layer = 0;
@@ -294,7 +270,7 @@ namespace Content.Server.NPC.Pathfinding
             CancellationToken cancelToken,
             PathFlags flags = PathFlags.None)
         {
-            if (!TryComp(entity, out TransformComponent? start))
+            if (!TryComp<TransformComponent>(entity, out var start))
                 return null;
 
             var request = GetRequest(entity, start.Coordinates, end, range, cancelToken, flags);
@@ -325,8 +301,8 @@ namespace Content.Server.NPC.Pathfinding
             CancellationToken cancelToken,
             PathFlags flags = PathFlags.None)
         {
-            if (!TryComp(entity, out TransformComponent? xform) ||
-                !TryComp(target, out TransformComponent? targetXform))
+            if (!TryComp<TransformComponent>(entity, out var xform) ||
+                !TryComp<TransformComponent>(target, out var targetXform))
                 return new PathResultEvent(PathResult.NoPath, new List<PathPoly>());
 
             var request = GetRequest(entity, xform.Coordinates, targetXform.Coordinates, range, cancelToken, flags);
@@ -397,22 +373,22 @@ namespace Content.Server.NPC.Pathfinding
         /// </summary>
         public PathPoly? GetPoly(EntityCoordinates coordinates)
         {
-            var gridUid = _transform.GetGrid(coordinates);
+            var gridUid = coordinates.GetGridUid(EntityManager);
 
             if (!TryComp<GridPathfindingComponent>(gridUid, out var comp) ||
-                !TryComp(gridUid, out TransformComponent? xform))
+                !TryComp<TransformComponent>(gridUid, out var xform))
             {
                 return null;
             }
 
-            var localPos = Vector2.Transform(_transform.ToMapCoordinates(coordinates).Position, _transform.GetInvWorldMatrix(xform));
+            var localPos = xform.InvWorldMatrix.Transform(coordinates.ToMapPos(EntityManager));
             var origin = GetOrigin(localPos);
 
             if (!TryGetChunk(origin, comp, out var chunk))
                 return null;
 
             var chunkPos = new Vector2(MathHelper.Mod(localPos.X, ChunkSize), MathHelper.Mod(localPos.Y, ChunkSize));
-            var polys = chunk.Polygons[(int)chunkPos.X * ChunkSize + (int)chunkPos.Y];
+            var polys = chunk.Polygons[(int) chunkPos.X * ChunkSize + (int) chunkPos.Y];
 
             foreach (var poly in polys)
             {
@@ -546,7 +522,7 @@ namespace Content.Server.NPC.Pathfinding
                 if ((session.Value & PathfindingDebugMode.Routes) == 0x0)
                     continue;
 
-                RaiseNetworkEvent(new PathRouteMessage(request.Polys.Select(GetDebugPoly).ToList(), new Dictionary<DebugPathPoly, float>()), session.Key.Channel);
+                RaiseNetworkEvent(new PathRouteMessage(request.Polys.Select(GetDebugPoly).ToList(), new Dictionary<DebugPathPoly, float>()), session.Key.ConnectedClient);
             }
         }
 
@@ -614,7 +590,7 @@ namespace Content.Server.NPC.Pathfinding
                 }
             }
 
-            RaiseNetworkEvent(msg, pSession.Channel);
+            RaiseNetworkEvent(msg, pSession.ConnectedClient);
         }
 
         private void SendRoute(PathRequest request)
@@ -642,7 +618,7 @@ namespace Content.Server.NPC.Pathfinding
                 if (!IsRoute(session.Value))
                     continue;
 
-                RaiseNetworkEvent(msg, session.Key.Channel);
+                RaiseNetworkEvent(msg, session.Key.ConnectedClient);
             }
         }
 
@@ -664,7 +640,7 @@ namespace Content.Server.NPC.Pathfinding
                 }
             }
 
-            RaiseNetworkEvent(msg, pSession.Channel);
+            RaiseNetworkEvent(msg, pSession.ConnectedClient);
         }
 
         private void SendBreadcrumbs(GridPathfindingChunk chunk, EntityUid gridUid)
@@ -684,7 +660,7 @@ namespace Content.Server.NPC.Pathfinding
                 if (!IsCrumb(session.Value))
                     continue;
 
-                RaiseNetworkEvent(msg, session.Key.Channel);
+                RaiseNetworkEvent(msg, session.Key.ConnectedClient);
             }
         }
 
@@ -718,7 +694,7 @@ namespace Content.Server.NPC.Pathfinding
                 if (!IsPoly(session.Value))
                     continue;
 
-                RaiseNetworkEvent(msg, session.Key.Channel);
+                RaiseNetworkEvent(msg, session.Key.ConnectedClient);
             }
         }
 

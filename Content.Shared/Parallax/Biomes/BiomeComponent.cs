@@ -12,12 +12,6 @@ namespace Content.Shared.Parallax.Biomes;
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState(true), Access(typeof(SharedBiomeSystem))]
 public sealed partial class BiomeComponent : Component
 {
-    /// <summary>
-    /// Do we load / deload.
-    /// </summary>
-    [DataField, ViewVariables(VVAccess.ReadWrite), Access(Other = AccessPermissions.ReadWriteExecute)]
-    public bool Enabled = true;
-
     [ViewVariables(VVAccess.ReadWrite), DataField("seed")]
     [AutoNetworkedField]
     public int Seed = -1;
@@ -30,13 +24,14 @@ public sealed partial class BiomeComponent : Component
     public List<IBiomeLayer> Layers = new();
 
     /// <summary>
-    /// Templates to use for <see cref="Layers"/>.
-    /// If this is set on mapinit, it will fill out layers automatically.
-    /// If not set, use <c>BiomeSystem</c> to do it.
-    /// Prototype reloading will also use this.
+    /// Templates to use for <see cref="Layers"/>. Optional as this can be set elsewhere.
     /// </summary>
-    [DataField]
-    public ProtoId<BiomeTemplatePrototype>? Template;
+    /// <remarks>
+    /// This is really just here for prototype reload support.
+    /// </remarks>
+    [ViewVariables(VVAccess.ReadWrite),
+     DataField("template", customTypeSerializer: typeof(PrototypeIdSerializer<BiomeTemplatePrototype>))]
+    public string? Template;
 
     /// <summary>
     /// If we've already generated a tile and couldn't deload it then we won't ever reload it in future.

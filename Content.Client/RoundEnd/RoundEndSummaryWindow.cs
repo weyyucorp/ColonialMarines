@@ -2,6 +2,7 @@ using System.Linq;
 using System.Numerics;
 using Content.Client.Message;
 using Content.Shared.GameTicking;
+using Robust.Client.GameObjects;
 using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.CustomControls;
 using Robust.Shared.Utility;
@@ -19,7 +20,7 @@ namespace Content.Client.RoundEnd
         {
             _entityManager = entityManager;
 
-            MinSize = new Vector2(520, 580);
+            MinSize = SetSize = new Vector2(520, 580);
 
             Title = Loc.GetString("round-end-summary-window-title");
 
@@ -36,7 +37,7 @@ namespace Content.Client.RoundEnd
 
             Contents.AddChild(roundEndTabs);
 
-            OpenCenteredRight();
+            OpenCentered();
             MoveToFront();
         }
 
@@ -51,8 +52,7 @@ namespace Content.Client.RoundEnd
             var roundEndSummaryContainerScrollbox = new ScrollContainer
             {
                 VerticalExpand = true,
-                Margin = new Thickness(10),
-                HScrollEnabled = false,
+                Margin = new Thickness(10)
             };
             var roundEndSummaryContainer = new BoxContainer
             {
@@ -62,9 +62,9 @@ namespace Content.Client.RoundEnd
             //Gamemode Name
             var gamemodeLabel = new RichTextLabel();
             var gamemodeMessage = new FormattedMessage();
-            gamemodeMessage.AddMarkupOrThrow(Loc.GetString("round-end-summary-window-round-id-label", ("roundId", roundId)));
+            gamemodeMessage.AddMarkup(Loc.GetString("round-end-summary-window-round-id-label", ("roundId", roundId)));
             gamemodeMessage.AddText(" ");
-            gamemodeMessage.AddMarkupOrThrow(Loc.GetString("round-end-summary-window-gamemode-name-label", ("gamemode", gamemode)));
+            gamemodeMessage.AddMarkup(Loc.GetString("round-end-summary-window-gamemode-name-label", ("gamemode", gamemode)));
             gamemodeLabel.SetMessage(gamemodeMessage);
             roundEndSummaryContainer.AddChild(gamemodeLabel);
 
@@ -125,15 +125,19 @@ namespace Content.Client.RoundEnd
                     VerticalExpand = true,
                 };
 
-                if (playerInfo.PlayerNetEntity != null)
+                var playerUid = _entityManager.GetEntity(playerInfo.PlayerNetEntity);
+
+                if (_entityManager.HasComponent<SpriteComponent>(playerUid))
                 {
-                    hBox.AddChild(new SpriteView(playerInfo.PlayerNetEntity.Value, _entityManager)
-                        {
-                            OverrideDirection = Direction.South,
-                            VerticalAlignment = VAlignment.Center,
-                            SetSize = new Vector2(32, 32),
-                            VerticalExpand = true,
-                        });
+                    var spriteView = new SpriteView
+                    {
+                        OverrideDirection = Direction.South,
+                        VerticalAlignment = VAlignment.Center,
+                        SetSize = new Vector2(32, 32),
+                        VerticalExpand = true,
+                    };
+                    spriteView.SetEntity(playerUid);
+                    hBox.AddChild(spriteView);
                 }
 
                 if (playerInfo.PlayerICName != null)

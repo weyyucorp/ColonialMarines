@@ -31,13 +31,13 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         base.Initialize();
 
         SubscribeLocalEvent<ClearAllOverlaysEvent>(_ => ClearAllOverlays());
-        Subs.ItemStatus<NetworkConfiguratorComponent>(OnCollectItemStatus);
+        SubscribeLocalEvent<NetworkConfiguratorComponent, ItemStatusCollectMessage>(OnCollectItemStatus);
     }
 
-    private Control OnCollectItemStatus(Entity<NetworkConfiguratorComponent> entity)
+    private void OnCollectItemStatus(EntityUid uid, NetworkConfiguratorComponent configurator, ItemStatusCollectMessage args)
     {
         _inputManager.TryGetKeyBinding((ContentKeyFunctions.AltUseItemInHand), out var binding);
-        return new StatusControl(entity, binding?.GetKeyString() ?? "");
+        args.Controls.Add(new StatusControl(configurator, binding?.GetKeyString() ?? ""));
     }
 
     public bool ConfiguredListIsTracked(EntityUid uid, NetworkConfiguratorComponent? component = null)
@@ -52,7 +52,8 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
     /// </summary>
     public void ToggleVisualization(EntityUid uid, bool toggle, NetworkConfiguratorComponent? component = null)
     {
-        if (_playerManager.LocalEntity == null
+        if (_playerManager.LocalPlayer == null
+            || _playerManager.LocalPlayer.ControlledEntity == null
             || !Resolve(uid, ref component)
             || component.ActiveDeviceList == null)
             return;
@@ -76,7 +77,7 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         {
             var overlay = new NetworkConfiguratorLinkOverlay();
             _overlay.AddOverlay(overlay);
-            var player = _playerManager.LocalEntity.Value;
+            var player = _playerManager.LocalPlayer.ControlledEntity.Value;
             overlay.Action = Spawn(Action);
             _actions.AddActionDirect(player, overlay.Action.Value);
         }
@@ -99,6 +100,17 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
 
         _actions.RemoveAction(overlay.Action);
         _overlay.RemoveOverlay(overlay);
+    }
+
+    // hacky solution related to mapping
+    public void SetActiveDeviceList(EntityUid tool, EntityUid list, NetworkConfiguratorComponent? component = null)
+    {
+        if (!Resolve(tool, ref component))
+        {
+            return;
+        }
+
+        component.ActiveDeviceList = list;
     }
 
     private sealed class StatusControl : Control
@@ -139,13 +151,11 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
 
 public sealed class ClearAllNetworkLinkOverlays : IConsoleCommand
 {
-    [Dependency] private readonly IEntityManager _e = default!;
-
     public string Command => "clearnetworklinkoverlays";
     public string Description => "Clear all network link overlays.";
     public string Help => Command;
     public void Execute(IConsoleShell shell, string argStr, string[] args)
     {
-        _e.System<NetworkConfiguratorSystem>().ClearAllOverlays();
+        IoCManager.Resolve<IEntityManager>().System<NetworkConfiguratorSystem>().ClearAllOverlays();
     }
 }

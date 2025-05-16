@@ -5,7 +5,6 @@ using Robust.Shared.GameObjects;
 namespace Content.IntegrationTests.Tests.GameRules;
 
 [TestFixture]
-[Ignore("Secret game rule is disabled in RMC14")]
 public sealed class SecretStartsTest
 {
     /// <summary>
@@ -18,15 +17,11 @@ public sealed class SecretStartsTest
 
         var server = pair.Server;
         await server.WaitIdleAsync();
-        var entMan = server.ResolveDependency<IEntityManager>();
         var gameTicker = server.ResolveDependency<IEntitySystemManager>().GetEntitySystem<GameTicker>();
 
         await server.WaitAssertion(() =>
         {
-            // this mimics roundflow:
-            // rules added, then round starts
-            gameTicker.AddGameRule("Secret");
-            gameTicker.StartGamePresetRules();
+            gameTicker.StartGameRule("Secret");
         });
 
         // Wait three ticks for any random update loops that might happen
@@ -34,7 +29,10 @@ public sealed class SecretStartsTest
 
         await server.WaitAssertion(() =>
         {
-            Assert.That(gameTicker.GetAddedGameRules().Count(), Is.GreaterThan(1), $"No additional rules started by secret rule.");
+            foreach (var rule in gameTicker.GetAddedGameRules())
+            {
+                Assert.That(gameTicker.GetActiveGameRules(), Does.Contain(rule));
+            }
 
             // End all rules
             gameTicker.ClearGameRules();

@@ -1,4 +1,3 @@
-using Content.Shared.Antag;
 using Robust.Shared.GameStates;
 using Content.Shared.StatusIcon;
 using Robust.Shared.Prototypes;
@@ -15,13 +14,11 @@ public sealed partial class HeadRevolutionaryComponent : Component
     /// The status icon corresponding to the head revolutionary.
     /// </summary>
     [DataField, ViewVariables(VVAccess.ReadWrite)]
-    public ProtoId<FactionIconPrototype> StatusIcon { get; set; } = "HeadRevolutionaryFaction";
+    public ProtoId<StatusIconPrototype> HeadRevStatusIcon = "HeadRevolutionaryFaction";
 
     /// <summary>
     /// How long the stun will last after the user is converted.
     /// </summary>
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public TimeSpan StunTime = TimeSpan.FromSeconds(3);
-
-    public override bool SessionSpecific => true;
 }

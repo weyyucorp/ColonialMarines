@@ -16,7 +16,6 @@ public sealed class TetherGunSystem : SharedTetherGunSystem
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IOverlayManager _overlay = default!;
     [Dependency] private readonly IPlayerManager _player = default!;
-    [Dependency] private readonly MapSystem _mapSystem = default!;
 
     public override void Initialize()
     {
@@ -55,7 +54,7 @@ public sealed class TetherGunSystem : SharedTetherGunSystem
         if (!_timing.IsFirstTimePredicted)
             return;
 
-        var player = _player.LocalEntity;
+        var player = _player.LocalPlayer?.ControlledEntity;
 
         if (player == null ||
             !TryGetTetherGun(player.Value, out var gunUid, out var gun) ||
@@ -74,16 +73,16 @@ public sealed class TetherGunSystem : SharedTetherGunSystem
 
         if (_mapManager.TryFindGridAt(mouseWorldPos, out var gridUid, out _))
         {
-            coords = TransformSystem.ToCoordinates(gridUid, mouseWorldPos);
+            coords = EntityCoordinates.FromMap(gridUid, mouseWorldPos, TransformSystem);
         }
         else
         {
-            coords = TransformSystem.ToCoordinates(_mapSystem.GetMap(mouseWorldPos.MapId), mouseWorldPos);
+            coords = EntityCoordinates.FromMap(_mapManager.GetMapEntityId(mouseWorldPos.MapId), mouseWorldPos, TransformSystem);
         }
 
         const float BufferDistance = 0.1f;
 
-        if (TryComp(gun.TetherEntity, out TransformComponent? tetherXform) &&
+        if (TryComp<TransformComponent>(gun.TetherEntity, out var tetherXform) &&
             tetherXform.Coordinates.TryDistance(EntityManager, TransformSystem, coords, out var distance) &&
             distance < BufferDistance)
         {

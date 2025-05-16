@@ -27,10 +27,9 @@
     - type: Sprite
       sprite: Objects/Misc/module.rsi
       state: charger_APC
-    - type: StaticPrice
-      price: 40
     - type: Tag
       tags:
+        - DroneUsable
         - WallmountSubstationElectronics
 
 # Wallmount Generator
@@ -43,13 +42,12 @@
   - type: Sprite
     sprite: Objects/Misc/module.rsi
     state: charger_APC
-  - type: StaticPrice
-    price: 20
   - type: PhysicalComposition
     materialComposition:
       Glass: 90
   - type: Tag
     tags:
+      - DroneUsable
       - WallmountGeneratorElectronics
 
 # APU
@@ -62,10 +60,9 @@
     - type: Sprite
       sprite: Objects/Misc/module.rsi
       state: charger_APC
-    - type: StaticPrice
-      price: 40
     - type: Tag
       tags:
+        - DroneUsable
         - WallmountGeneratorAPUElectronics
 
 # Solar Tracker Electronics
@@ -73,13 +70,12 @@
   parent: BaseElectronics
   id: SolarTrackerElectronics
   name: solar tracker electronics
-  description: Advanced circuit board used to track the nearest star.
+  description: Advanced circuit board used to detect differences in pressure, temperature and gas concentrations between the two sides of the door.
   components:
     - type: Sprite
       sprite: Objects/Misc/module.rsi
-      state: engineering
-    - type: StaticPrice
-      price: 85
+      state: generic
     - type: Tag
       tags:
+        - DroneUsable
         - SolarTrackerElectronics

@@ -6,10 +6,8 @@ replay-loading-processing = Processing Files
 replay-loading-spawning = Spawning Entities
 replay-loading-initializing = Initializing Entities
 replay-loading-starting= Starting Entities
-replay-loading-failed = Failed to load replay. Error:
+replay-loading-failed = Failed to load replay:
                         {$reason}
-replay-loading-retry = Try load with more exception tolerance - MAY CAUSE BUGS!
-replay-loading-cancel = Cancel
 
 # Main Menu
 replay-menu-subtext = Replay Client
@@ -42,5 +40,3 @@ replay-verb-spectate = Spectate
 cmd-replay-spectate-help = replay_spectate [optional entity]
 cmd-replay-spectate-desc = Attaches or detaches the local player to a given entity uid.
 cmd-replay-spectate-hint = Optional EntityUid
-
-cmd-replay-toggleui-desc = Toggles the replay control UI.

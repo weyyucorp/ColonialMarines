@@ -1,6 +1,4 @@
-using Content.Shared.Bed.Sleep;
-using Content.Shared.Damage;
-using Content.Shared.Damage.Events;
+﻿using Content.Shared.Damage;
 using Content.Shared.Damage.ForceSay;
 using Content.Shared.FixedPoint;
 using Content.Shared.Mobs;
@@ -48,7 +46,7 @@ public sealed class DamageForceSaySystem : EntitySystem
         }
     }
 
-    private void TryForceSay(EntityUid uid, DamageForceSayComponent component, bool useSuffix=true)
+    private void TryForceSay(EntityUid uid, DamageForceSayComponent component, bool useSuffix=true, string? suffixOverride = null)
     {
         if (!TryComp<ActorComponent>(uid, out var actor))
             return;
@@ -58,13 +56,7 @@ public sealed class DamageForceSaySystem : EntitySystem
             _timing.CurTime < component.NextAllowedTime)
             return;
 
-        var ev = new BeforeForceSayEvent(component.ForceSayStringDataset);
-        RaiseLocalEvent(uid, ev);
-
-        if (!_prototype.TryIndex(ev.Prefix, out var prefixList))
-            return;
-
-        var suffix = Loc.GetString(_random.Pick(prefixList.Values));
+        var suffix = Loc.GetString(suffixOverride ?? component.ForceSayStringPrefix + _random.Next(1, component.ForceSayStringCount));
 
         // set cooldown & raise event
         component.NextAllowedTime = _timing.CurTime + component.Cooldown;
@@ -87,7 +79,7 @@ public sealed class DamageForceSaySystem : EntitySystem
         if (!args.FellAsleep)
             return;
 
-        TryForceSay(uid, component);
+        TryForceSay(uid, component, true, "damage-force-say-sleep");
         AllowNextSpeech(uid);
     }
 
@@ -98,7 +90,7 @@ public sealed class DamageForceSaySystem : EntitySystem
 
     private void OnDamageChanged(EntityUid uid, DamageForceSayComponent component, DamageChangedEvent args)
     {
-        if (args.DamageDelta == null || !args.DamageIncreased || args.DamageDelta.GetTotal() < component.DamageThreshold)
+        if (args.DamageDelta == null || !args.DamageIncreased || args.DamageDelta.Total < component.DamageThreshold)
             return;
 
         if (component.ValidDamageGroups != null)

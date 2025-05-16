@@ -19,9 +19,8 @@
         base:
           On: { state: tray-on }
           Off: { state: tray-off }
-  - type: PhysicalComposition
-    materialComposition:
-      Steel: 400
-      Glass: 150
+  - type: Tag
+    tags:
+      - DroneUsable
   - type: StaticPrice
-    price: 85
+    price: 60

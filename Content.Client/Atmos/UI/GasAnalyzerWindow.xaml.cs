@@ -16,8 +16,6 @@ namespace Content.Client.Atmos.UI
     [GenerateTypedNameReferences]
     public sealed partial class GasAnalyzerWindow : DefaultWindow
     {
-        private NetEntity _currentEntity = NetEntity.Invalid;
-
         public GasAnalyzerWindow()
         {
             RobustXamlLoader.Load(this);
@@ -57,13 +55,6 @@ namespace Content.Client.Atmos.UI
             // Device Tab
             if (msg.NodeGasMixes.Length > 1)
             {
-                if (_currentEntity != msg.DeviceUid)
-                {
-                    // when we get new device data switch to the device tab
-                    CTabContainer.CurrentTab = 0;
-                    _currentEntity = msg.DeviceUid;
-                }
-
                 CTabContainer.SetTabVisible(0, true);
                 CTabContainer.SetTabTitle(0, Loc.GetString("gas-analyzer-window-tab-title-capitalized", ("title", msg.DeviceName)));
                 // Set up Grid
@@ -152,7 +143,6 @@ namespace Content.Client.Atmos.UI
                 CTabContainer.SetTabVisible(0, false);
                 CTabContainer.CurrentTab = 1;
                 minSize = new Vector2(CEnvironmentMix.DesiredSize.X + 40, MinSize.Y);
-                _currentEntity = NetEntity.Invalid;
             }
 
             MinSize = minSize;
@@ -172,26 +162,6 @@ namespace Content.Client.Atmos.UI
 
             parent.AddChild(panel);
             panel.AddChild(dataContainer);
-
-            // Volume label
-            var volBox = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Horizontal };
-
-            volBox.AddChild(new Label
-            {
-                Text = Loc.GetString("gas-analyzer-window-volume-text")
-            });
-            volBox.AddChild(new Control
-            {
-                MinSize = new Vector2(10, 0),
-                HorizontalExpand = true
-            });
-            volBox.AddChild(new Label
-            {
-                Text = Loc.GetString("gas-analyzer-window-volume-val-text", ("volume", $"{gasMix.Volume:0.##}")),
-                Align = Label.AlignMode.Right,
-                HorizontalExpand = true
-            });
-            dataContainer.AddChild(volBox);
 
             // Pressure label
             var presBox = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Horizontal };
@@ -271,10 +241,6 @@ namespace Content.Client.Atmos.UI
             {
                 Orientation = BoxContainer.LayoutOrientation.Vertical
             };
-            var tablePercent = new BoxContainer
-            {
-                Orientation = BoxContainer.LayoutOrientation.Vertical
-            };
             dataContainer.AddChild(new BoxContainer
             {
                 Orientation = BoxContainer.LayoutOrientation.Horizontal,
@@ -286,13 +252,7 @@ namespace Content.Client.Atmos.UI
                         MinSize = new Vector2(10, 0),
                         HorizontalExpand = true
                     },
-                    tableVal,
-                    new Control
-                    {
-                        MinSize = new Vector2(10, 0),
-                        HorizontalExpand = true
-                    },
-                    tablePercent
+                    tableVal
                 }
             });
             // This is the gas bar thingy
@@ -300,7 +260,6 @@ namespace Content.Client.Atmos.UI
             var gasBar = new SplitBar
             {
                 MinHeight = height,
-                MinBarSize = new Vector2(12, 0)
             };
             // Separator
             dataContainer.AddChild(new Control
@@ -315,17 +274,6 @@ namespace Content.Client.Atmos.UI
                 totalGasAmount += gas.Amount;
             }
 
-            tableKey.AddChild(new Label
-                { Text = Loc.GetString("gas-analyzer-window-gas-column-name"), Align = Label.AlignMode.Center });
-            tableVal.AddChild(new Label
-                { Text = Loc.GetString("gas-analyzer-window-molarity-column-name"), Align = Label.AlignMode.Center });
-            tablePercent.AddChild(new Label
-                { Text = Loc.GetString("gas-analyzer-window-percentage-column-name"), Align = Label.AlignMode.Center });
-
-            tableKey.AddChild(new StripeBack());
-            tableVal.AddChild(new StripeBack());
-            tablePercent.AddChild(new StripeBack());
-
             for (var j = 0; j < gasMix.Gases.Length; j++)
             {
                 var gas = gasMix.Gases[j];
@@ -338,14 +286,10 @@ namespace Content.Client.Atmos.UI
                 tableVal.AddChild(new Label
                 {
                     Text = Loc.GetString("gas-analyzer-window-molarity-text",
-                        ("mol", $"{gas.Amount:0.00}")),
+                        ("mol", $"{gas.Amount:0.##}"),
+                        ("percentage", $"{(gas.Amount / totalGasAmount * 100):0.#}")),
                     Align = Label.AlignMode.Right,
-                });
-                tablePercent.AddChild(new Label
-                {
-                    Text = Loc.GetString("gas-analyzer-window-percentage-text",
-                        ("percentage", $"{(gas.Amount / totalGasAmount * 100):0.0}")),
-                    Align = Label.AlignMode.Right
+                    HorizontalExpand = true
                 });
 
                 // Add to the gas bar //TODO: highlight the currently hover one

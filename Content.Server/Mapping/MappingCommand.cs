@@ -1,13 +1,16 @@
+// ReSharper disable once RedundantUsingDirective
+// Used to warn the player in big red letters in debug mode
+
 using System.Linq;
 using Content.Server.Administration;
 using Content.Server.GameTicking;
 using Content.Shared.Administration;
+using Content.Shared.CCVar;
+using Robust.Server.Player;
+using Robust.Shared.Configuration;
 using Robust.Shared.Console;
 using Robust.Shared.ContentPack;
-using Robust.Shared.EntitySerialization;
-using Robust.Shared.EntitySerialization.Systems;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
 
 namespace Content.Server.Mapping
@@ -16,7 +19,6 @@ namespace Content.Server.Mapping
     sealed class MappingCommand : IConsoleCommand
     {
         [Dependency] private readonly IEntityManager _entities = default!;
-        [Dependency] private readonly IMapManager _map = default!;
 
         public string Command => "mapping";
         public string Description => Loc.GetString("cmd-mapping-desc");
@@ -33,8 +35,6 @@ namespace Content.Server.Mapping
                     var opts = CompletionHelper.UserFilePath(args[1], res.UserData)
                         .Concat(CompletionHelper.ContentFilePath(args[1], res));
                     return CompletionResult.FromHintOptions(opts, Loc.GetString("cmd-hint-mapping-path"));
-                case 3:
-                    return CompletionResult.FromHintOptions(["false", "true"], Loc.GetString("cmd-mapping-hint-grid"));
             }
             return CompletionResult.Empty;
         }
@@ -43,35 +43,27 @@ namespace Content.Server.Mapping
         {
             if (shell.Player is not { } player)
             {
-                shell.WriteError(Loc.GetString("shell-cannot-run-command-from-server"));
+                shell.WriteError(Loc.GetString("cmd-savemap-server"));
                 return;
             }
 
-            if (args.Length > 3)
+            if (args.Length > 2)
             {
                 shell.WriteLine(Help);
                 return;
             }
 
 #if DEBUG
-            shell.WriteLine(Loc.GetString("cmd-mapping-warning"));
+            shell.WriteError(Loc.GetString("cmd-mapping-warning"));
 #endif
 
-            // For backwards compatibility, isGrid is optional and we allow mappers to try load grids without explicitly
-            // specifying that they are loading a grid. Currently content is not allowed to override a map's MapId, so
-            // without engine changes this needs to be done by brute force by just trying to load it as a map first.
-            // This can result in errors being logged if the file is actually a grid, but the command should still work.
-            // yipeeee
-            bool? isGrid = args.Length < 3 ? null : bool.Parse(args[2]);
-
+            var mapManager = IoCManager.Resolve<IMapManager>();
             MapId mapId;
-            string? toLoad = null;
-            var mapSys = _entities.System<SharedMapSystem>();
-            Entity<MapGridComponent>? grid = null;
 
             // Get the map ID to use
-            if (args.Length > 0)
+            if (args.Length is 1 or 2)
             {
+
                 if (!int.TryParse(args[0], out var intMapId))
                 {
                     shell.WriteError(Loc.GetString("cmd-mapping-failure-integer", ("arg", args[0])));
@@ -87,65 +79,35 @@ namespace Content.Server.Mapping
                     return;
                 }
 
-                if (mapSys.MapExists(mapId))
+                if (mapManager.MapExists(mapId))
                 {
                     shell.WriteError(Loc.GetString("cmd-mapping-exists", ("mapId", mapId)));
                     return;
                 }
 
-                // either load a map or create a new one.
-                if (args.Length <= 1)
-                {
-                    mapSys.CreateMap(mapId, runMapInit: false);
-                }
-                else
-                {
-                    var path = new ResPath(args[1]);
-                    toLoad = path.FilenameWithoutExtension;
-                    var opts = new DeserializationOptions {StoreYamlUids = true};
-                    var loader = _entities.System<MapLoaderSystem>();
-
-                    if (isGrid == true)
-                    {
-                        mapSys.CreateMap(mapId, runMapInit: false);
-                        if (!loader.TryLoadGrid(mapId, path, out grid, opts))
-                        {
-                            shell.WriteError(Loc.GetString("cmd-mapping-error"));
-                            mapSys.DeleteMap(mapId);
-                            return;
-                        }
-                    }
-                    else if (!loader.TryLoadMapWithId(mapId, path, out _, out _, opts))
-                    {
-                        if (isGrid == false)
-                        {
-                            shell.WriteError(Loc.GetString("cmd-mapping-error"));
-                            return;
-                        }
-
-                        // isGrid was not specified and loading it as a map failed, so we fall back to trying to load
-                        // the file as a grid
-                        shell.WriteLine(Loc.GetString("cmd-mapping-try-grid"));
-                        mapSys.CreateMap(mapId, runMapInit: false);
-                        if (!loader.TryLoadGrid(mapId, path, out grid, opts))
-                        {
-                            shell.WriteError(Loc.GetString("cmd-mapping-error"));
-                            mapSys.DeleteMap(mapId);
-                            return;
-                        }
-                    }
-                }
-
-                // was the map actually created or did it fail somehow?
-                if (!mapSys.MapExists(mapId))
-                {
-                    shell.WriteError(Loc.GetString("cmd-mapping-error"));
-                    return;
-                }
             }
             else
             {
-                mapSys.CreateMap(out mapId, runMapInit: false);
+                mapId = mapManager.NextMapId();
+            }
+
+            string? toLoad = null;
+            // either load a map or create a new one.
+            if (args.Length <= 1)
+            {
+                shell.ExecuteCommand($"addmap {mapId} false");
+            }
+            else
+            {
+                toLoad = CommandParsing.Escape(args[1]);
+                shell.ExecuteCommand($"loadmap {mapId} \"{toLoad}\" 0 0 0 true");
+            }
+
+            // was the map actually created?
+            if (!mapManager.MapExists(mapId))
+            {
+                shell.WriteError(Loc.GetString("cmd-mapping-error"));
+                return;
             }
 
             // map successfully created. run misc helpful mapping commands
@@ -155,26 +117,22 @@ namespace Content.Server.Mapping
                 shell.ExecuteCommand("aghost");
             }
 
+            var cfg = IoCManager.Resolve<IConfigurationManager>();
+
             // don't interrupt mapping with events or auto-shuttle
-            shell.ExecuteCommand("changecvar events.enabled false");
-            shell.ExecuteCommand("changecvar shuttle.auto_call_time 0");
+            shell.ExecuteCommand("sudo cvar events.enabled false");
+            shell.ExecuteCommand("sudo cvar shuttle.auto_call_time 0");
 
-            var auto = _entities.System<MappingSystem>();
-            if (grid != null)
-                auto.ToggleAutosave(grid.Value.Owner, toLoad ?? "NEWGRID");
-            else
-                auto.ToggleAutosave(mapId, toLoad ?? "NEWMAP");
-
+            if (cfg.GetCVar(CCVars.AutosaveEnabled))
+                shell.ExecuteCommand($"toggleautosave {mapId} {toLoad ?? "NEWMAP"}");
             shell.ExecuteCommand($"tp 0 0 {mapId}");
             shell.RemoteExecuteCommand("mappingclientsidesetup");
-            DebugTools.Assert(mapSys.IsPaused(mapId));
+            mapManager.SetMapPaused(mapId, true);
 
-            if (args.Length != 2)
-                shell.WriteLine(Loc.GetString("cmd-mapping-success", ("mapId", mapId)));
-            else if (grid == null)
-                shell.WriteLine(Loc.GetString("cmd-mapping-success-load", ("mapId", mapId), ("path", args[1])));
+            if (args.Length == 2)
+                shell.WriteLine(Loc.GetString("cmd-mapping-success-load",("mapId",mapId),("path", args[1])));
             else
-                shell.WriteLine(Loc.GetString("cmd-mapping-success-load-grid", ("mapId", mapId), ("path", args[1])));
+                shell.WriteLine(Loc.GetString("cmd-mapping-success", ("mapId", mapId)));
         }
     }
 }

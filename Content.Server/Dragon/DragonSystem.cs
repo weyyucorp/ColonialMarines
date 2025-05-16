@@ -1,3 +1,4 @@
+using Content.Server.GenericAntag;
 using Content.Server.Objectives.Components;
 using Content.Server.Objectives.Systems;
 using Content.Server.Popups;
@@ -8,28 +9,23 @@ using Content.Shared.Maps;
 using Content.Shared.Mind;
 using Content.Shared.Mind.Components;
 using Content.Shared.Mobs;
-using Content.Shared.Mobs.Systems;
 using Content.Shared.Movement.Systems;
-using Content.Shared.NPC.Systems;
-using Content.Shared.Zombies;
-using Robust.Shared.Audio.Systems;
+using Robust.Shared.GameStates;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
+using Robust.Shared.Player;
 
 namespace Content.Server.Dragon;
 
 public sealed partial class DragonSystem : EntitySystem
 {
     [Dependency] private readonly CarpRiftsConditionSystem _carpRifts = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly ITileDefinitionManager _tileDef = default!;
     [Dependency] private readonly MovementSpeedModifierSystem _movement = default!;
-    [Dependency] private readonly NpcFactionSystem _faction = default!;
     [Dependency] private readonly PopupSystem _popup = default!;
+    [Dependency] private readonly RoleSystem _role = default!;
     [Dependency] private readonly SharedActionsSystem _actions = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
-    [Dependency] private readonly SharedTransformSystem _transform = default!;
-    [Dependency] private readonly SharedMapSystem _map = default!;
-    [Dependency] private readonly MobStateSystem _mobState = default!;
 
     private EntityQuery<CarpRiftsConditionComponent> _objQuery;
 
@@ -56,7 +52,7 @@ public sealed partial class DragonSystem : EntitySystem
         SubscribeLocalEvent<DragonComponent, DragonSpawnRiftActionEvent>(OnSpawnRift);
         SubscribeLocalEvent<DragonComponent, RefreshMovementSpeedModifiersEvent>(OnDragonMove);
         SubscribeLocalEvent<DragonComponent, MobStateChangedEvent>(OnMobStateChanged);
-        SubscribeLocalEvent<DragonComponent, EntityZombifiedEvent>(OnZombified);
+        SubscribeLocalEvent<DragonComponent, GenericAntagCreatedEvent>(OnCreated);
     }
 
     public override void Update(float frameTime)
@@ -94,8 +90,7 @@ public sealed partial class DragonSystem : EntitySystem
                 }
             }
 
-            if (!_mobState.IsDead(uid))
-                comp.RiftAccumulator += frameTime;
+            comp.RiftAccumulator += frameTime;
 
             // Delete it, naughty dragon!
             if (comp.RiftAccumulator >= comp.RiftMaxAccumulator)
@@ -140,7 +135,7 @@ public sealed partial class DragonSystem : EntitySystem
         var xform = Transform(uid);
 
         // Have to be on a grid fam
-        if (!TryComp<MapGridComponent>(xform.GridUid, out var grid))
+        if (!_mapManager.TryGetGrid(xform.GridUid, out var grid))
         {
             _popup.PopupEntity(Loc.GetString("carp-rift-anchor"), uid, uid);
             return;
@@ -149,7 +144,7 @@ public sealed partial class DragonSystem : EntitySystem
         // cant stack rifts near eachother
         foreach (var (_, riftXform) in EntityQuery<DragonRiftComponent, TransformComponent>(true))
         {
-            if (_transform.InRange(riftXform.Coordinates, xform.Coordinates, RiftRange))
+            if (riftXform.Coordinates.InRange(EntityManager, xform.Coordinates, RiftRange))
             {
                 _popup.PopupEntity(Loc.GetString("carp-rift-proximity", ("proximity", RiftRange)), uid, uid);
                 return;
@@ -157,7 +152,7 @@ public sealed partial class DragonSystem : EntitySystem
         }
 
         // cant put a rift on solars
-        foreach (var tile in _map.GetTilesIntersecting(xform.GridUid.Value, grid, new Circle(_transform.GetWorldPosition(xform), RiftTileRadius), false))
+        foreach (var tile in grid.GetTilesIntersecting(new Circle(xform.WorldPosition, RiftTileRadius), false))
         {
             if (!tile.IsSpace(_tileDef))
                 continue;
@@ -166,7 +161,7 @@ public sealed partial class DragonSystem : EntitySystem
             return;
         }
 
-        var carpUid = Spawn(component.RiftPrototype, _transform.GetMapCoordinates(uid, xform: xform));
+        var carpUid = Spawn(component.RiftPrototype, xform.MapPosition);
         component.Rifts.Add(carpUid);
         Comp<DragonRiftComponent>(carpUid).Dragon = uid;
     }
@@ -193,16 +188,22 @@ public sealed partial class DragonSystem : EntitySystem
         DeleteRifts(uid, false, component);
     }
 
-    private void OnZombified(Entity<DragonComponent> ent, ref EntityZombifiedEvent args)
+    private void OnCreated(EntityUid uid, DragonComponent comp, ref GenericAntagCreatedEvent args)
     {
-        // prevent carp attacking zombie dragon
-        _faction.AddFaction(ent.Owner, ent.Comp.Faction);
+        var mindId = args.MindId;
+        var mind = args.Mind;
+
+        _role.MindAddRole(mindId, new DragonRoleComponent(), mind);
+        _role.MindAddRole(mindId, new RoleBriefingComponent()
+        {
+            Briefing = Loc.GetString("dragon-role-briefing")
+        }, mind);
     }
 
     private void Roar(EntityUid uid, DragonComponent comp)
     {
         if (comp.SoundRoar != null)
-            _audio.PlayPvs(comp.SoundRoar, uid);
+            _audio.Play(comp.SoundRoar, Filter.Pvs(uid, 4f, EntityManager), uid, true);
     }
 
     /// <summary>
@@ -228,7 +229,7 @@ public sealed partial class DragonSystem : EntitySystem
             return;
 
         var mind = Comp<MindComponent>(mindContainer.Mind.Value);
-        foreach (var objId in mind.Objectives)
+        foreach (var objId in mind.AllObjectives)
         {
             if (_objQuery.TryGetComponent(objId, out var obj))
             {
@@ -250,7 +251,7 @@ public sealed partial class DragonSystem : EntitySystem
             return;
 
         var mind = Comp<MindComponent>(mindContainer.Mind.Value);
-        foreach (var objId in mind.Objectives)
+        foreach (var objId in mind.AllObjectives)
         {
             if (_objQuery.TryGetComponent(objId, out var obj))
             {

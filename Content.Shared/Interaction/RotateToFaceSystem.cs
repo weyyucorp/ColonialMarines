@@ -1,7 +1,7 @@
 using System.Numerics;
-using Content.Shared._RMC14.Interaction;
 using Content.Shared.ActionBlocker;
 using Content.Shared.Buckle.Components;
+using Content.Shared.Mobs.Systems;
 using Content.Shared.Rotatable;
 using JetBrains.Annotations;
 
@@ -18,7 +18,6 @@ namespace Content.Shared.Interaction
     {
         [Dependency] private readonly ActionBlockerSystem _actionBlockerSystem = default!;
         [Dependency] private readonly SharedTransformSystem _transform = default!;
-        [Dependency] private readonly RMCInteractionSystem _rmcInteraction = default!;
 
         /// <summary>
         /// Tries to rotate the entity towards the target rotation. Returns false if it needs to keep rotating.
@@ -32,8 +31,6 @@ namespace Content.Shared.Interaction
         {
             if (!Resolve(uid, ref xform))
                 return true;
-
-            _rmcInteraction.TryCapWorldRotation((uid, null, xform), ref goalRotation);
 
             // If we have a max rotation speed then do that.
             // We'll rotate even if we can't shoot, looks better.
@@ -73,7 +70,7 @@ namespace Content.Shared.Interaction
             if (!Resolve(user, ref xform))
                 return false;
 
-            var diff = coordinates - _transform.GetMapCoordinates(user, xform: xform).Position;
+            var diff = coordinates - xform.MapPosition.Position;
             if (diff.LengthSquared() <= 0.01f)
                 return true;
 
@@ -83,32 +80,34 @@ namespace Content.Shared.Interaction
 
         public bool TryFaceAngle(EntityUid user, Angle diffAngle, TransformComponent? xform = null)
         {
-            if (!_actionBlockerSystem.CanChangeDirection(user))
-                return false;
-
-            if (TryComp(user, out BuckleComponent? buckle) && buckle.BuckledTo is {} strap)
+            if (_actionBlockerSystem.CanChangeDirection(user))
             {
-                // What if a person is strapped to a borg?
-                // I'm pretty sure this would allow them to be partially ratatouille'd
-
-                // We're buckled to another object. Is that object rotatable?
-                if (!TryComp<RotatableComponent>(strap, out var rotatable) || !rotatable.RotateWhileAnchored)
+                if (!Resolve(user, ref xform))
                     return false;
 
-                // Note the assumption that even if unanchored, user can only do spinnychair with an "independent wheel".
-                // (Since the user being buckled to it holds it down with their weight.)
-                // This is logically equivalent to RotateWhileAnchored.
-                // Barstools and office chairs have independent wheels, while regular chairs don't.
-                _transform.SetWorldRotation(Transform(strap), diffAngle);
+                _transform.SetWorldRotation(xform, diffAngle);
                 return true;
             }
 
-            // user is not buckled in; apply to their transform
-            if (!Resolve(user, ref xform))
-                return false;
+            if (EntityManager.TryGetComponent(user, out BuckleComponent? buckle) && buckle.Buckled)
+            {
+                var suid = buckle.LastEntityBuckledTo;
+                if (suid != null)
+                {
+                    // We're buckled to another object. Is that object rotatable?
+                    if (TryComp<RotatableComponent>(suid.Value, out var rotatable) && rotatable.RotateWhileAnchored)
+                    {
+                        // Note the assumption that even if unanchored, user can only do spinnychair with an "independent wheel".
+                        // (Since the user being buckled to it holds it down with their weight.)
+                        // This is logically equivalent to RotateWhileAnchored.
+                        // Barstools and office chairs have independent wheels, while regular chairs don't.
+                        _transform.SetWorldRotation(Transform(suid.Value), diffAngle);
+                        return true;
+                    }
+                }
+            }
 
-            _transform.SetWorldRotation(xform, diffAngle);
-            return true;
+            return false;
         }
     }
 }

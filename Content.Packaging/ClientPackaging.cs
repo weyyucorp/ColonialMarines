@@ -13,7 +13,7 @@ public static class ClientPackaging
     /// <summary>
     /// Be advised this can be called from server packaging during a HybridACZ build.
     /// </summary>
-    public static async Task PackageClient(bool skipBuild, string configuration, IPackageLogger logger)
+    public static async Task PackageClient(bool skipBuild, IPackageLogger logger)
     {
         logger.Info("Building client...");
 
@@ -26,7 +26,7 @@ public static class ClientPackaging
                 {
                     "build",
                     Path.Combine("Content.Client", "Content.Client.csproj"),
-                    "-c", configuration,
+                    "-c", "Release",
                     "--nologo",
                     "/v:m",
                     "/t:Rebuild",
@@ -61,13 +61,7 @@ public static class ClientPackaging
         var graph = new RobustClientAssetGraph();
         pass.Dependencies.Add(new AssetPassDependency(graph.Output.Name));
 
-        var dropSvgPass = new AssetPassFilterDrop(f => f.Path.EndsWith(".svg"))
-        {
-            Name = "DropSvgPass",
-        };
-        dropSvgPass.AddDependency(graph.Input).AddBefore(graph.PresetPasses);
-
-        AssetGraph.CalculateGraph([pass, dropSvgPass, ..graph.AllPasses], logger);
+        AssetGraph.CalculateGraph(graph.AllPasses.Append(pass).ToArray(), logger);
 
         var inputPass = graph.Input;
 
@@ -78,7 +72,7 @@ public static class ClientPackaging
             new[] { "Content.Client", "Content.Shared", "Content.Shared.Database" },
             cancel: cancel);
 
-        await RobustClientPackaging.WriteClientResources(contentDir, inputPass, cancel);
+        await RobustClientPackaging.WriteClientResources(contentDir, pass, cancel);
 
         inputPass.InjectFinished();
     }

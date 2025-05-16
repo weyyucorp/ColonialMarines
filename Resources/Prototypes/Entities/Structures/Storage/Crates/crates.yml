@@ -12,8 +12,6 @@
     - Energy
     reflectProb: 0.2
     spread: 90
-  - type: RadiationBlockingContainer
-    resistance: 2.5
 
 - type: entity
   parent: CrateBaseWeldable
@@ -30,7 +28,7 @@
     containers:
     - entity_storage
   - type: StaticPrice
-    price: 100
+    price: 80
 
 - type: entity
   parent: CratePlastic
@@ -42,13 +40,6 @@
   - type: Sprite
     sprite: Structures/Storage/Crates/freezer.rsi
   - type: AntiRottingContainer
-  - type: ExplosionResistance
-    damageCoefficient: 0.50
-  - type: Construction
-    graph: CrateFreezer
-    node: done
-    containers:
-    - entity_storage
 
 - type: entity
   parent: CratePlastic
@@ -92,7 +83,7 @@
     sprite: Structures/Storage/Crates/o2.rsi
 
 - type: entity
-  parent: CrateGenericSteel
+  parent: CratePlastic
   id: CrateElectrical
   name: electrical crate
   components:
@@ -145,9 +136,6 @@
       map: ["enum.StorageVisualLayers.Base"]
     - state: closed
       map: ["enum.StorageVisualLayers.Door"]
-    - state: paper
-      sprite: Structures/Storage/Crates/labels.rsi
-      map: ["enum.PaperLabelVisuals.Layer"]
   - type: Construction
     graph: WebStructures
     node: crate
@@ -163,7 +151,7 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWebSilk:
@@ -178,7 +166,7 @@
 # Secure Crates
 
 - type: entity
-  parent: [ CrateBaseSecure, BaseSecurityContraband ]
+  parent: CrateBaseSecure
   id: CrateSecgear
   name: secgear crate
   components:
@@ -294,18 +282,6 @@
     access: [["Armory"]]
 
 - type: entity
-  parent: [ CrateBaseSecure, BaseSecurityContraband ]
-  suffix: Armory, Secure
-  id: CrateContrabandStorageSecure
-  name: contraband storage crate
-  description: An armory access locked crate for storing contraband confiscated from suspects or prisoners.
-  components:
-  - type: Sprite
-    sprite: Structures/Storage/Crates/sec_gear.rsi
-  - type: AccessReader
-    access: [["Armory"]]
-
-- type: entity
   parent: CrateBaseSecure
   id: CrateCommandSecure
   name: command crate
@@ -330,10 +306,6 @@
     - state: base
     - state: closed
       map: ["enum.StorageVisualLayers.Door"]
-    - state: paper
-      sprite: Structures/Storage/Crates/labels.rsi
-      offset: "-0.25,0.625"
-      map: ["enum.PaperLabelVisuals.Layer"]
   - type: Icon
     sprite: Structures/Storage/Crates/livestock.rsi
     state: base
@@ -345,7 +317,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroyHeavy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWoodPlank1:
@@ -363,7 +335,7 @@
           bounds: "-0.4,-0.4,0.4,0.29"
         density: 135
         mask:
-        - CrateMask #this is so they can go under plastic flaps
+        - LargeMobMask
         layer:
         - LargeMobLayer
   - type: Construction
@@ -385,10 +357,6 @@
     - state: base
     - state: closed
       map: ["enum.StorageVisualLayers.Door"]
-    - state: paper
-      sprite: Structures/Storage/Crates/labels.rsi
-      offset: "0.0,0.125"
-      map: ["enum.PaperLabelVisuals.Layer"]
   - type: Icon
     sprite: Structures/Storage/Crates/cage.rsi
   - type: Destructible
@@ -399,7 +367,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalGlassBreak
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetPlastic:
@@ -420,11 +388,11 @@
           bounds: "-0.4,-0.4,0.4,0.29"
         density: 80
         mask:
-        - CrateMask
+        - LargeMobMask
         layer:
         - LargeMobLayer
   - type: StaticPrice
-    price: 75
+    price: 60
 
 - type: entity
   parent: CrateGeneric
@@ -442,10 +410,6 @@
     - state: welded
       visible: false
       map: ["enum.WeldableLayers.BaseWelded"]
-    - state: paper
-      sprite: Structures/Storage/Crates/labels.rsi
-      offset: "0.0,-0.09375"
-      map: ["enum.PaperLabelVisuals.Layer"]
   - type: Icon
     sprite: Structures/Storage/Crates/piratechest.rsi
     state: crate_icon
@@ -471,8 +435,6 @@
     - state: welded
       visible: false
       map: ["enum.WeldableLayers.BaseWelded"]
-    - state: paper
-      map: ["enum.PaperLabelVisuals.Layer"]
   - type: Icon
     sprite: Structures/Storage/Crates/toybox.rsi
     state: crate_icon
@@ -489,8 +451,6 @@
     - state: base
     - state: closed
       map: ["enum.StorageVisualLayers.Door"]
-    - state: paper
-      map: ["enum.PaperLabelVisuals.Layer"]
   - type: Icon
     sprite: Structures/Storage/Crates/coffin.rsi
     state: base
@@ -502,7 +462,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWoodPlank1:
@@ -529,10 +489,6 @@
     - state: base
     - state: closed
       map: ["enum.StorageVisualLayers.Door"]
-    - state: paper
-      sprite: Structures/Storage/Crates/labels.rsi
-      offset: "-0.28125,0.625"
-      map: ["enum.PaperLabelVisuals.Layer"]
   - type: Icon
     sprite: Structures/Storage/Crates/wooden_grave.rsi
     state: base
@@ -540,11 +496,11 @@
     thresholds:
     - trigger:
         !type:DamageTrigger
-        damage: 200 # discourage just beating the grave to break it open
+        damage: 15
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWoodPlank1:
@@ -554,15 +510,6 @@
         acts: [ "Destruction" ]
   - type: Physics
     bodyType: Static
-  - type: Grave
-  - type: ProRottingContainer
-  - type: EntityStorage
-    airtight: true
-    isCollidableWhenOpen: false
-    closeSound:
-      path: /Audio/Items/shovel_dig.ogg
-    openSound:
-      path: /Audio/Items/shovel_dig.ogg
 
 - type: entity
   parent: CrateWoodenGrave
@@ -577,10 +524,6 @@
     - state: base
     - state: closed
       map: ["enum.StorageVisualLayers.Door"]
-    - state: paper
-      sprite: Structures/Storage/Crates/labels.rsi
-      offset: "-0.3125,0.5625"
-      map: ["enum.PaperLabelVisuals.Layer"]
   - type: Icon
     sprite: Structures/Storage/Crates/stone_grave.rsi
     state: base
@@ -588,8 +531,6 @@
 - type: entity
   parent: CrateGenericSteel
   id: CrateSyndicate
-  name: Syndicate crate
-  description: A dark steel crate with red bands and a letter S embossed on the front.
   components:
   - type: Icon
     sprite: Structures/Storage/Crates/syndicate.rsi
@@ -597,7 +538,7 @@
     sprite: Structures/Storage/Crates/syndicate.rsi
 
 - type: entity
-  parent: [StructureWheeled, CrateBaseWeldable]
+  parent: CrateBaseWeldable
   id: CrateTrashCart
   name: trash cart
   components:
@@ -605,17 +546,6 @@
     sprite: Structures/Storage/Crates/trashcart.rsi
   - type: Sprite
     sprite: Structures/Storage/Crates/trashcart.rsi
-    layers:
-    - state: base
-    - state: closed
-      map: ["enum.StorageVisualLayers.Door"]
-    - state: welded
-      visible: false
-      map: ["enum.WeldableLayers.BaseWelded"]
-    - state: paper
-      sprite: Structures/Storage/Crates/labels.rsi
-      offset: "0.0,0.03125"
-      map: ["enum.PaperLabelVisuals.Layer"]
 
 - type: entity
   parent: CrateBaseSecure
@@ -626,20 +556,6 @@
     sprite: Structures/Storage/Crates/trashcart_jani.rsi
   - type: Sprite
     sprite: Structures/Storage/Crates/trashcart_jani.rsi
-    layers:
-    - state: base
-    - state: closed
-      map: ["enum.StorageVisualLayers.Door"]
-    - state: welded
-      visible: false
-      map: ["enum.WeldableLayers.BaseWelded"]
-    - state: locked
-      map: ["enum.LockVisualLayers.Lock"]
-      shader: unshaded
-    - state: paper
-      sprite: Structures/Storage/Crates/labels.rsi
-      offset: "0.0,0.03125"
-      map: ["enum.PaperLabelVisuals.Layer"]
   - type: AccessReader
     access: [["Janitor"]]
 

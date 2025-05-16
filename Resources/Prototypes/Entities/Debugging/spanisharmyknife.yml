@@ -20,8 +20,10 @@
     damage:
       types:
         Slash: 10
-  - type: ToolTileCompatible
+  - type: TilePrying
   - type: Tool
+    qualities:
+      - Prying
   - type: Prying
   - type: MultipleTool
     statusShowBehavior: true

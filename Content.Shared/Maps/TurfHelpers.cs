@@ -3,7 +3,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Content.Shared.Physics;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Random;
 
 namespace Content.Shared.Maps
@@ -12,6 +11,22 @@ namespace Content.Shared.Maps
     // That, or make the interface arguments non-optional so people stop failing to pass them in.
     public static class TurfHelpers
     {
+        /// <summary>
+        ///     Attempts to get the turf at map indices with grid id or null if no such turf is found.
+        /// </summary>
+        public static TileRef GetTileRef(this Vector2i vector2i, EntityUid gridId, IMapManager? mapManager = null)
+        {
+            mapManager ??= IoCManager.Resolve<IMapManager>();
+
+            if (!mapManager.TryGetGrid(gridId, out var grid))
+                return default;
+
+            if (!grid.TryGetTileRef(vector2i, out var tile))
+                return default;
+
+            return tile;
+        }
+
         /// <summary>
         ///     Attempts to get the turf at a certain coordinates or null if no such turf is found.
         /// </summary>
@@ -23,7 +38,7 @@ namespace Content.Shared.Maps
                 return null;
 
             mapManager ??= IoCManager.Resolve<IMapManager>();
-            var pos = entityManager.System<SharedTransformSystem>().ToMapCoordinates(coordinates);
+            var pos = coordinates.ToMap(entityManager, entityManager.System<SharedTransformSystem>());
             if (!mapManager.TryFindGridAt(pos, out _, out var grid))
                 return null;
 
@@ -52,7 +67,7 @@ namespace Content.Shared.Maps
         /// </summary>
         public static bool IsSpace(this Tile tile, ITileDefinitionManager? tileDefinitionManager = null)
         {
-            return tile.GetContentTileDefinition(tileDefinitionManager).MapAtmosphere;
+            return tile.GetContentTileDefinition(tileDefinitionManager).IsSpace;
         }
 
         /// <summary>
@@ -101,6 +116,15 @@ namespace Content.Shared.Maps
         }
 
         /// <summary>
+        ///     Helper that returns all entities in a turf.
+        /// </summary>
+        [Obsolete("Use the lookup system")]
+        public static IEnumerable<EntityUid> GetEntitiesInTile(this Vector2i indices, EntityUid gridId, LookupFlags flags = LookupFlags.Static, EntityLookupSystem? lookupSystem = null)
+        {
+            return GetEntitiesInTile(indices.GetTileRef(gridId), flags, lookupSystem);
+        }
+
+        /// <summary>
         /// Checks if a turf has something dense on it.
         /// </summary>
         [Obsolete("Use turf system")]
@@ -120,11 +144,11 @@ namespace Content.Shared.Maps
         private static bool GetWorldTileBox(TileRef turf, out Box2Rotated res)
         {
             var entManager = IoCManager.Resolve<IEntityManager>();
-            var xformSystem = entManager.System<SharedTransformSystem>();
+            var map = IoCManager.Resolve<IMapManager>();
 
-            if (entManager.TryGetComponent<MapGridComponent>(turf.GridUid, out var tileGrid))
+            if (map.TryGetGrid(turf.GridUid, out var tileGrid))
             {
-                var gridRot = xformSystem.GetWorldRotation(turf.GridUid);
+                var gridRot = entManager.GetComponent<TransformComponent>(turf.GridUid).WorldRotation;
 
                 // This is scaled to 90 % so it doesn't encompass walls on other tiles.
                 var tileBox = Box2.UnitCentered.Scale(0.9f);

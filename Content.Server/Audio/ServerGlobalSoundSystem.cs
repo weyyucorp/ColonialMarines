@@ -1,7 +1,6 @@
 ﻿using Content.Server.Station.Systems;
 using Content.Shared.Audio;
 using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Console;
 using Robust.Shared.Player;
 
@@ -11,7 +10,6 @@ public sealed class ServerGlobalSoundSystem : SharedGlobalSoundSystem
 {
     [Dependency] private readonly IConsoleHost _conHost = default!;
     [Dependency] private readonly StationSystem _stationSystem = default!;
-    [Dependency] private readonly SharedAudioSystem _audio = default!;
 
     public override void Shutdown()
     {
@@ -19,9 +17,9 @@ public sealed class ServerGlobalSoundSystem : SharedGlobalSoundSystem
         _conHost.UnregisterCommand("playglobalsound");
     }
 
-    public void PlayAdminGlobal(Filter playerFilter, ResolvedSoundSpecifier specifier, AudioParams? audioParams = null, bool replay = true)
+    public void PlayAdminGlobal(Filter playerFilter, string filename, AudioParams? audioParams = null, bool replay = true)
     {
-        var msg = new AdminSoundEvent(specifier, audioParams);
+        var msg = new AdminSoundEvent(filename, audioParams);
         RaiseNetworkEvent(msg, playerFilter, recordReplay: replay);
     }
 
@@ -32,9 +30,9 @@ public sealed class ServerGlobalSoundSystem : SharedGlobalSoundSystem
         return stationFilter;
     }
 
-    public void PlayGlobalOnStation(EntityUid source, ResolvedSoundSpecifier specifier, AudioParams? audioParams = null)
+    public void PlayGlobalOnStation(EntityUid source, string filename, AudioParams? audioParams = null)
     {
-        var msg = new GameGlobalSoundEvent(specifier, audioParams);
+        var msg = new GameGlobalSoundEvent(filename, audioParams);
         var filter = GetStationAndPvs(source);
         RaiseNetworkEvent(msg, filter);
     }
@@ -52,13 +50,9 @@ public sealed class ServerGlobalSoundSystem : SharedGlobalSoundSystem
 
     public void DispatchStationEventMusic(EntityUid source, SoundSpecifier sound, StationEventMusicType type)
     {
-        DispatchStationEventMusic(source, _audio.ResolveSound(sound), type);
-    }
-
-    public void DispatchStationEventMusic(EntityUid source, ResolvedSoundSpecifier specifier, StationEventMusicType type)
-    {
         var audio = AudioParams.Default.WithVolume(-8);
-        var msg = new StationEventMusicEvent(specifier, type, audio);
+        var soundFile = sound.GetSound();
+        var msg = new StationEventMusicEvent(soundFile, type, audio);
 
         var filter = GetStationAndPvs(source);
         RaiseNetworkEvent(msg, filter);

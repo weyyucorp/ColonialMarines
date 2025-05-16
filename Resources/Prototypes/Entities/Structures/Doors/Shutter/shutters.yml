@@ -7,7 +7,6 @@
   placement:
     mode: SnapgridCenter
   components:
-  - type: StationAiWhitelist
   - type: Sprite
     sprite: Structures/Doors/Shutters/shutters.rsi
     drawdepth: BlastDoors
@@ -33,10 +32,6 @@
   - type: ContainerContainer
     containers:
       board: !type:Container
-  - type: NavMapDoor
-  - type: Tag
-    tags:
-    - ForceNoFixRotations # Don't want the fixrotations command to target these
   - type: Door
     openDrawDepth: BlastDoors
     closedDrawDepth: BlastDoors
@@ -52,22 +47,23 @@
       types:
         Blunt: 5 # getting shutters closed on you probably doesn't hurt that much
     openSound:
-      path: /Audio/Machines/shutter.ogg
+      path: /Audio/Machines/blastdoor.ogg
     closeSound:
-      path: /Audio/Machines/shutter.ogg
+      path: /Audio/Machines/blastdoor.ogg
   - type: Weldable
     time: 3
   - type: Appearance
   - type: UserInterface
     interfaces:
-      enum.WiresUiKey.Key:
-        type: WiresBoundUserInterface
+    - key: enum.WiresUiKey.Key
+      type: WiresBoundUserInterface
   - type: Airtight
+    fixVacuum: true
   - type: RadiationBlocker
     resistance: 2
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallic
+    damageContainer: Inorganic
+    damageModifierSet: Metallic
   - type: Destructible
     thresholds:
     - trigger:
@@ -93,14 +89,11 @@
   - type: DeviceLinkSource
     ports:
     - DoorStatus
-    lastSignals:
-      DoorStatus: false
   - type: InteractionPopup
-    interactSuccessString: shutter-rattle
-    messagePerceivedByOthers: rmc-window-knock-others
+    interactSuccessString: comp-window-knock
+    messagePerceivedByOthers: comp-window-knock
     interactSuccessSound:
-      collection: FenceRattle
-  - type: BlockWeather
+      path: /Audio/Effects/glass_knock.ogg
 
 - type: entity
   id: ShuttersNormal
@@ -215,7 +208,7 @@
     - board
   - type: InteractionOutline
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -240,4 +233,4 @@
         layer:
         - HighImpassable
   - type: Transform
-    noRot: false
+    noRot: true

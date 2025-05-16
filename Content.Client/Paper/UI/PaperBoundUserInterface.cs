@@ -1,9 +1,9 @@
 using JetBrains.Annotations;
-using Robust.Client.UserInterface;
+using Robust.Client.GameObjects;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.Input;
 using Robust.Shared.Utility;
-using Content.Shared.Paper;
-using static Content.Shared.Paper.PaperComponent;
+using static Content.Shared.Paper.SharedPaperComponent;
 
 namespace Content.Client.Paper.UI;
 
@@ -21,17 +21,24 @@ public sealed class PaperBoundUserInterface : BoundUserInterface
     {
         base.Open();
 
-        _window = this.CreateWindow<PaperWindow>();
-        _window.OnSaved += InputOnTextEntered;
-
-        if (EntMan.TryGetComponent<PaperComponent>(Owner, out var paper))
+        _window = new PaperWindow();
+        _window.OnClose += Close;
+        _window.Input.OnKeyBindDown += args => // Solution while TextEdit don't have events
         {
-            _window.MaxInputLength = paper.ContentSize;
-        }
+            if (args.Function == EngineKeyFunctions.TextSubmit)
+            {
+                var text = Rope.Collapse(_window.Input.TextRope);
+                Input_OnTextEntered(text);
+                args.Handle();
+            }
+        };
+
         if (EntMan.TryGetComponent<PaperVisualsComponent>(Owner, out var visuals))
         {
             _window.InitVisuals(Owner, visuals);
         }
+
+        _window.OpenCentered();
     }
 
     protected override void UpdateState(BoundUserInterfaceState state)
@@ -40,14 +47,24 @@ public sealed class PaperBoundUserInterface : BoundUserInterface
         _window?.Populate((PaperBoundUserInterfaceState) state);
     }
 
-    private void InputOnTextEntered(string text)
+    private void Input_OnTextEntered(string text)
     {
-        SendMessage(new PaperInputTextMessage(text));
-
-        if (_window != null)
+        if (!string.IsNullOrEmpty(text))
         {
-            _window.Input.TextRope = Rope.Leaf.Empty;
-            _window.Input.CursorPosition = new TextEdit.CursorPos(0, TextEdit.LineBreakBias.Top);
+            SendMessage(new PaperInputTextMessage(text));
+
+            if (_window != null)
+            {
+                _window.Input.TextRope = Rope.Leaf.Empty;
+                _window.Input.CursorPosition = new TextEdit.CursorPos(0, TextEdit.LineBreakBias.Top);
+            }
         }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (!disposing) return;
+        _window?.Dispose();
     }
 }

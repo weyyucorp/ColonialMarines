@@ -2,6 +2,7 @@
 
 ## General
 
+shell-server-cannot = Server cannot do this.
 shell-command-success = Command successful
 shell-invalid-command = Invalid command.
 shell-invalid-command-specific = Invalid {$commandName} command.
@@ -46,4 +47,3 @@ shell-argument-number-invalid = Argument {$index} must be a valid number!
 
 # Hints
 shell-argument-username-hint = <username>
-shell-argument-username-optional-hint = [username]

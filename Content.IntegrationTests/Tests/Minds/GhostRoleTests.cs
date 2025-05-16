@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System.Linq;
-using Content.IntegrationTests.Pair;
 using Content.Server.Ghost.Roles;
 using Content.Server.Ghost.Roles.Components;
 using Content.Server.Players;
@@ -27,7 +26,7 @@ public sealed class GhostRoleTests
 ";
 
     /// <summary>
-    /// This is a simple test that just checks if a player can take a ghost role and then regain control of their
+    /// This is a simple test that just checks if a player can take a ghost roll and then regain control of their
     /// original entity without encountering errors.
     /// </summary>
     [Test]
@@ -35,14 +34,11 @@ public sealed class GhostRoleTests
     {
         await using var pair = await PoolManager.GetServerClient(new PoolSettings
         {
-            Dirty = true,
             DummyTicker = false,
             Connected = true
         });
         var server = pair.Server;
         var client = pair.Client;
-
-        var mapData = await pair.CreateTestMap();
 
         var entMan = server.ResolveDependency<IEntityManager>();
         var sPlayerMan = server.ResolveDependency<Robust.Server.Player.IPlayerManager>();
@@ -55,7 +51,7 @@ public sealed class GhostRoleTests
         EntityUid originalMob = default;
         await server.WaitPost(() =>
         {
-            originalMob = entMan.SpawnEntity(null, mapData.GridCoords);
+            originalMob = entMan.SpawnEntity(null, MapCoordinates.Nullspace);
             mindSystem.TransferTo(originalMindId, originalMob, true);
         });
 
@@ -64,7 +60,7 @@ public sealed class GhostRoleTests
         Assert.That(session.AttachedEntity, Is.EqualTo(originalMob));
         var originalMind = entMan.GetComponent<MindComponent>(originalMindId);
         Assert.That(originalMind.OwnedEntity, Is.EqualTo(originalMob));
-        Assert.That(originalMind.VisitingEntity, Is.Null);
+        Assert.Null(originalMind.VisitingEntity);
 
         // Use the ghost command
         conHost.ExecuteCommand("ghost");
@@ -73,12 +69,12 @@ public sealed class GhostRoleTests
         Assert.That(entMan.HasComponent<GhostComponent>(ghost));
         Assert.That(ghost, Is.Not.EqualTo(originalMob));
         Assert.That(session.ContentData()?.Mind, Is.EqualTo(originalMindId));
-        Assert.That(originalMind.OwnedEntity, Is.EqualTo(originalMob), $"Original mob: {originalMob}, Ghost: {ghost}");
+        Assert.That(originalMind.OwnedEntity, Is.EqualTo(originalMob));
         Assert.That(originalMind.VisitingEntity, Is.EqualTo(ghost));
 
         // Spawn ghost takeover entity.
         EntityUid ghostRole = default;
-        await server.WaitPost(() => ghostRole = entMan.SpawnEntity("GhostRoleTestEntity", mapData.GridCoords));
+        await server.WaitPost(() => ghostRole = entMan.SpawnEntity("GhostRoleTestEntity", MapCoordinates.Nullspace));
 
         // Take the ghost role
         await server.WaitPost(() =>
@@ -94,11 +90,11 @@ public sealed class GhostRoleTests
         Assert.That(newMindId, Is.Not.EqualTo(originalMindId));
         Assert.That(session.AttachedEntity, Is.EqualTo(ghostRole));
         Assert.That(newMind.OwnedEntity, Is.EqualTo(ghostRole));
-        Assert.That(newMind.VisitingEntity, Is.Null);
+        Assert.Null(newMind.VisitingEntity);
 
         // Original mind should be unaffected, but the ghost will have deleted itself.
         Assert.That(originalMind.OwnedEntity, Is.EqualTo(originalMob));
-        Assert.That(originalMind.VisitingEntity, Is.Null);
+        Assert.Null(originalMind.VisitingEntity);
         Assert.That(entMan.Deleted(ghost));
 
         // Ghost again.
@@ -117,11 +113,11 @@ public sealed class GhostRoleTests
         await pair.RunTicksSync(10);
         Assert.That(session.AttachedEntity, Is.EqualTo(originalMob));
         Assert.That(originalMind.OwnedEntity, Is.EqualTo(originalMob));
-        Assert.That(originalMind.VisitingEntity, Is.Null);
+        Assert.Null(originalMind.VisitingEntity);
 
         // the ghost-role mind is unaffected, though the ghost will have deleted itself
         Assert.That(newMind.OwnedEntity, Is.EqualTo(ghostRole));
-        Assert.That(newMind.VisitingEntity, Is.Null);
+        Assert.Null(newMind.VisitingEntity);
         Assert.That(entMan.Deleted(otherGhost));
 
         await pair.CleanReturnAsync();

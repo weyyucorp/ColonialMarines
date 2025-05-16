@@ -19,45 +19,36 @@ namespace Content.IntegrationTests.Tests.Damageable
 # Define some damage groups
 - type: damageType
   id: TestDamage1
-  name: damage-type-blunt
 
 - type: damageType
   id: TestDamage2a
-  name: damage-type-blunt
 
 - type: damageType
   id: TestDamage2b
-  name: damage-type-blunt
 
 - type: damageType
   id: TestDamage3a
-  name: damage-type-blunt
 
 - type: damageType
   id: TestDamage3b
-  name: damage-type-blunt
 
 - type: damageType
   id: TestDamage3c
-  name: damage-type-blunt
 
 # Define damage Groups with 1,2,3 damage types
 - type: damageGroup
   id: TestGroup1
-  name: damage-group-brute
   damageTypes:
     - TestDamage1
 
 - type: damageGroup
   id: TestGroup2
-  name: damage-group-brute
   damageTypes:
     - TestDamage2a
     - TestDamage2b
 
 - type: damageGroup
   id: TestGroup3
-  name: damage-group-brute
   damageTypes:
     - TestDamage3a
     - TestDamage3b
@@ -107,11 +98,10 @@ namespace Content.IntegrationTests.Tests.Damageable
 
             FixedPoint2 typeDamage;
 
-            var map = await pair.CreateTestMap();
-
             await server.WaitPost(() =>
             {
-                var coordinates = map.MapCoords;
+                var map = sMapManager.CreateMap();
+                var coordinates = new MapCoordinates(0, 0, map);
 
                 sDamageableEntity = sEntityManager.SpawnEntity("TestDamageableEntityId", coordinates);
                 sDamageableComponent = sEntityManager.GetComponent<DamageableComponent>(sDamageableEntity);
@@ -180,19 +170,19 @@ namespace Content.IntegrationTests.Tests.Damageable
 
                 // Check that damage works properly if it is NOT perfectly divisible among group members
                 types = group3.DamageTypes;
-
-                Assert.That(types, Has.Count.EqualTo(3));
-
-                damage = new DamageSpecifier(group3, 14);
+                damageToDeal = FixedPoint2.New(types.Count * 5 - 1);
+                damage = new DamageSpecifier(group3, damageToDeal);
                 sDamageableSystem.TryChangeDamage(uid, damage, true);
 
                 Assert.Multiple(() =>
                 {
-                    Assert.That(sDamageableComponent.TotalDamage, Is.EqualTo(FixedPoint2.New(14)));
-                    Assert.That(sDamageableComponent.DamagePerGroup[group3.ID], Is.EqualTo(FixedPoint2.New(14)));
-                    Assert.That(sDamageableComponent.Damage.DamageDict[type3a.ID], Is.EqualTo(FixedPoint2.New(4.66f)));
-                    Assert.That(sDamageableComponent.Damage.DamageDict[type3b.ID], Is.EqualTo(FixedPoint2.New(4.67f)));
-                    Assert.That(sDamageableComponent.Damage.DamageDict[type3c.ID], Is.EqualTo(FixedPoint2.New(4.67f)));
+                    Assert.That(sDamageableComponent.TotalDamage, Is.EqualTo(damageToDeal));
+                    Assert.That(sDamageableComponent.DamagePerGroup[group3.ID], Is.EqualTo(damageToDeal));
+                    Assert.That(sDamageableComponent.Damage.DamageDict[type3a.ID], Is.EqualTo(damageToDeal / types.Count));
+                    Assert.That(sDamageableComponent.Damage.DamageDict[type3b.ID], Is.EqualTo(damageToDeal / types.Count));
+
+                    // last one will get 0.01 less, since its not perfectly divisble by 3
+                    Assert.That(sDamageableComponent.Damage.DamageDict[type3c.ID], Is.EqualTo(damageToDeal / types.Count - 0.01));
                 });
 
                 // Heal
@@ -234,7 +224,7 @@ namespace Content.IntegrationTests.Tests.Damageable
 
                 Assert.Multiple(() =>
                 {
-                    Assert.That(sDamageableComponent.Damage.DamageDict[type3a.ID], Is.EqualTo(FixedPoint2.New(1.34)));
+                    Assert.That(sDamageableComponent.Damage.DamageDict[type3a.ID], Is.EqualTo(FixedPoint2.New(1.33)));
                     Assert.That(sDamageableComponent.Damage.DamageDict[type3b.ID], Is.EqualTo(FixedPoint2.New(3.33)));
                     Assert.That(sDamageableComponent.Damage.DamageDict[type3c.ID], Is.EqualTo(FixedPoint2.New(0)));
                 });

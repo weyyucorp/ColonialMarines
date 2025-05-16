@@ -1,5 +1,4 @@
-﻿using Content.Shared.Administration;
-using Content.Shared.GameTicking;
+﻿using Content.Shared.GameTicking;
 using Content.Shared.Mind;
 using Robust.Shared.Network;
 
@@ -33,9 +32,10 @@ public sealed class ContentPlayerData
     public EntityUid? Mind { get; set; }
 
     /// <summary>
-    /// If true, the admin will not show up in adminwho except to admins with the <see cref="AdminFlags.Stealth"/> flag.
+    ///     If true, the player is an admin and they explicitly de-adminned mid-game,
+    ///     so they should not regain admin if they reconnect.
     /// </summary>
-    public bool Stealthed { get; set; }
+    public bool ExplicitlyDeadminned { get; set; }
 
     public ContentPlayerData(NetUserId userId, string name)
     {

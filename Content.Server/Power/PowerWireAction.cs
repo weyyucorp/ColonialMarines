@@ -1,7 +1,5 @@
 using Content.Server.Electrocution;
-using Content.Shared.Electrocution;
 using Content.Server.Power.Components;
-using Content.Server.Power.EntitySystems;
 using Content.Server.Wires;
 using Content.Shared.Power;
 using Content.Shared.Wires;
@@ -18,7 +16,7 @@ public sealed partial class PowerWireAction : BaseWireAction
     [DataField("pulseTimeout")]
     private int _pulseTimeout = 30;
 
-    private ElectrocutionSystem _electrocution = default!;
+    private ElectrocutionSystem _electrocutionSystem = default!;
 
     public override object StatusKey { get; } = PowerWireActionKey.Status;
 
@@ -62,17 +60,15 @@ public sealed partial class PowerWireAction : BaseWireAction
             return;
         }
 
-        var receiverSys = EntityManager.System<PowerReceiverSystem>();
-
         if (pulsed)
         {
-            receiverSys.SetPowerDisabled(owner, true, power);
+            power.PowerDisabled = true;
             return;
         }
 
         if (AllWiresCut(owner))
         {
-            receiverSys.SetPowerDisabled(owner, true, power);
+            power.PowerDisabled = true;
         }
         else
         {
@@ -82,7 +78,7 @@ public sealed partial class PowerWireAction : BaseWireAction
                 return;
             }
 
-            receiverSys.SetPowerDisabled(owner, false, power);
+            power.PowerDisabled = false;
         }
     }
 
@@ -108,8 +104,7 @@ public sealed partial class PowerWireAction : BaseWireAction
             && !EntityManager.TryGetComponent(used, out electrified))
             return;
 
-        _electrocution.SetElectrifiedWireCut((used, electrified), setting);
-        _electrocution.SetElectrified((used, electrified), setting);
+        electrified.Enabled = setting;
     }
 
     /// <returns>false if failed, true otherwise, or if the entity cannot be electrified</returns>
@@ -123,7 +118,7 @@ public sealed partial class PowerWireAction : BaseWireAction
         // always set this to true
         SetElectrified(wire.Owner, true, electrified);
 
-        var electrifiedAttempt = _electrocution.TryDoElectrifiedAct(wire.Owner, user);
+        var electrifiedAttempt = _electrocutionSystem.TryDoElectrifiedAct(wire.Owner, user);
 
         // if we were electrified, then return false
         return !electrifiedAttempt;
@@ -164,7 +159,7 @@ public sealed partial class PowerWireAction : BaseWireAction
     {
         base.Initialize();
 
-        _electrocution = EntityManager.System<ElectrocutionSystem>();
+        _electrocutionSystem = EntitySystem.Get<ElectrocutionSystem>();
     }
 
     // This should add a wire into the entity's state, whether it be

@@ -14,29 +14,15 @@
     sprite: Objects/Fun/bikehorn.rsi
     slots: [Belt]
     quickEquip: false
-  - type: UseDelay
-    delay: 0.5
+  - type: ItemCooldown
   - type: EmitSoundOnUse
     sound:
       collection: BikeHorn
       params:
         variation: 0.125
-  - type: EmitSoundOnLand
-    sound:
-      collection: BikeHorn
-      params:
-        variation: 0.125
+  - type: UseDelay
+    delay: 0.5
   - type: EmitSoundOnTrigger
-    sound:
-      collection: BikeHorn
-      params:
-        variation: 0.125
-  - type: EmitSoundOnActivate
-    sound:
-      collection: BikeHorn
-      params:
-        variation: 0.125
-  - type: EmitSoundOnCollide
     sound:
       collection: BikeHorn
       params:
@@ -66,7 +52,7 @@
   name: broken bike horn
   description: A broken horn off of a bicycle.
   components:
-  - type: UseDelay
+  - type: ItemCooldown
   - type: Sprite
     sprite: Objects/Fun/cluwnehorn.rsi
     state: icon
@@ -90,22 +76,7 @@
     sound:
       collection: CluwneHorn
       params:
-        variation: 0.125
-  - type: EmitSoundOnActivate
-    sound:
-      collection: CluwneHorn
-      params:
-        variation: 0.125
-  - type: EmitSoundOnCollide
-    sound:
-      collection: CluwneHorn
-      params:
-        variation: 0.125
-  - type: EmitSoundOnLand
-    sound:
-      collection: CluwneHorn
-      params:
-        variation: 0.125
+        variation: 0.246
   - type: MeleeWeapon
     wideAnimationRotation: 135
     soundHit:
@@ -121,7 +92,7 @@
   parent: BikeHorn
   id: GoldenBikeHorn
   name: golden honker
-  categories: [ DoNotMap ]
+  suffix: No mapping
   description: A happy honk prize, pray to the gods for your reward.
   components:
   - type: Sprite
@@ -136,11 +107,6 @@
   - type: Prayable
   - type: StaticPrice
     price: 1000
-  - type: PointLight
-    radius: 1.2
-    energy: 1
-    castShadows: false
-    color: "#eef066"
 
 - type: entity
   parent: BikeHorn
@@ -153,7 +119,7 @@
     state: icon
   - type: Item
     sprite: Objects/Fun/bananiumhorn.rsi
-    size: Small
+    size: Tiny
   - type: Clothing
     sprite: Objects/Fun/bananiumhorn.rsi
     slots: [Belt]
@@ -163,36 +129,6 @@
       collection: BananiumHorn
       params:
         variation: 0.246
-  - type: EmitSoundOnLand
-    sound:
-      collection: BananiumHorn
-      params:
-        variation: 0.246
-  - type: EmitSoundOnTrigger
-    sound:
-      collection: BananiumHorn
-      params:
-        variation: 0.246
-  - type: EmitSoundOnActivate
-    sound:
-      collection: BananiumHorn
-      params:
-        variation: 0.246
-  - type: EmitSoundOnCollide
-    sound:
-      collection: BananiumHorn
-      params:
-        variation: 0.246
-  - type: MeleeWeapon
-    wideAnimationRotation: 135
-    soundHit:
-      collection: BananiumHorn
-      params:
-        variation: 0.246
-    damage:
-      types:
-        Blunt: 0
-    hidden: true
   - type: Construction
     graph: BananiumHorn
     node: bananiumHorn

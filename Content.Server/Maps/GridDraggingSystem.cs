@@ -12,7 +12,6 @@ public sealed class GridDraggingSystem : SharedGridDraggingSystem
 {
     [Dependency] private readonly IConGroupController _admin = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
-    [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
 
     private readonly HashSet<ICommonSession> _draggers = new();
 
@@ -45,7 +44,7 @@ public sealed class GridDraggingSystem : SharedGridDraggingSystem
         RaiseNetworkEvent(new GridDragToggleMessage()
         {
             Enabled = _draggers.Contains(session),
-        }, session.Channel);
+        }, session.ConnectedClient);
     }
 
     private void OnRequestVelocity(GridDragVelocityRequest ev, EntitySessionEventArgs args)
@@ -77,6 +76,8 @@ public sealed class GridDraggingSystem : SharedGridDraggingSystem
             return;
         }
 
-        _transformSystem.SetWorldPosition(grid, msg.WorldPosition);
+        var gridXform = Transform(grid);
+
+        gridXform.WorldPosition = msg.WorldPosition;
     }
 }

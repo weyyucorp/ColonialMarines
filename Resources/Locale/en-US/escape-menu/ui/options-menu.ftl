@@ -1,29 +1,14 @@
 ## General stuff
 
 ui-options-title = Game Options
-ui-options-tab-accessibility = Accessibility
-ui-options-tab-admin = Admin
 ui-options-tab-graphics = Graphics
 ui-options-tab-controls = Controls
 ui-options-tab-audio = Audio
 ui-options-tab-network = Network
-ui-options-tab-misc = General
 
-ui-options-apply = Save & apply
-ui-options-reset-all = Reset changed
-ui-options-default = Reset to defaults
-
-ui-options-value-percent = { TOSTRING($value, "P0") }
-
-# Misc/General menu
-
-ui-options-discordrich = Enable Discord Rich Presence
-ui-options-general-ui-style = UI Style
-ui-options-general-discord = Discord
-ui-options-general-cursor = Cursor
-ui-options-general-speech = Speech
-ui-options-general-storage = Storage
-ui-options-general-accessibility = Accessibility
+ui-options-apply = Apply
+ui-options-reset-all = Reset All
+ui-options-default = Default
 
 ## Audio menu
 
@@ -32,30 +17,19 @@ ui-options-midi-volume = MIDI (Instrument) Volume:
 ui-options-ambient-music-volume = Ambient music volume:
 ui-options-ambience-volume = Ambience volume:
 ui-options-lobby-volume = Lobby & Round-end volume:
-ui-options-interface-volume = Interface volume:
 ui-options-ambience-max-sounds = Ambience simultaneous sounds:
 ui-options-lobby-music = Lobby & Round-end Music
 ui-options-restart-sounds = Round Restart Sounds
 ui-options-event-music = Event Music
 ui-options-admin-sounds = Play Admin Sounds
-ui-options-bwoink-sound = Play AHelp Notification Sound
 ui-options-volume-label = Volume
+ui-options-volume-percent = { TOSTRING($volume, "P0") }
 
 ## Graphics menu
 
-ui-options-display-label = Display
-ui-options-quality-label = Quality
-ui-options-misc-label = Misc
-ui-options-interface-label = Interface
-
-
-ui-options-show-held-item = Show held item next to cursor
-ui-options-show-combat-mode-indicators = Show combat mode indicators with cursor
-ui-options-opaque-storage-window = Opaque storage window
-ui-options-show-ooc-patron-color = Show OOC Patreon color
-ui-options-show-looc-on-head = Show LOOC chat above characters head
-ui-options-fancy-speech = Show names in speech bubbles
-ui-options-fancy-name-background = Add background to speech bubble names
+ui-options-show-held-item = Show held item next to cursor?
+ui-options-show-combat-mode-indicators = Show combat mode indicators with cursor?
+ui-options-show-looc-on-head = Show LOOC chat above characters head?
 ui-options-vsync = VSync
 ui-options-fullscreen = Fullscreen
 ui-options-lighting-label = Lighting Quality:
@@ -71,32 +45,21 @@ ui-options-scale-125 = 125%
 ui-options-scale-150 = 150%
 ui-options-scale-175 = 175%
 ui-options-scale-200 = 200%
-ui-options-hud-theme = HUD theme:
+ui-options-hud-theme = HUD Theme:
 ui-options-hud-theme-default = Default
-ui-options-hud-theme-plasmafire = Plasmafire
-ui-options-hud-theme-slimecore = Slimecore
-ui-options-hud-theme-clockwork = Clockwork
-ui-options-hud-theme-retro = Retro
-ui-options-hud-theme-minimalist = Minimalist
-ui-options-hud-theme-ashen = Ashen
-ui-options-hud-layout-default = Default
-ui-options-hud-layout-separated = Separated
+ui-options-hud-theme-modernized = Modernized
+ui-options-hud-theme-classic = Classic
 ui-options-vp-stretch = Stretch viewport to fit game window
-ui-options-vp-scale = Fixed viewport scale:
-ui-options-vp-scale-value = x{ $scale }
+ui-options-vp-scale = Fixed viewport scale: x{ $scale }
 ui-options-vp-integer-scaling = Prefer integer scaling (might cause black bars/clipping)
 ui-options-vp-integer-scaling-tooltip = If this option is enabled, the viewport will be scaled using an integer value
                                         at specific resolutions. While this results in crisp textures, it also often
                                         means that black bars appear at the top/bottom of the screen or that part
                                         of the viewport is not visible.
-ui-options-vp-vertical-fit = Vertical viewport fitting
-ui-options-vp-vertical-fit-tooltip = When enabled, the main viewport will ignore the horizontal axis entirely when
-                                     fitting to your screen. If your screen is smaller than the viewport, then this
-                                     will cause the viewport to be cut off on the horizontal axis.
 ui-options-vp-low-res = Low-resolution viewport
 ui-options-parallax-low-quality = Low-quality Parallax (background)
 ui-options-fps-counter = Show FPS counter
-ui-options-vp-width = Viewport width:
+ui-options-vp-width = Viewport width: { $width }
 ui-options-hud-layout = HUD layout:
 
 ## Controls menu
@@ -118,11 +81,6 @@ ui-options-header-shuttle = Shuttle
 ui-options-header-map-editor = Map Editor
 ui-options-header-dev = Development
 ui-options-header-general = General
-ui-options-header-text-cursor = Text cursor
-ui-options-header-text-cursor-select = Text selecting
-ui-options-header-text-edit = Text editing
-ui-options-header-text-chat = Chat
-ui-options-header-text-other = Text input other
 
 ui-options-hotkey-keymap = Use US QWERTY Keys
 ui-options-hotkey-toggle-walk = Toggle Walk
@@ -151,23 +109,14 @@ ui-options-function-alt-activate-item-in-world = Alternative activate item in wo
 ui-options-function-drop = Drop item
 ui-options-function-examine-entity = Examine
 ui-options-function-swap-hands = Swap hands
-ui-options-function-move-stored-item = Move stored item
-ui-options-function-rotate-stored-item = Rotate stored item
-ui-options-function-save-item-location = Save item location
-ui-options-static-storage-ui = Lock storage window to hotbar
 
 ui-options-function-smart-equip-backpack = Smart-equip to backpack
 ui-options-function-smart-equip-belt = Smart-equip to belt
-ui-options-function-open-backpack = Open backpack
-ui-options-function-open-belt = Open belt
 ui-options-function-throw-item-in-hand = Throw item
 ui-options-function-try-pull-object = Pull object
 ui-options-function-move-pulled-object = Move pulled object
 ui-options-function-release-pulled-object = Release pulled object
 ui-options-function-point = Point at location
-ui-options-function-rotate-object-clockwise = Rotate clockwise
-ui-options-function-rotate-object-counterclockwise = Rotate counterclockwise
-ui-options-function-flip-object = Flip
 
 ui-options-function-focus-chat-input-window = Focus chat
 ui-options-function-focus-local-chat-window = Focus chat (IC)
@@ -185,10 +134,8 @@ ui-options-function-open-character-menu = Open character menu
 ui-options-function-open-context-menu = Open context menu
 ui-options-function-open-crafting-menu = Open crafting menu
 ui-options-function-open-inventory-menu = Open inventory
-ui-options-function-open-a-help = Open admin and mentor help
+ui-options-function-open-a-help = Open admin help
 ui-options-function-open-abilities-menu = Open action menu
-ui-options-function-open-emotes-menu = Open emotes menu
-ui-options-function-toggle-round-end-summary-window = Toggle round end summary window
 ui-options-function-open-entity-spawn-window = Open entity spawn menu
 ui-options-function-open-sandbox-window = Open sandbox menu
 ui-options-function-open-tile-spawn-window = Open tile spawn menu
@@ -212,6 +159,7 @@ ui-options-function-editor-rotate-object = Rotate
 ui-options-function-editor-flip-object = Flip
 ui-options-function-editor-copy-object = Copy
 
+ui-options-function-open-abilities-menu = Open action menu
 ui-options-function-show-debug-console = Open Console
 ui-options-function-show-debug-monitors = Show Debug Monitors
 ui-options-function-inspect-entity = Inspect Entity
@@ -245,42 +193,6 @@ ui-options-function-shuttle-strafe-down = Strafe down
 ui-options-function-shuttle-rotate-left = Rotate left
 ui-options-function-shuttle-rotate-right = Rotate right
 ui-options-function-shuttle-brake = Brake
-
-ui-options-function-text-cursor-left = Move cursor left
-ui-options-function-text-cursor-right = Move cursor right
-ui-options-function-text-cursor-up = Move cursor up
-ui-options-function-text-cursor-down = Move cursor down
-ui-options-function-text-cursor-word-left = Move cursor left by word
-ui-options-function-text-cursor-word-right = Move cursor right by word
-ui-options-function-text-cursor-begin = Move cursor to beginning
-ui-options-function-text-cursor-end = Move cursor to end
-ui-options-function-text-cursor-select = Select text
-ui-options-function-text-cursor-select-left = Expand selection left
-ui-options-function-text-cursor-select-right = Expand selection right
-ui-options-function-text-cursor-select-up = Expand selection up
-ui-options-function-text-cursor-select-down = Expand selection down
-ui-options-function-text-cursor-select-word-left = Expand selection left by word
-ui-options-function-text-cursor-select-word-right = Expand selection right by word
-ui-options-function-text-cursor-select-begin = Expand selection to beginning
-ui-options-function-text-cursor-select-end = Expand selection to end
-ui-options-function-text-backspace = Backspace
-ui-options-function-text-delete = Delete
-ui-options-function-text-word-backspace = Backspace word
-ui-options-function-text-word-delete = Delete word
-ui-options-function-text-newline = Newline
-ui-options-function-text-submit = Submit
-ui-options-function-multiline-text-submit = Submit multiline
-ui-options-function-text-select-all = Select all
-ui-options-function-text-copy = Copy
-ui-options-function-text-cut = Cut
-ui-options-function-text-paste = Paste
-ui-options-function-text-history-prev = Previous from history
-ui-options-function-text-history-next = Next from history
-ui-options-function-text-release-focus = Release focus
-ui-options-function-text-scroll-to-bottom = Scroll to bottom
-ui-options-function-text-tab-complete = Tab completion
-ui-options-function-text-complete-next = Complete next
-ui-options-function-text-complete-prev = Complete previous
 
 ## Network menu
 
@@ -317,37 +229,3 @@ ui-options-net-pvs-leave-tooltip = This limits the rate at which the client will
 ## Toggle window console command
 cmd-options-desc = Opens options menu, optionally with a specific tab selected.
 cmd-options-help = Usage: options [tab]
-
-## Accessibility menu
-
-ui-options-accessability-header-visuals = Visuals
-ui-options-accessability-header-content = Content
-
-ui-options-enable-color-name = Add colors to character names
-ui-options-colorblind-friendly = Colorblind friendly mode
-ui-options-reduced-motion = Reduce motion of visual effects
-ui-options-screen-shake-intensity = Screen shake intensity
-
-ui-options-chat-window-opacity = Chat window opacity
-ui-options-speech-bubble-text-opacity = Speech bubble text opacity
-ui-options-speech-bubble-speaker-opacity = Speech bubble speaker opacity
-ui-options-speech-bubble-background-opacity = Speech bubble background opacity
-
-ui-options-censor-nudity = Censor character nudity
-
-## Admin menu
-
-ui-options-admin-player-panel = Admin Menu Players List
-
-ui-options-admin-playerlist-separate-symbols = Show separate symbols for each antag role type
-ui-options-admin-playerlist-character-color = Color names of antagonist characters
-ui-options-admin-playerlist-roletype-color = Color role types
-
-ui-options-admin-overlay-title = Admin Overlay
-ui-options-enable-classic-overlay = Revert overlay to classic mode
-ui-options-enable-overlay-symbols = Add antag symbol to text
-ui-options-enable-overlay-playtime = Show playtime
-ui-options-enable-overlay-starting-job = Show starting job
-ui-options-overlay-merge-distance = Stack merge distance
-ui-options-overlay-ghost-fade-distance = Ghost overlay fade range from mouse
-ui-options-overlay-ghost-hide-distance = Ghost overlay hide range from mouse

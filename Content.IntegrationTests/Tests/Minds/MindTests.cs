@@ -1,8 +1,10 @@
 ﻿#nullable enable
 using System.Linq;
+using Content.Server.Ghost;
 using Content.Server.Ghost.Roles;
 using Content.Server.Ghost.Roles.Components;
 using Content.Server.Mind.Commands;
+using Content.Server.Players;
 using Content.Server.Roles;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
@@ -16,6 +18,7 @@ using Robust.Server.Console;
 using Robust.Server.GameObjects;
 using Robust.Server.Player;
 using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
 using Robust.Shared.Map;
 using Robust.Shared.Prototypes;
 
@@ -284,27 +287,27 @@ public sealed partial class MindTests
             Assert.Multiple(() =>
             {
                 Assert.That(roleSystem.MindHasRole<TraitorRoleComponent>(mindId), Is.False);
-                Assert.That(roleSystem.MindHasRole<JobRoleComponent>(mindId), Is.False);
+                Assert.That(roleSystem.MindHasRole<JobComponent>(mindId), Is.False);
             });
 
-            var traitorRole = "MindRoleTraitor";
+            var traitorRole = new TraitorRoleComponent();
 
             roleSystem.MindAddRole(mindId, traitorRole);
 
             Assert.Multiple(() =>
             {
                 Assert.That(roleSystem.MindHasRole<TraitorRoleComponent>(mindId));
-                Assert.That(roleSystem.MindHasRole<JobRoleComponent>(mindId), Is.False);
+                Assert.That(roleSystem.MindHasRole<JobComponent>(mindId), Is.False);
             });
 
-            var jobRole = "";
+            var jobRole = new JobComponent();
 
-            roleSystem.MindAddJobRole(mindId, jobPrototype:jobRole);
+            roleSystem.MindAddRole(mindId, jobRole);
 
             Assert.Multiple(() =>
             {
                 Assert.That(roleSystem.MindHasRole<TraitorRoleComponent>(mindId));
-                Assert.That(roleSystem.MindHasRole<JobRoleComponent>(mindId));
+                Assert.That(roleSystem.MindHasRole<JobComponent>(mindId));
             });
 
             roleSystem.MindRemoveRole<TraitorRoleComponent>(mindId);
@@ -312,15 +315,15 @@ public sealed partial class MindTests
             Assert.Multiple(() =>
             {
                 Assert.That(roleSystem.MindHasRole<TraitorRoleComponent>(mindId), Is.False);
-                Assert.That(roleSystem.MindHasRole<JobRoleComponent>(mindId));
+                Assert.That(roleSystem.MindHasRole<JobComponent>(mindId));
             });
 
-            roleSystem.MindRemoveRole<JobRoleComponent>(mindId);
+            roleSystem.MindRemoveRole<JobComponent>(mindId);
 
             Assert.Multiple(() =>
             {
                 Assert.That(roleSystem.MindHasRole<TraitorRoleComponent>(mindId), Is.False);
-                Assert.That(roleSystem.MindHasRole<JobRoleComponent>(mindId), Is.False);
+                Assert.That(roleSystem.MindHasRole<JobComponent>(mindId), Is.False);
             });
         });
 
@@ -338,6 +341,7 @@ public sealed partial class MindTests
         var playerMan = server.ResolveDependency<IPlayerManager>();
 
         var mindSystem = entMan.EntitySysManager.GetEntitySystem<SharedMindSystem>();
+        var ghostSystem = entMan.EntitySysManager.GetEntitySystem<GhostSystem>();
 
         EntityUid entity = default!;
         EntityUid mindId = default!;
@@ -377,7 +381,7 @@ public sealed partial class MindTests
 
             mob = entMan.SpawnEntity(null, new MapCoordinates());
 
-            MakeSentientCommand.MakeSentient(mob, entMan);
+            MakeSentientCommand.MakeSentient(mob, IoCManager.Resolve<IEntityManager>());
             mobMindId = mindSystem.CreateMind(player.UserId, "Mindy McThinker the Second");
             mobMind = entMan.GetComponent<MindComponent>(mobMindId);
 

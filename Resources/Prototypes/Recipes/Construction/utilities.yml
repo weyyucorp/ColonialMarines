@@ -63,6 +63,24 @@
   canBuildInImpassable: true
 
 - type: construction
+  name: solar assembly
+  id: SolarPanel
+  graph: SolarPanel
+  startNode: start
+  targetNode: solarpanel
+  category: construction-category-utilities
+  description: "Can be turned into a solar panel or solar tracker."
+  icon:
+    sprite: Structures/Power/Generation/solar_panel.rsi
+    state: solar_assembly
+  objectType: Structure
+  placementMode: SnapgridCenter
+  canBuildInImpassable: false
+  conditions:
+    - !type:TileNotBlocked
+      failIfSpace: false
+
+- type: construction
   name: cable terminal
   id: CableTerminal
   graph: CableTerminal
@@ -160,7 +178,7 @@
   targetNode: pipe
   category: construction-category-utilities
   placementMode: SnapgridCenter
-  canBuildInImpassable: false
+  canBuildInImpassable: true
   icon:
     sprite: Structures/Piping/disposal.rsi
     state: conpipe-s
@@ -366,21 +384,6 @@
   objectType: Structure
   canRotate: true
 
-- type: construction
-  name: gas pipe sensor
-  id: GasPipeSensor
-  graph: GasPipeSensor
-  startNode: start
-  targetNode: sensor
-  category: construction-category-structures
-  description: Reports on the status of the gas within the attached pipe network. 
-  icon:
-    sprite: Structures/Piping/Atmospherics/gas_pipe_sensor.rsi
-    state: icon
-  placementMode: SnapgridCenter
-  objectType: Structure
-  canRotate: true
-
 # ATMOS PIPES
 - type: construction
   name: gas pipe half
@@ -391,7 +394,7 @@
   targetNode: half
   category: construction-category-utilities
   placementMode: SnapgridCenter
-  canBuildInImpassable: true
+  canBuildInImpassable: false
   icon:
     sprite: Structures/Piping/Atmospherics/pipe.rsi
     state: pipeHalf
@@ -405,7 +408,7 @@
   targetNode: straight
   category: construction-category-utilities
   placementMode: SnapgridCenter
-  canBuildInImpassable: true
+  canBuildInImpassable: false
   icon:
     sprite: Structures/Piping/Atmospherics/pipe.rsi
     state: pipeStraight
@@ -419,7 +422,7 @@
   targetNode: bend
   category: construction-category-utilities
   placementMode: SnapgridCenter
-  canBuildInImpassable: true
+  canBuildInImpassable: false
   icon:
     sprite: Structures/Piping/Atmospherics/pipe.rsi
     state: pipeBend
@@ -433,7 +436,7 @@
   targetNode: tjunction
   category: construction-category-utilities
   placementMode: SnapgridCenter
-  canBuildInImpassable: true
+  canBuildInImpassable: false
   icon:
     sprite: Structures/Piping/Atmospherics/pipe.rsi
     state: pipeTJunction
@@ -447,7 +450,7 @@
   targetNode: fourway
   category: construction-category-utilities
   placementMode: SnapgridCenter
-  canBuildInImpassable: true
+  canBuildInImpassable: false
   icon:
     sprite: Structures/Piping/Atmospherics/pipe.rsi
     state: pipeFourway
@@ -472,8 +475,9 @@
   - sprite: Structures/Piping/Atmospherics/vent.rsi
     state: vent_off
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
-
+    
 - type: construction
   name: passive vent
   description: Unpowered vent that equalises gases on both sides.
@@ -486,15 +490,16 @@
   canBuildInImpassable: false
   icon:
     sprite: Structures/Piping/Atmospherics/vent.rsi
-    state: vent_passive
+    state: vent_off
   layers:
   - sprite: Structures/Piping/Atmospherics/pipe.rsi
     state: pipeHalf
   - sprite: Structures/Piping/Atmospherics/vent.rsi
-    state: vent_passive
+    state: vent_off
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
-
+    
 - type: construction
   name: air scrubber
   description: Sucks gas into connected pipes.
@@ -514,8 +519,9 @@
   - sprite: Structures/Piping/Atmospherics/scrubber.rsi
     state: scrub_off
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
-
+    
 - type: construction
   name: air injector
   description: Injects air into the atmosphere.
@@ -535,8 +541,9 @@
   - sprite: Structures/Piping/Atmospherics/outletinjector.rsi
     state: injector
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
-
+    
 # ATMOS BINARY
 - type: construction
   name: gas pump
@@ -557,6 +564,7 @@
   - sprite: Structures/Piping/Atmospherics/pump.rsi
     state: pumpPressure
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
 
 - type: construction
@@ -578,6 +586,7 @@
   - sprite: Structures/Piping/Atmospherics/pump.rsi
     state: pumpVolume
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
 
 - type: construction
@@ -599,6 +608,7 @@
   - sprite: Structures/Piping/Atmospherics/pump.rsi
     state: pumpPassiveGate
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
 
 - type: construction
@@ -620,6 +630,7 @@
   - sprite: Structures/Piping/Atmospherics/pump.rsi
     state: pumpManualValve
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
 
 - type: construction
@@ -641,6 +652,7 @@
   - sprite: Structures/Piping/Atmospherics/pump.rsi
     state: pumpSignalValve
   conditions:
+  - !type:TileNotBlocked {}
   - !type:NoUnstackableInTile
 
 - type: construction
@@ -662,6 +674,7 @@
   - sprite: Structures/Piping/Atmospherics/gascanisterport.rsi
     state: gasCanisterPort
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
 
 - type: construction
@@ -682,6 +695,8 @@
     state: pipeStraight
   - sprite: Structures/Piping/Atmospherics/vent.rsi
     state: vent_off
+  conditions:
+    - !type:TileNotBlocked {}
 
 - type: construction
   id: HeatExchanger
@@ -696,20 +711,8 @@
   icon:
     sprite: Structures/Piping/Atmospherics/heatexchanger.rsi
     state: heStraight
-
-- type: construction
-  id: HeatExchangerBend
-  name: radiator bend
-  description: Transfers heat between the pipe and its surroundings.
-  graph: GasBinary
-  startNode: start
-  targetNode: bendradiator
-  category: construction-category-utilities
-  placementMode: SnapgridCenter
-  canBuildInImpassable: false
-  icon:
-    sprite: Structures/Piping/Atmospherics/heatexchanger.rsi
-    state: heBend
+  conditions:
+    - !type:TileNotBlocked {}
 
 # ATMOS TRINARY
 - type: construction
@@ -727,6 +730,7 @@
     state: gasFilter
   mirror: GasFilterFlipped
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
 
 - type: construction
@@ -745,6 +749,7 @@
     state: gasFilterF
   mirror: GasFilter
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
 
 - type: construction
@@ -762,6 +767,7 @@
     state: gasMixer
   mirror: GasMixerFlipped
   conditions:
+    - !type:TileNotBlocked {}
     - !type:NoUnstackableInTile
 
 - type: construction
@@ -780,12 +786,13 @@
     state: gasMixerF
   mirror: GasMixer
   conditions:
+    - !type:TileNotBlocked
     - !type:NoUnstackableInTile
 
 - type: construction
   id: PressureControlledValve
   name: pneumatic valve
-  description: A bidirectional valve controlled by pressure. Opens if the output pipe is lower than the pressure of the control pipe by 101.325 kPa.
+  description: Valve controlled by pressure.
   graph: GasTrinary
   startNode: start
   targetNode: pneumaticvalve
@@ -796,12 +803,13 @@
     sprite: Structures/Piping/Atmospherics/pneumaticvalve.rsi
     state: off
   conditions:
+    - !type:TileNotBlocked
     - !type:NoUnstackableInTile
 
 # INTERCOM
 - type: construction
   name: intercom
-  id: IntercomAssembly
+  id: IntercomAssesmbly
   graph: Intercom
   startNode: start
   targetNode: intercom
@@ -844,8 +852,8 @@
   category: construction-category-utilities
   description: "A wallmounted timer for sending timed signals to things. This one has a screen for displaying text."
   icon:
-    sprite: Structures/Wallmounts/signalscreen.rsi
-    state: signalscreen
+    sprite: Structures/Wallmounts/textscreen.rsi
+    state: textscreen
   objectType: Structure
   canRotate: false
   placementMode: SnapgridCenter
@@ -862,8 +870,8 @@
   category: construction-category-utilities
   description: "A wallmounted timer for sending timed signals to things. This one has a screen for displaying text and requires security access to use."
   icon:
-    sprite: Structures/Wallmounts/signalscreen.rsi
-    state: signalscreen
+    sprite: Structures/Wallmounts/textscreen.rsi
+    state: textscreen
   objectType: Structure
   canRotate: false
   placementMode: SnapgridCenter

@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Content.Shared.Ghost;
 using Content.Shared.Mind;
 using Robust.Server.Player;
@@ -127,7 +127,7 @@ public sealed partial class MindTests
         var mindSys = entMan.System<SharedMindSystem>();
         var mind = GetMind(pair);
 
-        Assert.That(mind.Comp.VisitingEntity, Is.Null);
+        Assert.Null(mind.Comp.VisitingEntity);
 
         // Make player visit a new mob
         var original = mind.Comp.OwnedEntity;
@@ -165,8 +165,8 @@ public sealed partial class MindTests
         await using var pair = await SetupPair();
         var mind = GetMind(pair);
 
-        Assert.That(mind.Comp.VisitingEntity, Is.Null);
-        Assert.That(mind.Comp.OwnedEntity, Is.Not.Null);
+        Assert.Null(mind.Comp.VisitingEntity);
+        Assert.NotNull(mind.Comp.OwnedEntity);
         var entity = mind.Comp.OwnedEntity;
 
         await pair.RunTicksSync(5);
@@ -175,7 +175,7 @@ public sealed partial class MindTests
 
         var newMind = GetMind(pair);
 
-        Assert.That(newMind.Comp.VisitingEntity, Is.Null);
+        Assert.Null(newMind.Comp.VisitingEntity);
         Assert.That(newMind.Comp.OwnedEntity, Is.EqualTo(entity));
         Assert.That(newMind.Id, Is.EqualTo(mind.Id));
 

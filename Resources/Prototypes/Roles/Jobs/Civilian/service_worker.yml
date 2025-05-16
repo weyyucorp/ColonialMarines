@@ -1,4 +1,4 @@
-- type: job
+﻿- type: job
   id: ServiceWorker
   name: job-name-serviceworker
   description: job-description-serviceworker
@@ -6,6 +6,7 @@
   startingGear: ServiceWorkerGear
   icon: "JobIconServiceWorker"
   supervisors: job-supervisors-service
+  canBeAntag: false
   access:
   - Service
   - Maintenance
@@ -17,9 +18,11 @@
 - type: startingGear
   id: ServiceWorkerGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitBartender
+    back: ClothingBackpackFilled
     shoes: ClothingShoesColorBlack
     id: ServiceWorkerPDA
     ears: ClothingHeadsetService
-  #storage:
-    #back:
-    #- Stuff
+  innerClothingSkirt: ClothingUniformJumpskirtBartender
+  satchel: ClothingBackpackSatchelFilled
+  duffelbag: ClothingBackpackDuffelFilled

@@ -10,8 +10,8 @@ using Content.Shared.Dataset;
 using Content.Shared.Nutrition.Components;
 using Content.Shared.Nutrition.EntitySystems;
 using Content.Shared.Pointing;
-using Content.Shared.Random.Helpers;
 using Content.Shared.RatKing;
+using Robust.Server.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Random;
 
@@ -26,6 +26,7 @@ namespace Content.Server.RatKing
         [Dependency] private readonly HungerSystem _hunger = default!;
         [Dependency] private readonly NPCSystem _npc = default!;
         [Dependency] private readonly PopupSystem _popup = default!;
+        [Dependency] private readonly TransformSystem _xform = default!;
 
         public override void Initialize()
         {
@@ -48,7 +49,7 @@ namespace Content.Server.RatKing
                 return;
 
             //make sure the hunger doesn't go into the negatives
-            if (_hunger.GetHunger(hunger) < component.HungerPerArmyUse)
+            if (hunger.CurrentHunger < component.HungerPerArmyUse)
             {
                 _popup.PopupEntity(Loc.GetString("rat-king-too-hungry"), uid, uid);
                 return;
@@ -66,7 +67,7 @@ namespace Content.Server.RatKing
         }
 
         /// <summary>
-        /// uses hunger to release a specific amount of ammonia into the air. This heals the rat king
+        /// uses hunger to release a specific amount of miasma into the air. This heals the rat king
         /// and his servants through a specific metabolism.
         /// </summary>
         private void OnDomain(EntityUid uid, RatKingComponent component, RatKingDomainActionEvent args)
@@ -78,7 +79,7 @@ namespace Content.Server.RatKing
                 return;
 
             //make sure the hunger doesn't go into the negatives
-            if (_hunger.GetHunger(hunger) < component.HungerPerDomainUse)
+            if (hunger.CurrentHunger < component.HungerPerDomainUse)
             {
                 _popup.PopupEntity(Loc.GetString("rat-king-too-hungry"), uid, uid);
                 return;
@@ -87,8 +88,11 @@ namespace Content.Server.RatKing
             _hunger.ModifyHunger(uid, -component.HungerPerDomainUse, hunger);
 
             _popup.PopupEntity(Loc.GetString("rat-king-domain-popup"), uid);
-            var tileMix = _atmos.GetTileMixture(uid, excite: true);
-            tileMix?.AdjustMoles(Gas.Ammonia, component.MolesAmmoniaPerDomain);
+
+            var transform = Transform(uid);
+            var indices = _xform.GetGridOrMapTilePosition(uid, transform);
+            var tileMix = _atmos.GetTileMixture(transform.GridUid, transform.MapUid, indices, true);
+            tileMix?.AdjustMoles(Gas.Miasma, component.MolesMiasmaPerDomain);
         }
 
         private void OnPointedAt(EntityUid uid, RatKingComponent component, ref AfterPointedAtEvent args)
@@ -121,10 +125,10 @@ namespace Content.Server.RatKing
             base.DoCommandCallout(uid, component);
 
             if (!component.OrderCallouts.TryGetValue(component.CurrentOrder, out var datasetId) ||
-                !PrototypeManager.TryIndex<LocalizedDatasetPrototype>(datasetId, out var datasetPrototype))
+                !PrototypeManager.TryIndex<DatasetPrototype>(datasetId, out var datasetPrototype))
                 return;
 
-            var msg = Random.Pick(datasetPrototype);
+            var msg = Random.Pick(datasetPrototype.Values);
             _chat.TrySendInGameICMessage(uid, msg, InGameICChatType.Speak, true);
         }
     }

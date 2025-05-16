@@ -1,7 +1,7 @@
 - type: entity
   id: Vaccinator
   parent: BaseMachinePowered
-  name: vaccinator
+  name: Vaccinator
   description: A machine that creates vaccines.
   placement:
     mode: SnapgridCenter
@@ -24,4 +24,3 @@
     containers:
       machine_board: !type:Container
       machine_parts: !type:Container
-  - type: RequireProjectileTarget

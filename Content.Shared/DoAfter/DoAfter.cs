@@ -31,12 +31,6 @@ public sealed partial class DoAfter
     public TimeSpan? CancelledTime;
 
     /// <summary>
-    ///     Last time an effect was spawned.
-    /// </summary>
-    [DataField("lastEffectSpawnTime", customTypeSerializer: typeof(TimeOffsetSerializer))]
-    public TimeSpan? LastEffectSpawnTime;
-
-    /// <summary>
     ///     If true, this do after has finished, passed the final checks, and has raised its events.
     /// </summary>
     [DataField("completed")]
@@ -87,6 +81,12 @@ public sealed partial class DoAfter
     public DoAfter(ushort index, DoAfterArgs args, TimeSpan startTime)
     {
         Index = index;
+
+        if (args.Target == null)
+        {
+            DebugTools.Assert(!args.BreakOnTargetMove);
+            args.BreakOnTargetMove = false;
+        }
 
         Args = args;
         StartTime = startTime;

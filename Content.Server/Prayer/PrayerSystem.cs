@@ -1,9 +1,8 @@
-using Content.Server.Administration;
+﻿using Content.Server.Administration;
 using Content.Server.Administration.Logs;
 using Content.Server.Bible.Components;
 using Content.Server.Chat.Managers;
 using Content.Server.Popups;
-using Content.Shared._RMC14.Xenonids;
 using Content.Shared.Database;
 using Content.Shared.Popups;
 using Content.Shared.Chat;
@@ -40,11 +39,7 @@ public sealed class PrayerSystem : EntitySystem
             return;
 
         // this is to prevent ghosts from using it
-        if (!args.CanInteract)
-            return;
-
-        // Nobody to answer their prayers :(
-        if (HasComp<XenoComponent>(args.User))
+        if (!args.CanAccess)
             return;
 
         var prayerVerb = new ActivationVerb
@@ -59,11 +54,9 @@ public sealed class PrayerSystem : EntitySystem
                     return;
                 }
 
-                _quickDialog.OpenDialog(actor.PlayerSession, Loc.GetString(comp.Verb), Loc.GetString("prayer-popup-notify-pray-ui-message"), (string message) =>
+                _quickDialog.OpenDialog(actor.PlayerSession, Loc.GetString(comp.Verb), "Message", (string message) =>
                 {
-                    // Make sure the player's entity and the Prayable entity+component still exist
-                    if (actor?.PlayerSession != null && HasComp<PrayableComponent>(uid))
-                        Pray(actor.PlayerSession, comp, message);
+                    Pray(actor.PlayerSession, comp, message);
                 });
             },
             Impact = LogImpact.Low,
@@ -88,7 +81,7 @@ public sealed class PrayerSystem : EntitySystem
         var message = popupMessage == "" ? "" : popupMessage + (messageString == "" ? "" : $" \"{messageString}\"");
 
         _popupSystem.PopupEntity(popupMessage, target.AttachedEntity.Value, target, PopupType.Large);
-        _chatManager.ChatMessageToOne(ChatChannel.Local, messageString, message, EntityUid.Invalid, false, target.Channel);
+        _chatManager.ChatMessageToOne(ChatChannel.Local, messageString, message, EntityUid.Invalid, false, target.ConnectedClient);
         _adminLogger.Add(LogType.AdminMessage, LogImpact.Low, $"{ToPrettyString(target.AttachedEntity.Value):player} received subtle message from {source.Name}: {message}");
     }
 

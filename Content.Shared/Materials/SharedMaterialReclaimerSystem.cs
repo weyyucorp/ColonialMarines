@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Content.Shared.Administration.Logs;
 using Content.Shared.Audio;
 using Content.Shared.Body.Components;
@@ -8,10 +8,7 @@ using Content.Shared.Emag.Systems;
 using Content.Shared.Examine;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Stacks;
-using Content.Shared.Whitelist;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
-using Robust.Shared.Map;
 using Robust.Shared.Physics.Events;
 using Robust.Shared.Timing;
 
@@ -27,9 +24,7 @@ public abstract class SharedMaterialReclaimerSystem : EntitySystem
     [Dependency] protected readonly IGameTiming Timing = default!;
     [Dependency] protected readonly SharedAmbientSoundSystem AmbientSound = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
-    [Dependency] protected readonly SharedContainerSystem Container = default!;
-    [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
-    [Dependency] private readonly EmagSystem _emag = default!;
+    [Dependency] private readonly SharedContainerSystem _container = default!;
 
     public const string ActiveReclaimerContainerId = "active-material-reclaimer-container";
 
@@ -37,11 +32,13 @@ public abstract class SharedMaterialReclaimerSystem : EntitySystem
     public override void Initialize()
     {
         SubscribeLocalEvent<MaterialReclaimerComponent, ComponentShutdown>(OnShutdown);
+        SubscribeLocalEvent<MaterialReclaimerComponent, EntityUnpausedEvent>(OnUnpaused);
         SubscribeLocalEvent<MaterialReclaimerComponent, ExaminedEvent>(OnExamined);
         SubscribeLocalEvent<MaterialReclaimerComponent, GotEmaggedEvent>(OnEmagged);
         SubscribeLocalEvent<MaterialReclaimerComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<CollideMaterialReclaimerComponent, StartCollideEvent>(OnCollide);
         SubscribeLocalEvent<ActiveMaterialReclaimerComponent, ComponentStartup>(OnActiveStartup);
+        SubscribeLocalEvent<ActiveMaterialReclaimerComponent, EntityUnpausedEvent>(OnActiveUnpaused);
     }
 
     private void OnMapInit(EntityUid uid, MaterialReclaimerComponent component, MapInitEvent args)
@@ -51,7 +48,12 @@ public abstract class SharedMaterialReclaimerSystem : EntitySystem
 
     private void OnShutdown(EntityUid uid, MaterialReclaimerComponent component, ComponentShutdown args)
     {
-        _audio.Stop(component.Stream);
+        component.Stream?.Stop();
+    }
+
+    private void OnUnpaused(EntityUid uid, MaterialReclaimerComponent component, ref EntityUnpausedEvent args)
+    {
+        component.NextSound += args.PausedTime;
     }
 
     private void OnExamined(EntityUid uid, MaterialReclaimerComponent component, ExaminedEvent args)
@@ -61,12 +63,6 @@ public abstract class SharedMaterialReclaimerSystem : EntitySystem
 
     private void OnEmagged(EntityUid uid, MaterialReclaimerComponent component, ref GotEmaggedEvent args)
     {
-        if (!_emag.CompareFlag(args.Type, EmagType.Interaction))
-            return;
-
-        if (_emag.CheckFlag(uid, EmagType.Interaction))
-            return;
-
         args.Handled = true;
     }
 
@@ -81,7 +77,12 @@ public abstract class SharedMaterialReclaimerSystem : EntitySystem
 
     private void OnActiveStartup(EntityUid uid, ActiveMaterialReclaimerComponent component, ComponentStartup args)
     {
-        component.ReclaimingContainer = Container.EnsureContainer<Container>(uid, ActiveReclaimerContainerId);
+        component.ReclaimingContainer = _container.EnsureContainer<Container>(uid, ActiveReclaimerContainerId);
+    }
+
+    private void OnActiveUnpaused(EntityUid uid, ActiveMaterialReclaimerComponent component, ref EntityUnpausedEvent args)
+    {
+        component.EndTime += args.PausedTime;
     }
 
     /// <summary>
@@ -98,28 +99,27 @@ public abstract class SharedMaterialReclaimerSystem : EntitySystem
         if (HasComp<MobStateComponent>(item) && !CanGib(uid, item, component)) // whitelist? We be gibbing, boy!
             return false;
 
-        if (_whitelistSystem.IsWhitelistFail(component.Whitelist, item) ||
-            _whitelistSystem.IsBlacklistPass(component.Blacklist, item))
+        if (component.Whitelist is {} whitelist && !whitelist.IsValid(item))
             return false;
 
-        if (Container.TryGetContainingContainer((item, null, null), out _) && !Container.TryRemoveFromContainer(item))
+        if (component.Blacklist is {} blacklist && blacklist.IsValid(item))
+            return false;
+
+        if (_container.TryGetContainingContainer(item, out _) && !_container.TryRemoveFromContainer(item))
             return false;
 
         if (user != null)
         {
-            _adminLog.Add(LogType.Action,
-                LogImpact.High,
+            _adminLog.Add(LogType.Action, LogImpact.High,
                 $"{ToPrettyString(user.Value):player} destroyed {ToPrettyString(item)} in the material reclaimer, {ToPrettyString(uid)}");
         }
 
         if (Timing.CurTime > component.NextSound)
         {
-            component.Stream = _audio.PlayPredicted(component.Sound, uid, user)?.Entity;
+            component.Stream = _audio.PlayPredicted(component.Sound, uid, user);
+
             component.NextSound = Timing.CurTime + component.SoundCooldown;
         }
-
-        var reclaimedEvent = new GotReclaimedEvent(Transform(uid).Coordinates);
-        RaiseLocalEvent(item, ref reclaimedEvent);
 
         var duration = GetReclaimingDuration(uid, item, component);
         // if it's instant, don't bother with all the active comp stuff.
@@ -132,7 +132,7 @@ public abstract class SharedMaterialReclaimerSystem : EntitySystem
         var active = EnsureComp<ActiveMaterialReclaimerComponent>(uid);
         active.Duration = duration;
         active.EndTime = Timing.CurTime + duration;
-        Container.Insert(item, active.ReclaimingContainer);
+        active.ReclaimingContainer.Insert(item);
         return true;
     }
 
@@ -167,29 +167,21 @@ public abstract class SharedMaterialReclaimerSystem : EntitySystem
 
         component.ItemsProcessed++;
         if (component.CutOffSound)
-        {
-            _audio.Stop(component.Stream);
-        }
+            component.Stream?.Stop();
 
-        Dirty(uid, component);
+        Dirty(component);
     }
 
     /// <summary>
     /// Sets the Enabled field on the reclaimer.
     /// </summary>
-    public bool SetReclaimerEnabled(EntityUid uid, bool enabled, MaterialReclaimerComponent? component = null)
+    public void SetReclaimerEnabled(EntityUid uid, bool enabled, MaterialReclaimerComponent? component = null)
     {
         if (!Resolve(uid, ref component, false))
-            return true;
-
-        if (component.Broken && enabled)
-            return false;
-
+            return;
         component.Enabled = enabled;
         AmbientSound.SetAmbience(uid, enabled && component.Powered);
-        Dirty(uid, component);
-
-        return true;
+        Dirty(component);
     }
 
     /// <summary>
@@ -201,7 +193,7 @@ public abstract class SharedMaterialReclaimerSystem : EntitySystem
         if (HasComp<ActiveMaterialReclaimerComponent>(uid))
             return false;
 
-        return component.Powered && component.Enabled && !component.Broken;
+        return component.Powered && component.Enabled;
     }
 
     /// <summary>
@@ -212,9 +204,8 @@ public abstract class SharedMaterialReclaimerSystem : EntitySystem
     {
         return component.Powered &&
                component.Enabled &&
-               !component.Broken &&
                HasComp<BodyComponent>(victim) &&
-               _emag.CheckFlag(uid, EmagType.Interaction);
+               HasComp<EmaggedComponent>(uid);
     }
 
     /// <summary>
@@ -255,6 +246,3 @@ public abstract class SharedMaterialReclaimerSystem : EntitySystem
         }
     }
 }
-
-[ByRefEvent]
-public record struct GotReclaimedEvent(EntityCoordinates ReclaimerCoordinates);

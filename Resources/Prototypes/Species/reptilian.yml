@@ -2,14 +2,14 @@
   id: Reptilian
   name: species-name-reptilian
   roundStart: true
-  prototype: CMMobReptilian
+  prototype: MobReptilian
   sprites: MobReptilianSprites
   defaultSkinTone: "#34a223"
   markingLimits: MobReptilianMarkingLimits
   dollPrototype: MobReptilianDummy
   skinColoration: Hues
-  maleFirstNames: NamesReptilianMale
-  femaleFirstNames: NamesReptilianFemale
+  maleFirstNames: names_reptilian_male
+  femaleFirstNames: names_reptilian_female
   naming: FirstDashFirst
 
 - type: speciesBaseSprites
@@ -17,11 +17,7 @@
   sprites:
     Head: MobReptilianHead
     Snout: MobHumanoidAnyMarking
-    UndergarmentTop: MobHumanoidAnyMarking
-    UndergarmentBottom: MobHumanoidAnyMarking
     Chest: MobReptilianTorso
-    Underwear: MobHumanoidAnyMarking
-    Undershirt: MobHumanoidAnyMarking
     HeadTop: MobHumanoidAnyMarking
     HeadSide: MobHumanoidAnyMarking
     Tail: MobHumanoidAnyMarking
@@ -53,34 +49,11 @@
       points: 1
       required: true
       defaultMarkings: [ LizardSnoutRound ]
-    Underwear:
-      points: 1
-      required: true
-      defaultMarkings: [ RMCUnderwearBoxersBlue ]
-    Undershirt:
-      points: 1
-      required: true
-      defaultMarkings: [ RMCUndershirtStandard ]
     HeadTop:
-      points: 2
+      points: 1
       required: false
     HeadSide:
       points: 1
-      required: false
-    UndergarmentTop:
-      points: 1
-      required: false
-    UndergarmentBottom:
-      points: 1
-      required: false
-    Chest:
-      points: 3
-      required: false
-    Legs:
-      points: 2
-      required: false
-    Arms:
-      points: 2
       required: false
 
 - type: humanoidBaseSprite

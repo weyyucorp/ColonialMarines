@@ -17,20 +17,6 @@
   - type: Tag
     tags:
     - Figurine
-  - type: UseDelay
-    delay: 5
-  - type: TriggerOnActivate
-  - type: TriggerOnSignal
-  - type: Speech
-    speechSounds: Pai # it just sounds better
-  - type: DeviceNetwork
-    deviceNetId: Wireless
-    receiveFrequencyId: BasicDevice
-  - type: WirelessNetworkConnection
-    range: 200
-  - type: DeviceLinkSink
-    ports:
-    - Trigger
 
 - type: entity
   parent: BaseFigurine
@@ -40,9 +26,7 @@
   components:
   - type: Sprite
     state: hop
-  - type: SpeakOnTrigger
-    pack: FigurinesHoP
-
+    
 - type: entity
   parent: BaseFigurine
   id: ToyFigurinePassenger
@@ -51,9 +35,7 @@
   components:
   - type: Sprite
     state: passenger
-  - type: SpeakOnTrigger
-    pack: FigurinesPassenger
-
+    
 - type: entity
   parent: BaseFigurine
   id: ToyFigurineGreytider
@@ -62,8 +44,6 @@
   components:
   - type: Sprite
     state: passenger_greytide
-  - type: SpeakOnTrigger
-    pack: FigurinesGreytider
 
 - type: entity
   parent: BaseFigurine
@@ -73,8 +53,6 @@
   components:
   - type: Sprite
     state: clown
-  - type: SpeakOnTrigger
-    pack: FigurinesClown
 
 - type: entity
   parent: BaseFigurine
@@ -84,8 +62,7 @@
   components:
   - type: Sprite
     state: holoclown
-  - type: SpeakOnTrigger
-    pack: FigurinesHoloClown
+
 
 - type: entity
   parent: BaseFigurine
@@ -95,8 +72,6 @@
   components:
   - type: Sprite
     state: mime
-  - type: SpeakOnTrigger
-    pack: FigurinesMime
 
 - type: entity
   parent: BaseFigurine
@@ -106,8 +81,6 @@
   components:
   - type: Sprite
     state: musician
-  - type: SpeakOnTrigger
-    pack: FigurinesMusician
 
 - type: entity
   parent: BaseFigurine
@@ -117,8 +90,6 @@
   components:
   - type: Sprite
     state: boxer
-  - type: SpeakOnTrigger
-    pack: FigurinesBoxer
 
 - type: entity
   parent: BaseFigurine
@@ -128,8 +99,6 @@
   components:
   - type: Sprite
     state: captain
-  - type: SpeakOnTrigger
-    pack: FigurinesCaptain
 
 - type: entity
   parent: BaseFigurine
@@ -139,8 +108,6 @@
   components:
   - type: Sprite
     state: hos
-  - type: SpeakOnTrigger
-    pack: FigurinesHoS
 
 - type: entity
   parent: BaseFigurine
@@ -150,8 +117,6 @@
   components:
   - type: Sprite
     state: warden
-  - type: SpeakOnTrigger
-    pack: FigurinesWarden
 
 - type: entity
   parent: BaseFigurine
@@ -161,8 +126,6 @@
   components:
   - type: Sprite
     state: detective
-  - type: SpeakOnTrigger
-    pack: FigurinesDetective
 
 - type: entity
   parent: BaseFigurine
@@ -172,8 +135,6 @@
   components:
   - type: Sprite
     state: security
-  - type: SpeakOnTrigger
-    pack: FigurinesSecurity
 
 - type: entity
   parent: BaseFigurine
@@ -183,8 +144,6 @@
   components:
   - type: Sprite
     state: lawyer
-  - type: SpeakOnTrigger
-    pack: FigurinesLawyer
 
 - type: entity
   parent: BaseFigurine
@@ -194,19 +153,15 @@
   components:
   - type: Sprite
     state: cargotech
-  - type: SpeakOnTrigger
-    pack: FigurinesCargoTech
 
 - type: entity
   parent: BaseFigurine
   id: ToyFigurineSalvage
-  name: salvage specialist figure
-  description: A figurine depicting a Salvage Specialist holding a survival knife.
+  name: salvage technican figure
+  description: A figurine depicting a Salvage Technician holding a survival knife.
   components:
   - type: Sprite
     state: salvage
-  - type: SpeakOnTrigger
-    pack: FigurinesSalvage
 
 - type: entity
   parent: BaseFigurine
@@ -216,8 +171,6 @@
   components:
   - type: Sprite
     state: qm
-  - type: SpeakOnTrigger
-    pack: FigurinesQM
 
 - type: entity
   parent: BaseFigurine
@@ -227,8 +180,6 @@
   components:
   - type: Sprite
     state: ce
-  - type: SpeakOnTrigger
-    pack: FigurinesCE
 
 - type: entity
   parent: BaseFigurine
@@ -238,8 +189,6 @@
   components:
   - type: Sprite
     state: engineer
-  - type: SpeakOnTrigger
-    pack: FigurinesEngineer
 
 - type: entity
   parent: BaseFigurine
@@ -249,8 +198,6 @@
   components:
   - type: Sprite
     state: atmos
-  - type: SpeakOnTrigger
-    pack: FigurinesAtmosTech
 
 - type: entity
   parent: BaseFigurine
@@ -260,8 +207,6 @@
   components:
   - type: Sprite
     state: rd
-  - type: SpeakOnTrigger
-    pack: FigurinesRD
 
 - type: entity
   parent: BaseFigurine
@@ -271,8 +216,6 @@
   components:
   - type: Sprite
     state: scientist
-  - type: SpeakOnTrigger
-    pack: FigurinesScientist
 
 - type: entity
   parent: BaseFigurine
@@ -282,8 +225,6 @@
   components:
   - type: Sprite
     state: cmo
-  - type: SpeakOnTrigger
-    pack: FigurinesCMO
 
 - type: entity
   parent: BaseFigurine
@@ -293,8 +234,6 @@
   components:
   - type: Sprite
     state: chemist
-  - type: SpeakOnTrigger
-    pack: FigurinesChemist
 
 - type: entity
   parent: BaseFigurine
@@ -304,8 +243,6 @@
   components:
   - type: Sprite
     state: paramedic
-  - type: SpeakOnTrigger
-    pack: FigurinesParamedic
 
 - type: entity
   parent: BaseFigurine
@@ -315,8 +252,6 @@
   components:
   - type: Sprite
     state: medical
-  - type: SpeakOnTrigger
-    pack: FigurinesDoctor
 
 - type: entity
   parent: BaseFigurine
@@ -326,8 +261,6 @@
   components:
   - type: Sprite
     state: librarian
-  - type: SpeakOnTrigger
-    pack: FigurinesLibrarian
 
 - type: entity
   parent: BaseFigurine
@@ -337,8 +270,6 @@
   components:
   - type: Sprite
     state: chaplain
-  - type: SpeakOnTrigger
-    pack: FigurinesChaplain
 
 - type: entity
   parent: BaseFigurine
@@ -348,8 +279,6 @@
   components:
   - type: Sprite
     state: chef
-  - type: SpeakOnTrigger
-    pack: FigurinesChef
 
 - type: entity
   parent: BaseFigurine
@@ -359,8 +288,6 @@
   components:
   - type: Sprite
     state: bartender
-  - type: SpeakOnTrigger
-    pack: FigurinesBartender
 
 - type: entity
   parent: BaseFigurine
@@ -370,8 +297,6 @@
   components:
   - type: Sprite
     state: botanist
-  - type: SpeakOnTrigger
-    pack: FigurinesBotanist
 
 - type: entity
   parent: BaseFigurine
@@ -381,8 +306,6 @@
   components:
   - type: Sprite
     state: janitor
-  - type: SpeakOnTrigger
-    pack: FigurinesJanitor
 
 - type: entity
   parent: BaseFigurine
@@ -392,19 +315,15 @@
   components:
   - type: Sprite
     state: nukie
-  - type: SpeakOnTrigger
-    pack: FigurinesNukie
-
+ 
 - type: entity
   parent: BaseFigurine
   id: ToyFigurineNukieElite
   name: elite syndicate operative figure
-  description: A figurine depicting someone in an elite blood-red hardsuit, similar to what someone on a nuclear operative team might wear.
+  description: A figurine depicting someone in an elite blood-red hardsuit, similar to what the medic of a nuclear operative team might wear.
   components:
   - type: Sprite
     state: nukie_elite
-  - type: SpeakOnTrigger
-    pack: FigurinesNukieElite
 
 - type: entity
   parent: BaseFigurine
@@ -414,9 +333,7 @@
   components:
   - type: Sprite
     state: nukie_commander
-  - type: SpeakOnTrigger
-    pack: FigurinesNukieCommander
-
+ 
 - type: entity
   parent: BaseFigurine
   id: ToyFigurineFootsoldier
@@ -425,9 +342,7 @@
   components:
   - type: Sprite
     state: footsoldier
-  - type: SpeakOnTrigger
-    pack: FigurinesFootsoldier
-
+ 
 - type: entity
   parent: BaseFigurine
   id: ToyFigurineWizard
@@ -436,9 +351,7 @@
   components:
   - type: Sprite
     state: wizard
-  - type: SpeakOnTrigger
-    pack: FigurinesWizard
-
+ 
 - type: entity
   parent: BaseFigurine
   id: ToyFigurineWizardFake
@@ -447,8 +360,6 @@
   components:
   - type: Sprite
     state: wizard_fake
-  - type: SpeakOnTrigger
-    pack: FigurinesWizard
 
 #Nonhuman Figurines
 
@@ -460,9 +371,7 @@
   components:
   - type: Sprite
     state: spacedragon
-  - type: SpeakOnTrigger
-    pack: FigurinesSpaceDragon
-
+ 
 - type: entity
   parent: BaseFigurine
   id: ToyFigurineQueen
@@ -471,8 +380,6 @@
   components:
   - type: Sprite
     state: queen
-  # - type: SpeakOnTrigger # TODO add something
-  #   pack: FigurinesQueen
 
 - type: entity
   parent: BaseFigurine
@@ -482,8 +389,6 @@
   components:
   - type: Sprite
     state: ratking
-  - type: SpeakOnTrigger
-    pack: FigurinesRatKing
 
 - type: entity
   parent: BaseFigurine
@@ -493,8 +398,6 @@
   components:
   - type: Sprite
     state: ratservant
-  - type: SpeakOnTrigger
-    pack: FigurinesRatServant
 
 - type: entity
   parent: BaseFigurine
@@ -504,9 +407,7 @@
   components:
   - type: Sprite
     state: mouse
-  - type: SpeakOnTrigger
-    pack: FigurinesMouse
-
+    
 - type: entity
   parent: BaseFigurine
   id: ToyFigurineSlime
@@ -515,8 +416,6 @@
   components:
   - type: Sprite
     state: slime
-  - type: SpeakOnTrigger
-    pack: FigurinesSlime
 
 - type: entity
   parent: BaseFigurine
@@ -526,9 +425,7 @@
   components:
   - type: Sprite
     state: hamlet
-  - type: SpeakOnTrigger
-    pack: FigurinesHamlet
-
+ 
 #TODO: Convert these to the new figurine sprite template and rename their sprite name.
 #Yes, these are humanoids, but they need to be updated first.
 

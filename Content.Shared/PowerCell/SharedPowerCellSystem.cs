@@ -15,18 +15,10 @@ public abstract class SharedPowerCellSystem : EntitySystem
     public override void Initialize()
     {
         base.Initialize();
-
-        SubscribeLocalEvent<PowerCellDrawComponent, MapInitEvent>(OnMapInit);
-
         SubscribeLocalEvent<PowerCellSlotComponent, RejuvenateEvent>(OnRejuvenate);
         SubscribeLocalEvent<PowerCellSlotComponent, EntInsertedIntoContainerMessage>(OnCellInserted);
         SubscribeLocalEvent<PowerCellSlotComponent, EntRemovedFromContainerMessage>(OnCellRemoved);
         SubscribeLocalEvent<PowerCellSlotComponent, ContainerIsInsertingAttemptEvent>(OnCellInsertAttempt);
-    }
-
-    private void OnMapInit(Entity<PowerCellDrawComponent> ent, ref MapInitEvent args)
-    {
-        QueueUpdate((ent, ent.Comp));
     }
 
     private void OnRejuvenate(EntityUid uid, PowerCellSlotComponent component, RejuvenateEvent args)
@@ -71,22 +63,13 @@ public abstract class SharedPowerCellSystem : EntitySystem
         RaiseLocalEvent(uid, new PowerCellChangedEvent(true), false);
     }
 
-    /// <summary>
-    /// Makes the draw logic update in the next tick.
-    /// </summary>
-    public void QueueUpdate(Entity<PowerCellDrawComponent?> ent)
+    public void SetPowerCellDrawEnabled(EntityUid uid, bool enabled, PowerCellDrawComponent? component = null)
     {
-        if (Resolve(ent, ref ent.Comp))
-            ent.Comp.NextUpdateTime = Timing.CurTime;
-    }
-
-    public void SetDrawEnabled(Entity<PowerCellDrawComponent?> ent, bool enabled)
-    {
-        if (!Resolve(ent, ref ent.Comp, false) || ent.Comp.Enabled == enabled)
+        if (!Resolve(uid, ref component, false) || enabled == component.Drawing)
             return;
 
-        ent.Comp.Enabled = enabled;
-        Dirty(ent, ent.Comp);
+        component.Drawing = enabled;
+        component.NextUpdateTime = Timing.CurTime;
     }
 
     /// <summary>

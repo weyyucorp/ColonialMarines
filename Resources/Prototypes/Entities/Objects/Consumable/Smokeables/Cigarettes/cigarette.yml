@@ -14,14 +14,10 @@
   - type: SpaceGarbage
   - type: Clothing
     sprite: Objects/Consumable/Smokeables/Cigarettes/cigarette.rsi
-    slots:
-    - mask
-    - ears
+    slots: [ mask ]
     equippedPrefix: unlit
   - type: Item
     size: Tiny
-    sprite: Objects/Consumable/Smokeables/Cigarettes/cigarette.rsi
-    heldPrefix: unlit
   - type: Construction
     graph: smokeableCigarette
     node: cigarette
@@ -30,7 +26,6 @@
   id: SoakedCigarette
   parent: BaseCigar
   name: cigarette
-  suffix: Soaked
   description: A roll of tobacco and nicotine soaked in some chemical.
   components:
   - type: Sprite
@@ -64,11 +59,6 @@
     solutions:
       smokable:
         maxVol: 20
-  - type: Tag
-    tags:
-      - Cigarette
-      - Trash
-      - Burnt
 
 - type: entity
   id: CigaretteSyndicate
@@ -134,7 +124,7 @@
 - type: entity
   id: CigaretteDylovene
   parent: SoakedCigarette
-  name: Urinal Cake Dissolver
+  name: Urinal Cake Disolver
   components:
   - type: SolutionContainerManager
     solutions:
@@ -203,7 +193,7 @@
         reagents:
           - ReagentId: Nicotine
             Quantity: 10
-          - ReagentId: CMBicaridine
+          - ReagentId: Bicaridine
             Quantity: 10
 
 - type: entity

@@ -49,8 +49,6 @@
   - type: Appearance
   - type: Physics
     canCollide: false
-  - type: StealTarget
-    stealGroup: LAMP
 
 - type: entity
   name: lamp
@@ -62,24 +60,12 @@
     sprite: Objects/Misc/Lights/lamp.rsi
     layers:
       - state: lamp
-        map: [ "base" ]
       - state: lamp-on
         shader: unshaded
         visible: false
         map: [ "light" ]
   - type: Item
     sprite: Objects/Misc/Lights/lamp.rsi
-  - type: HolidayVisuals
-    holidays:
-      festive:
-      - FestiveSeason
-  - type: GenericVisualizer
-    visuals:
-      enum.HolidayVisuals.Holiday:
-        base:
-          festive: { state: christmaslamp }
-        light:
-          festive: { state: christmaslamp-on }
 
 - type: entity
   name: banana lamp
@@ -105,34 +91,18 @@
     sprite: Objects/Misc/Lights/lampgreen.rsi
     layers:
       - state: lampgreen
-        map: [ "base" ]
       - state: lampgreen-on
         shader: unshaded
         visible: false
         map: [ "light" ]
   - type: Item
     sprite: Objects/Misc/Lights/lampgreen.rsi
-  - type: HolidayVisuals
-    holidays:
-      festive:
-      - FestiveSeason
-  - type: GenericVisualizer
-    visuals:
-      enum.HolidayVisuals.Holiday:
-        base:
-          festive:
-            sprite: Objects/Misc/Lights/lamp.rsi
-            state: christmaslamp
-        light:
-          festive:
-            sprite: Objects/Misc/Lights/lamp.rsi
-            state: christmaslamp-on
 
 - type: entity
   name: interrogator lamp
   id: LampInterrogator
-  parent: [ BaseLamp, BaseSecurityContraband ]
-  description: Ultra-bright lamp for the bad cop.
+  parent: BaseLamp
+  description: Ultra-bright lamp for the bad cop
   components:
   - type: Sprite
     sprite: Objects/Misc/Lights/lampint.rsi
@@ -163,7 +133,6 @@
   - type: AutoRecharge
     rechargeDuration: 30
   - type: MeleeWeapon
-    wideAnimationRotation: 180
     damage:
       types:
         Blunt: 0 # melee weapon to allow flashing individual targets
@@ -191,11 +160,9 @@
   - type: Item
     size: Normal
   - type: Sprite
-    sprite: Objects/Misc/Lights/lights.rsi
     layers:
       - state: floodlight
-        map: [ "base" ]
-      - state: floodlight-on
+      - state: floodlight_on
         shader: unshaded
         visible: false
         map: [ "light" ]
@@ -209,19 +176,16 @@
           bounds: "-0.2, -0.5, 0.2, 0.5"
         density: 50
         mask:
-        - HighImpassable
+        - MachineMask
+        layer:
+        - MachineLayer
   - type: PointLight
     enabled: false
     radius: 8
     energy: 5
-  - type: ItemSlots
-    slots:
-      cell_slot:
-        name: power-cell-slot-component-slot-name-default
-        startingItem: PowerCellMedium
   - type: Anchorable
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -231,7 +195,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: GlassBreak
+          path: /Audio/Effects/glass_break1.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           FloodlightBroken:
@@ -246,16 +210,12 @@
   parent: BaseItem
   description: A pole with powerful mounted lights on it. It's broken.
   components:
-  - type: Item
-    size: Normal
-    sprite: Objects/Misc/Lights/lights.rsi
-    heldPrefix: floodlight-broken
   - type: Sprite
     sprite: Objects/Misc/Lights/lights.rsi
-    state: floodlight-broken
+    state: floodlight_broken
   - type: Anchorable
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -271,7 +231,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalGlassBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
@@ -288,4 +248,6 @@
           bounds: "-0.2, -0.5, 0.2, 0.5"
         density: 50
         mask:
-        - HighImpassable
+        - MachineMask
+        layer:
+        - MachineLayer

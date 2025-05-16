@@ -1,12 +1,9 @@
-using System.Diagnostics.CodeAnalysis;
 using Content.Shared.Alert;
 using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Systems;
 using Content.Shared.Nutrition.Components;
 using Content.Shared.Rejuvenate;
-using Content.Shared.StatusIcon;
 using JetBrains.Annotations;
-using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
@@ -16,28 +13,23 @@ namespace Content.Shared.Nutrition.EntitySystems;
 public sealed class ThirstSystem : EntitySystem
 {
     [Dependency] private readonly IGameTiming _timing = default!;
-    [Dependency] private readonly IPrototypeManager _prototype = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly AlertsSystem _alerts = default!;
     [Dependency] private readonly MovementSpeedModifierSystem _movement = default!;
     [Dependency] private readonly SharedJetpackSystem _jetpack = default!;
 
-    [ValidatePrototypeId<SatiationIconPrototype>]
-    private const string ThirstIconOverhydratedId = "ThirstIconOverhydrated";
-
-    [ValidatePrototypeId<SatiationIconPrototype>]
-    private const string ThirstIconThirstyId = "ThirstIconThirsty";
-
-    [ValidatePrototypeId<SatiationIconPrototype>]
-    private const string ThirstIconParchedId = "ThirstIconParched";
+    private ISawmill _sawmill = default!;
 
     public override void Initialize()
     {
         base.Initialize();
 
+        _sawmill = Logger.GetSawmill("thirst");
+
         SubscribeLocalEvent<ThirstComponent, RefreshMovementSpeedModifiersEvent>(OnRefreshMovespeed);
         SubscribeLocalEvent<ThirstComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<ThirstComponent, RejuvenateEvent>(OnRejuvenate);
+        SubscribeLocalEvent<ThirstComponent, EntityUnpausedEvent>(OnUnpaused);
     }
 
     private void OnMapInit(EntityUid uid, ThirstComponent component, MapInitEvent args)
@@ -61,7 +53,6 @@ public sealed class ThirstSystem : EntitySystem
 
     private void OnRefreshMovespeed(EntityUid uid, ThirstComponent component, RefreshMovementSpeedModifiersEvent args)
     {
-        return; // RMC14 no thirst in 13, so no slowdown from it here
         // TODO: This should really be taken care of somewhere else
         if (_jetpack.IsUserFlying(uid))
             return;
@@ -102,8 +93,7 @@ public sealed class ThirstSystem : EntitySystem
             component.ThirstThresholds[ThirstThreshold.Dead],
             component.ThirstThresholds[ThirstThreshold.OverHydrated]
         );
-
-        EntityManager.DirtyField(uid, component, nameof(ThirstComponent.CurrentThirst));
+        Dirty(uid, component);
     }
 
     private bool IsMovementThreshold(ThirstThreshold threshold)
@@ -122,30 +112,6 @@ public sealed class ThirstSystem : EntitySystem
         }
     }
 
-    public bool TryGetStatusIconPrototype(ThirstComponent component, [NotNullWhen(true)] out SatiationIconPrototype? prototype)
-    {
-        switch (component.CurrentThirstThreshold)
-        {
-            case ThirstThreshold.OverHydrated:
-                _prototype.TryIndex(ThirstIconOverhydratedId, out prototype);
-                break;
-
-            case ThirstThreshold.Thirsty:
-                _prototype.TryIndex(ThirstIconThirstyId, out prototype);
-                break;
-
-            case ThirstThreshold.Parched:
-                _prototype.TryIndex(ThirstIconParchedId, out prototype);
-                break;
-
-            default:
-                prototype = null;
-                break;
-        }
-
-        return prototype != null;
-    }
-
     private void UpdateEffects(EntityUid uid, ThirstComponent component)
     {
         if (IsMovementThreshold(component.LastThirstThreshold) != IsMovementThreshold(component.CurrentThirstThreshold) &&
@@ -161,7 +127,7 @@ public sealed class ThirstSystem : EntitySystem
         }
         else
         {
-            _alerts.ClearAlertCategory(uid, component.ThirstyCategory);
+            _alerts.ClearAlertCategory(uid, AlertCategory.Thirst);
         }
 
         switch (component.CurrentThirstThreshold)
@@ -191,7 +157,7 @@ public sealed class ThirstSystem : EntitySystem
                 return;
 
             default:
-                Log.Error($"No thirst threshold found for {component.CurrentThirstThreshold}");
+                _sawmill.Error($"No thirst threshold found for {component.CurrentThirstThreshold}");
                 throw new ArgumentOutOfRangeException($"No thirst threshold found for {component.CurrentThirstThreshold}");
         }
     }
@@ -217,5 +183,10 @@ public sealed class ThirstSystem : EntitySystem
             thirst.CurrentThirstThreshold = calculatedThirstThreshold;
             UpdateEffects(uid, thirst);
         }
+    }
+
+    private void OnUnpaused(EntityUid uid, ThirstComponent component, ref EntityUnpausedEvent args)
+    {
+        component.NextUpdateTime += args.PausedTime;
     }
 }

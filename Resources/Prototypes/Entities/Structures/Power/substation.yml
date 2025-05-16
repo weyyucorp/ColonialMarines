@@ -17,14 +17,19 @@
       shader: unshaded
     - state: full
       shader: unshaded
+  - type: UpgradeBattery
+    maxChargeMultiplier: 2
+    baseMaxCharge: 2500000
+  - type: UpgradePowerSupplyRamping
+    scaling: Linear
+    supplyRampingMultiplier: 1
   - type: Battery
-    maxCharge: 2500000
     startingCharge: 0
   - type: ExaminableBattery
   - type: PointLight
     radius: 1.5
-    energy: 1
-    color: "#ff6900"
+    energy: 1.6
+    color: "#3db83b"
     castShadows: false
   - type: NodeContainer
     examinable: true
@@ -35,13 +40,6 @@
       output:
         !type:CableDeviceNode
         nodeGroupID: MVPower
-  - type: PowerMonitoringDevice
-    group: Substation
-    sourceNode: input
-    loadNode: output
-    collectionName: substation
-    sprite: Structures/Power/substation.rsi
-    state: substation_static
   - type: BatteryCharger
     voltage: High
   - type: BatteryDischarger
@@ -52,9 +50,8 @@
     supplyRampTolerance: 5000
     supplyRampRate: 1000
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallicStrong
-  - type: PacifismDangerousAttack
+    damageContainer: Inorganic
+    damageModifierSet: StrongMetallic
   - type: Destructible
     thresholds:
     - trigger:
@@ -71,7 +68,7 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalGlassBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:ExplodeBehavior
       - !type:SpawnEntitiesBehavior
         spawn:
@@ -92,6 +89,9 @@
     intensitySlope: 2
     totalIntensity: 200
   - type: WiresPanel
+  - type: Wires
+    boardName: wires-board-name-substation
+    layoutId: Substation
   - type: Machine
     board: SubstationMachineCircuitboard
   - type: StationInfiniteBatteryTarget
@@ -108,15 +108,11 @@
     requirePower: true
     highVoltageNode: input
     mediumVoltageNode: output
-  - type: GuideHelp
-    guides:
-    - VoltageNetworks
-    - Power
 
 # Compact Wall Substation Base
 - type: entity
   id: BaseSubstationWall
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   name: wallmount substation
   description: A substation designed for compact shuttles and spaces.
   placement:
@@ -130,11 +126,10 @@
       path: /Audio/Ambience/Objects/buzzing.ogg
   - type: PointLight
     radius: 1.5
-    energy: 1
-    color: "#ff6900"
+    energy: 1.6
+    color: "#3db83b"
     netsync: false
     castShadows: false
-    offset: 0, -0.2
   - type: Clickable
   - type: AccessReader
     access: [["Engineering"]]
@@ -156,7 +151,7 @@
     sprite: Structures/Power/substation.rsi
     layers:
     - state: substation_wall
-    - state: screen_wall
+    - state: screen
       shader: unshaded
   - type: Battery
     maxCharge: 2000000
@@ -171,12 +166,6 @@
       output:
         !type:CableDeviceNode
         nodeGroupID: MVPower
-  - type: PowerMonitoringDevice
-    group: Substation
-    sourceNode: input
-    loadNode: output
-    sprite: Structures/Power/substation.rsi
-    state: substation_wall_static
   - type: BatteryCharger
     voltage: High
   - type: BatteryDischarger
@@ -187,9 +176,8 @@
     supplyRampTolerance: 5000
     supplyRampRate: 1000
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallicStrong
-  - type: PacifismDangerousAttack
+    damageContainer: Inorganic
+    damageModifierSet: Metallic
   - type: Destructible
     thresholds:
     - trigger:
@@ -207,7 +195,7 @@
       - !type:ExplodeBehavior
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalGlassBreak
+          path: /Audio/Effects/metalbreak.ogg
   - type: Construction
     graph: WallmountSubstation
     node: substation
@@ -218,10 +206,6 @@
     totalIntensity: 100
   - type: StationInfiniteBatteryTarget
   - type: WallMount
-  - type: GuideHelp
-    guides:
-    - VoltageNetworks
-    - Power
 
 # Substations in use
 
@@ -250,23 +234,13 @@
   - type: Battery
     maxCharge: 2000000
     startingCharge: 2000000
-  - type: ContainerFill
-    containers:
-      board: [ WallmountSubstationElectronics ]
-      capacitor: [ CapacitorStockPart ]
-      powercell: [ PowerCellSmall ]
-  - type: ContainerContainer
-    containers:
-      board: !type:Container
-      capacitor: !type:Container
-      powercell: !type:Container
 
 # Construction Frame
 - type: entity
   id: BaseSubstationWallFrame
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   name: wallmount substation frame
-  description: A substation frame for construction.
+  description: A substation frame for construction
   placement:
     mode: SnapgridCenter
   components:

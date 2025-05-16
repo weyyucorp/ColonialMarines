@@ -6,25 +6,13 @@
   id: FoodBowlBig
   description: A simple bowl, used for soups and salads.
   components:
-  - type: Item
-    storedRotation: -90
   - type: SolutionContainerManager
     solutions:
       food:
         maxVol: 50 # enough to make cheese in.
   - type: Sprite
     sprite: Objects/Consumable/Food/bowl.rsi
-    layers:
-    - state: bowl
-    - map: ["enum.SolutionContainerLayers.Fill"]
-      state: fill-1
-      visible: false
-  - type: MixableSolution
-    solution: food
-  - type: Drink
-    solution: food
-    useSound:
-      path: /Audio/Items/drink.ogg
+    state: bowl
   - type: DamageOnLand
     damage:
       types:
@@ -33,16 +21,12 @@
     damage:
       types:
         Blunt: 5
-  - type: Appearance
-  - type: SolutionContainerVisuals
-    maxFillLevels: 5
-    fillBaseName: fill-
   - type: SolutionTransfer
     canChangeTransferAmount: true
   - type: UserInterface
     interfaces:
-      enum.TransferAmountUiKey.Key:
-        type: TransferAmountBoundUserInterface
+    - key: enum.TransferAmountUiKey.Key
+      type: TransferAmountBoundUserInterface
   - type: Destructible
     thresholds:
     - trigger:
@@ -90,9 +74,4 @@
   description: A fancy bowl, used for SPECIAL soups and salads.
   components:
   - type: Sprite
-    sprite: Objects/Consumable/Food/bowl.rsi
-    layers:
-    - state: bowl2
-    - map: ["enum.SolutionContainerLayers.Fill"]
-      state: fill-1
-      visible: false
+    state: bowl2

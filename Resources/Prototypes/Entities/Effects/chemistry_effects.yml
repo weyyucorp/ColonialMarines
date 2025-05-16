@@ -9,7 +9,6 @@
   - type: SmokeVisuals
   - type: Transform
     anchored: true
-  - type: Clickable
   - type: Physics
   - type: Fixtures
     fixtures:
@@ -36,7 +35,7 @@
   parent: BaseFoam
   id: Smoke
   name: smoke
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: Occluder
   - type: Sprite
@@ -49,19 +48,10 @@
     - HideContextMenu
 
 - type: entity
-  parent: Smoke
-  id: WizardSmoke
-  name: smoke
-  categories: [ HideSpawnMenu ]
-  components:
-  - type: Smoke
-    spreadAmount: 5
-
-- type: entity
   parent: BaseFoam
   id: Foam
   name: foam
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: Sprite
     color: "#ffffffcc"
@@ -79,20 +69,18 @@
       state: foam-west
   - type: SmoothEdge
   - type: IconSmooth
+    key: walls
     mode: NoSprite
   - type: FoamVisuals
     animationTime: 0.6
     animationState: foam-dissolve
   - type: Slippery
   - type: StepTrigger
-  # disabled until foam reagent duplication is fixed
-  #- type: ScoopableSolution
-  #  solution: solutionArea
 
 - type: entity
   id: MetalFoam
   name: metal foam
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   parent: Foam
   components:
   - type: Sprite
@@ -109,8 +97,6 @@
       state: m_foam-north
     - map: [ "enum.EdgeLayer.West" ]
       state: m_foam-west
-  - type: EdgeSpreader
-    id: MetalFoam
   - type: FoamVisuals
     animationTime: 0.6
     animationState: m_foam-dissolve
@@ -118,7 +104,7 @@
 - type: entity
   id: IronMetalFoam
   name: iron metal foam
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   parent: MetalFoam
   components:
   - type: SpawnOnDespawn
@@ -127,7 +113,7 @@
 - type: entity
   id: AluminiumMetalFoam
   name: aluminium metal foam
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   parent: MetalFoam
   components:
   - type: SpawnOnDespawn
@@ -142,10 +128,9 @@
     snap:
     - Wall
   components:
-  - type: RCDDeconstructable
-    cost: 2
-    delay: 2
-    fx: EffectRCDDeconstruct2
+  - type: Tag
+    tags:
+    - RCDDeconstructWhitelist
   - type: Clickable
   - type: InteractionOutline
   - type: Sprite
@@ -169,15 +154,8 @@
   - type: Transform
     anchored: true
   - type: Airtight
-  - type: ReplaceFloorOnSpawn
-    replaceableTiles:
-    - Plating
-    - Lattice
-    - TrainLattice
-    replacementTiles:
-    - FloorMetalFoam
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -231,16 +209,3 @@
       state: metal_foam-north
     - map: [ "enum.EdgeLayer.West" ]
       state: metal_foam-west
-
-- type: entity
-  id: ReactionFlash
-  categories: [ HideSpawnMenu ]
-  components:
-  - type: PointLight
-    enabled: true
-    radius: 2
-    energy: 8
-  - type: LightFade
-    duration: 0.5
-  - type: TimedDespawn
-    lifetime: 0.5

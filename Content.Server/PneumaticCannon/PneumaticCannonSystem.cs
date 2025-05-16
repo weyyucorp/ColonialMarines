@@ -2,14 +2,12 @@ using Content.Server.Atmos.Components;
 using Content.Server.Atmos.EntitySystems;
 using Content.Server.Storage.EntitySystems;
 using Content.Server.Stunnable;
-using Content.Server.Weapons.Ranged.Systems;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Interaction;
 using Content.Shared.PneumaticCannon;
 using Content.Shared.StatusEffect;
-using Content.Shared.Tools.Systems;
+using Content.Shared.Tools.Components;
 using Content.Shared.Weapons.Ranged.Components;
-using Content.Shared.Weapons.Ranged.Events;
 using Content.Shared.Weapons.Ranged.Systems;
 using Robust.Shared.Containers;
 
@@ -19,10 +17,8 @@ public sealed class PneumaticCannonSystem : SharedPneumaticCannonSystem
 {
     [Dependency] private readonly AtmosphereSystem _atmos = default!;
     [Dependency] private readonly GasTankSystem _gasTank = default!;
-    [Dependency] private readonly GunSystem _gun = default!;
     [Dependency] private readonly StunSystem _stun = default!;
     [Dependency] private readonly ItemSlotsSystem _slots = default!;
-    [Dependency] private readonly SharedToolSystem _toolSystem = default!;
 
     public override void Initialize()
     {
@@ -31,7 +27,6 @@ public sealed class PneumaticCannonSystem : SharedPneumaticCannonSystem
         SubscribeLocalEvent<PneumaticCannonComponent, InteractUsingEvent>(OnInteractUsing, before: new []{ typeof(StorageSystem) });
         SubscribeLocalEvent<PneumaticCannonComponent, GunShotEvent>(OnShoot);
         SubscribeLocalEvent<PneumaticCannonComponent, ContainerIsInsertingAttemptEvent>(OnContainerInserting);
-        SubscribeLocalEvent<PneumaticCannonComponent, GunRefreshModifiersEvent>(OnGunRefreshModifiers);
     }
 
     private void OnInteractUsing(EntityUid uid, PneumaticCannonComponent component, InteractUsingEvent args)
@@ -39,7 +34,10 @@ public sealed class PneumaticCannonSystem : SharedPneumaticCannonSystem
         if (args.Handled)
             return;
 
-        if (!_toolSystem.HasQuality(args.Used, component.ToolModifyPower))
+        if (!TryComp<ToolComponent>(args.Used, out var tool))
+            return;
+
+        if (!tool.Qualities.Contains(component.ToolModifyPower))
             return;
 
         var val = (int) component.Power;
@@ -49,9 +47,10 @@ public sealed class PneumaticCannonSystem : SharedPneumaticCannonSystem
         Popup.PopupEntity(Loc.GetString("pneumatic-cannon-component-change-power",
             ("power", component.Power.ToString())), uid, args.User);
 
-        component.ProjectileSpeed = GetProjectileSpeedFromPower(component);
         if (TryComp<GunComponent>(uid, out var gun))
-            _gun.RefreshModifiers((uid, gun));
+        {
+            gun.ProjectileSpeed = GetProjectileSpeedFromPower(component);
+        }
 
         args.Handled = true;
     }
@@ -79,8 +78,8 @@ public sealed class PneumaticCannonSystem : SharedPneumaticCannonSystem
         if (gas == null && component.GasUsage > 0f)
             return;
 
-        if (TryComp<StatusEffectsComponent>(args.User, out var status)
-            && component.Power == PneumaticCannonPower.High)
+        if(TryComp<StatusEffectsComponent>(args.User, out var status)
+           && component.Power == PneumaticCannonPower.High)
         {
             _stun.TryParalyze(args.User, TimeSpan.FromSeconds(component.HighPowerStunTime), true, status);
             Popup.PopupEntity(Loc.GetString("pneumatic-cannon-component-power-stun",
@@ -92,7 +91,7 @@ public sealed class PneumaticCannonSystem : SharedPneumaticCannonSystem
             return;
 
         // this should always be possible, as we'll eject the gas tank when it no longer is
-        var environment = _atmos.GetContainingMixture(cannon.Owner, false, true);
+        var environment = _atmos.GetContainingMixture(cannon, false, true);
         var removed = _gasTank.RemoveAir(gas.Value, component.GasUsage);
         if (environment != null && removed != null)
         {
@@ -104,12 +103,6 @@ public sealed class PneumaticCannonSystem : SharedPneumaticCannonSystem
 
         // eject gas tank
         _slots.TryEject(uid, PneumaticCannonComponent.TankSlotId, args.User, out _);
-    }
-
-    private void OnGunRefreshModifiers(Entity<PneumaticCannonComponent> ent, ref GunRefreshModifiersEvent args)
-    {
-        if (ent.Comp.ProjectileSpeed is { } speed)
-            args.ProjectileSpeed = speed;
     }
 
     /// <summary>

@@ -1,16 +1,18 @@
-# Configuration preset used on Wizard's Den Salamander
+﻿# Configuration preset used on Wizard's Den Salamander
 
 [game]
-desc = "Official English Space Station 14 servers. Medium roleplay ruleset. you must be whitelisted by playing on other Wizard's Den servers if there are more than 15 online players."
-hostname = "[EN][MRP] Wizard's Den Salamander [US West]"
-round_restart_time = 300
+desc = "Official English Space Station 14 servers. Roleplay required, you must be whitelisted through Discord to play if there are more than 15 online players."
+hostname = "[EN] Wizard's Den Salamander [US West RP]"
+artifact_round_end_timer = 0.0
 
 [server]
-rules_file = "MRPRuleset"
+rules_file = "RP_Rules.txt"
+rules_header = "ui-rules-header-rp"
 
 [whitelist]
 enabled = true
-prototype_list = "salamanderMrpWhitelist"
+reason = "whitelist-not-whitelisted-rp"
+min_players = 15
 
 [shuttle]
 emergency_early_launch_allowed = true
@@ -26,4 +28,3 @@ flavor_text = true
 
 [hub]
 tags = "lang:en,region:am_n_w,rp:med"
-

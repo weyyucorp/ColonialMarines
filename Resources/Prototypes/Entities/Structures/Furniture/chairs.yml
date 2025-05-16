@@ -4,9 +4,8 @@
   abstract: true
   description: You sit in this. Either by will or force.
   placement:
-    mode: PlaceFree
+    mode: SnapgridCenter
   components:
-  - type: Animateable
   - type: Clickable
   - type: InteractionOutline
   - type: Physics
@@ -46,63 +45,21 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
   - type: StaticPrice
-    price: 50
-
-#Starts unanchored, cannot be rotated while anchored
-- type: entity
-  name: chair
-  id: UnanchoredChairBase
-  parent: SeatBase
-  abstract: true
-  components:
-  - type: Anchorable
-  - type: Rotatable
-
-#Start anchored, cannot be rotated while anchored
-- type: entity
-  name: chair
-  id: ChairBase
-  abstract: true
-  parent: UnanchoredChairBase
-  placement:
-    mode: SnapgridCenter
-  components:
-  - type: Physics
-    bodyType: Static
-  - type: Transform
-    anchored: true
-
-#Starts unanchored, can be rotated while anchored
-- type: entity
-  name: chair
-  id: OfficeChairBase
-  parent: UnanchoredChairBase
-  abstract: true
-  components:
-  - type: Rotatable
-    rotateWhileAnchored: true
-
-#Starts anchored, can be rotated while anchored
-- type: entity
-  name: stool
-  id: StoolBase
-  parent: OfficeChairBase
-  abstract: true
-  placement:
-    mode: SnapgridCenter
-  components:
-  - type: Physics
-    bodyType: Static
-  - type: Transform
-    anchored: true
+    price: 10
 
 - type: entity
   name: chair
   id: Chair
-  parent: ChairBase
+  parent: SeatBase
   components:
+  - type: Transform
+    anchored: true
+  - type: Physics
+    bodyType: Static
+  - type: Anchorable
+  - type: Rotatable
   - type: Sprite
     state: chair
   - type: Construction
@@ -110,20 +67,12 @@
     node: chair
 
 - type: entity
-  name: chair
-  id: ChairGreyscale
-  parent: Chair
-  suffix: White
-  components:
-  - type: Sprite
-    state: chair-greyscale
-
-- type: entity
   name: stool
   id: Stool
-  parent: UnanchoredChairBase
+  parent: SeatBase
   description: Apply butt.
   components:
+  - type: Anchorable
   - type: Sprite
     state: stool
   - type: Construction
@@ -133,8 +82,15 @@
 - type: entity
   name: bar stool
   id: StoolBar
-  parent: StoolBase
+  parent: SeatBase
   components:
+  - type: Transform
+    anchored: true
+  - type: Rotatable
+    rotateWhileAnchored: true
+  - type: Physics
+    bodyType: Static
+  - type: Anchorable
   - type: Sprite
     state: bar
   - type: Construction
@@ -142,21 +98,12 @@
     node: stoolBar
 
 - type: entity
-  name: brass chair
-  id: ChairBrass
-  parent: StoolBase
-  components:
-  - type: Sprite
-    state: brass_chair
-  - type: Construction
-    graph: Seat
-    node: chairBrass
-
-- type: entity
   name: white office chair
   id: ChairOfficeLight
-  parent: OfficeChairBase
+  parent: SeatBase
   components:
+  - type: Rotatable
+    rotateWhileAnchored: true
   - type: Sprite
     state: office-white
   - type: Construction
@@ -177,9 +124,15 @@
 - type: entity
   name: comfy chair
   id: ComfyChair
-  parent: ChairBase
+  parent: SeatBase
   description: It looks comfy.
   components:
+  - type: Transform
+    anchored: true
+  - type: Physics
+    bodyType: Static
+  - type: Anchorable
+  - type: Rotatable
   - type: Sprite
     state: comfy
   - type: Construction
@@ -189,9 +142,15 @@
 - type: entity
   name: pilot seat
   id: ChairPilotSeat
-  parent: ChairBase
+  parent: SeatBase
   description: The pilot seat of a prestigious ship.
   components:
+  - type: Transform
+    anchored: true
+  - type: Physics
+    bodyType: Static
+  - type: Anchorable
+  - type: Rotatable
   - type: Sprite
     state: shuttle
   - type: Construction
@@ -201,10 +160,11 @@
 - type: entity
   name: wooden chair
   id: ChairWood
-  parent: UnanchoredChairBase
+  parent: SeatBase
   components:
   - type: Sprite
     state: wooden
+  - type: Rotatable
   - type: Construction
     graph: Seat
     node: chairWood
@@ -220,7 +180,7 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWoodPlank:
@@ -235,9 +195,11 @@
 - type: entity
   name: ritual chair
   id: ChairRitual
-  parent: ChairWood
+  parent: SeatBase
   description: Looks uncomfortable.
   components:
+  - type: Anchorable
+  - type: Rotatable
   - type: Sprite
     state: ritual
   - type: Construction
@@ -246,10 +208,12 @@
 
 - type: entity
   id: ChairMeat
-  parent: UnanchoredChairBase
+  parent: SeatBase
   name: meat chair
   description: Uncomfortably sweaty.
   components:
+  - type: Anchorable
+  - type: Rotatable
   - type: Sprite
     state: meat
   - type: Construction
@@ -259,9 +223,11 @@
 - type: entity
   name: cursed chair
   id: ChairCursed
-  parent: ChairWood
+  parent: SeatBase
   description: It's staring back.
   components:
+  - type: Anchorable
+  - type: Rotatable
   - type: Sprite
     state: cursed
   - type: Strap
@@ -278,12 +244,6 @@
       - !type:PlaySoundBehavior
         sound:
           path: /Audio/Voice/Human/womanlaugh.ogg
-      - !type:SpawnEntitiesBehavior
-        spawn:
-          MaterialWoodPlank:
-            min: 1
-            max: 1
-  - type: Construction
     graph: RitualSeat
     node: chairCursed
 
@@ -291,8 +251,14 @@
   name: web chair
   id: ChairWeb
   description: For true web developers.
-  parent: UnanchoredChairBase
+  parent: SeatBase
   components:
+  - type: Transform
+    anchored: true
+  - type: Physics
+    bodyType: Static
+  - type: Anchorable
+  - type: Rotatable
   - type: Sprite
     sprite: Structures/Web/chair.rsi
     state: icon
@@ -313,7 +279,7 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWebSilk:
@@ -324,7 +290,7 @@
     node: chair
 
 - type: entity
-  parent: [SeatBase, BaseDeployFoldable]
+  parent: [SeatBase, BaseFoldable]
   id: ChairFolding
   name: folding chair
   description: If you carry six of these you become the coolest kid at church.
@@ -345,61 +311,32 @@
     damage:
       types:
         Blunt: 8
-    soundHit:
-      collection: MetalThud
   - type: Construction
     graph: Seat
     node: chairFolding
-  - type: DamageExaminable
 
 - type: entity
   parent: ChairFolding
   id: ChairFoldingSpawnFolded
   suffix: folded
+  placement:
+    mode: PlaceFree
   components:
   - type: Foldable
     folded: true
-  - type: Strap
-    enabled: False
 
 - type: entity
   name: steel bench
   id: SteelBench
-  parent: ChairBase
+  parent: SeatBase
   description: A long chair made for a metro. Really standard design.
   components:
+  - type: Transform
+    anchored: true
+  - type: Physics
+    bodyType: Static
+  - type: Anchorable
+  - type: Rotatable
   - type: Sprite
     state: steel-bench
-  - type: Construction
-    graph: Seat
-    node: chairSteelBench
 
-- type: entity
-  name: wooden bench
-  id: WoodenBench
-  parent: ChairBase
-  description: Did you get a splinter? Well, at least it’s eco friendly.
-  components:
-  - type: Sprite
-    state: wooden-bench
-  - type: Construction
-    graph: Seat
-    node: chairWoodBench
-  - type: Destructible
-    thresholds:
-    - trigger:
-        !type:DamageTrigger
-        damage: 50
-      behaviors:
-      - !type:DoActsBehavior
-        acts: ["Destruction"]
-      - !type:PlaySoundBehavior
-        sound:
-          collection: WoodDestroy
-      - !type:SpawnEntitiesBehavior
-        spawn:
-          MaterialWoodPlank:
-            min: 2
-            max: 4
-  - type: StaticPrice
-    price: 50

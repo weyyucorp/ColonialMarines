@@ -2,9 +2,7 @@ using System.Linq;
 using System.Numerics;
 using Content.Shared.Administration;
 using Content.Shared.Explosion;
-using Content.Shared.Explosion.Components;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Timing;
 
@@ -13,7 +11,7 @@ namespace Content.Server.Explosion.EntitySystems;
 // This partial part of the explosion system has all of the functions used to create the actual explosion map.
 // I.e, to get the sets of tiles & intensity values that describe an explosion.
 
-public sealed partial class ExplosionSystem
+public sealed partial class ExplosionSystem : EntitySystem
 {
     /// <summary>
     ///     This is the main explosion generating function.
@@ -26,7 +24,7 @@ public sealed partial class ExplosionSystem
     /// <param name="maxIntensity">The maximum intensity that the explosion can have at any given tile. This
     /// effectively caps the damage that this explosion can do.</param>
     /// <returns>A list of tile-sets and a list of intensity values which describe the explosion.</returns>
-    private (int, List<float>, ExplosionSpaceTileFlood?, Dictionary<EntityUid, ExplosionGridTileFlood>, Matrix3x2)? GetExplosionTiles(
+    private (int, List<float>, ExplosionSpaceTileFlood?, Dictionary<EntityUid, ExplosionGridTileFlood>, Matrix3)? GetExplosionTiles(
         MapCoordinates epicenter,
         string typeID,
         float totalIntensity,
@@ -38,7 +36,7 @@ public sealed partial class ExplosionSystem
 
         if (!_explosionTypes.TryGetValue(typeID, out var typeIndex))
         {
-            Log.Error("Attempted to spawn explosion using a prototype that was not defined during initialization. Explosion prototype hot-reload is not currently supported.");
+            Logger.Error("Attempted to spawn explosion using a prototype that was not defined during initialization. Explosion prototype hot-reload is not currently supported.");
             return null;
         }
 
@@ -57,7 +55,7 @@ public sealed partial class ExplosionSystem
         else if (referenceGrid != null)
         {
             // reference grid defines coordinate system that the explosion in space will use
-            initialTile = Comp<MapGridComponent>(referenceGrid.Value).WorldToTile(epicenter.Position);
+            initialTile = _mapManager.GetGrid(referenceGrid.Value).WorldToTile(epicenter.Position);
         }
         else
         {
@@ -84,12 +82,13 @@ public sealed partial class ExplosionSystem
         Dictionary<EntityUid, HashSet<Vector2i>>? previousGridJump;
 
         // variables for transforming between grid and space-coordinates
-        var spaceMatrix = Matrix3x2.Identity;
+        var spaceMatrix = Matrix3.Identity;
         var spaceAngle = Angle.Zero;
         if (referenceGrid != null)
         {
-            var xform = Transform(Comp<MapGridComponent>(referenceGrid.Value).Owner);
-            (_, spaceAngle, spaceMatrix) = _transformSystem.GetWorldPositionRotationMatrix(xform);
+            var xform = Transform(_mapManager.GetGrid(referenceGrid.Value).Owner);
+            spaceMatrix = xform.WorldMatrix;
+            spaceAngle = xform.WorldRotation;
         }
 
         // is the explosion starting on a grid?
@@ -102,7 +101,7 @@ public sealed partial class ExplosionSystem
                 airtightMap = new();
 
             var initialGridData = new ExplosionGridTileFlood(
-                Comp<MapGridComponent>(epicentreGrid.Value),
+                _mapManager.GetGrid(epicentreGrid.Value),
                 airtightMap,
                 maxIntensity,
                 stepSize,
@@ -191,7 +190,7 @@ public sealed partial class ExplosionSystem
                         airtightMap = new();
 
                     data = new ExplosionGridTileFlood(
-                        Comp<MapGridComponent>(grid),
+                        _mapManager.GetGrid(grid),
                         airtightMap,
                         maxIntensity,
                         stepSize,

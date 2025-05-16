@@ -9,19 +9,16 @@
   access:
   - Service
   - Maintenance
-  special:
-  - !type:GiveItemOnHolidaySpecial
-    holiday: MonkeyDay
-    prototype: MonkeyCubeBox
 
 - type: startingGear
   id: ZookeeperGear
   equipment:
     jumpsuit: ClothingUniformJumpsuitSafari
+    back: ClothingBackpackFilled
     head: ClothingHeadSafari
     shoes: ClothingShoesColorWhite
     id: ZookeeperPDA
     ears: ClothingHeadsetService
-  #storage:
-    #back:
-    #- Stuff
+  innerClothingSkirt: ClothingUniformJumpsuitSafari
+  satchel: ClothingBackpackSatchelFilled
+  duffelbag: ClothingBackpackDuffelFilled

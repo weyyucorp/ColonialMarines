@@ -1,0 +1,136 @@
+﻿- type: entity
+  id: ActionXenoAcid
+  parent: ActionXenoBase
+  name: Corrosive Acid # TODO CM14 description
+  components:
+  - type: EntityTargetAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: corrosive_acid
+    event: !type:XenoCorrosiveAcidEvent
+
+- type: entity
+  id: ActionXenoRegurgitate
+  parent: ActionXenoBase
+  name: Regurgitate # TODO CM14 description
+  components:
+  - type: InstantAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: regurgitate
+    event: !type:XenoRegurgitateActionEvent
+
+- type: entity
+  id: ActionXenoTailStab
+  parent: ActionXenoBase
+  name: Tail Stab # TODO CM14 description
+  components:
+  - type: WorldTargetAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: tail_attack
+    event: !type:XenoTailStabEvent
+    range: 15
+    useDelay: 10
+    checkCanAccess: false
+
+- type: entity
+  id: ActionXenoLeap
+  parent: ActionXenoBase
+  name: Leap # TODO CM14 description
+  components:
+  - type: WorldTargetAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: pounce
+    event: !type:XenoLeapActionEvent
+    range: 15
+    useDelay: 3
+    checkCanAccess: false
+
+- type: entity
+  id: ActionXenoHeadbutt
+  parent: ActionXenoBase
+  name: Headbutt # TODO CM14 description
+  components:
+  - type: WorldTargetAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: headbutt
+    event: !type:XenoHeadbuttActionEvent
+    range: 15
+    useDelay: 6
+    checkCanAccess: false
+
+- type: entity
+  id: ActionXenoTailSweep
+  parent: ActionXenoBase
+  name: Tail Sweep # TODO CM14 description
+  components:
+  - type: InstantAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: tail_sweep
+    event: !type:XenoTailSweepActionEvent
+    useDelay: 15
+
+- type: entity
+  id: ActionXenoSlowingSpit
+  parent: ActionXenoBase
+  name: Slowing Spit # TODO CM14 description
+  components:
+  - type: WorldTargetAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: xeno_spit
+    event: !type:XenoSlowingSpitActionEvent
+    useDelay: 1.5
+    range: 15
+
+- type: entity
+  id: ActionXenoScatteredSpit
+  parent: ActionXenoBase
+  name: Scattered Spit # TODO CM14 description
+  components:
+  - type: WorldTargetAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: acid_shotgun
+    event: !type:XenoScatteredSpitActionEvent
+    useDelay: 8
+    range: 15
+
+- type: entity
+  id: ActionXenoParalyzingSlash
+  parent: ActionXenoBase
+  name: Paralyzing Slash # TODO CM14 description
+  components:
+  - type: InstantAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: lurker_inject_neuro
+    event: !type:XenoParalyzingSlashActionEvent
+    useDelay: 12
+
+- type: entity
+  id: ActionXenoBoneChips
+  parent: ActionXenoBase
+  name: Bone Chips # TODO CM14 description
+  components:
+  - type: WorldTargetAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: runner_bonespur
+    event: !type:XenoBoneChipsActionEvent
+    useDelay: 12
+    range: 15

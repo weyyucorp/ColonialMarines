@@ -4,7 +4,6 @@ using Content.Shared.CCVar;
 using Robust.Server.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
-using Robust.Shared.Input;
 using Robust.Shared.Player;
 using Robust.Shared.Timing;
 
@@ -30,14 +29,7 @@ public sealed class AFKSystem : EntitySystem
     {
         base.Initialize();
         _playerManager.PlayerStatusChanged += OnPlayerChange;
-        Subs.CVar(_configManager, CCVars.AfkTime, SetAfkDelay, true);
-
-        SubscribeNetworkEvent<FullInputCmdMessage>(HandleInputCmd);
-    }
-
-    private void HandleInputCmd(FullInputCmdMessage msg, EntitySessionEventArgs args)
-    {
-        _afkManager.PlayerDidAction(args.SenderSession);
+        _configManager.OnValueChanged(CCVars.AfkTime, SetAfkDelay, true);
     }
 
     private void SetAfkDelay(float obj)
@@ -60,6 +52,7 @@ public sealed class AFKSystem : EntitySystem
         base.Shutdown();
         _afkPlayers.Clear();
         _playerManager.PlayerStatusChanged -= OnPlayerChange;
+        _configManager.UnsubValueChanged(CCVars.AfkTime, SetAfkDelay);
     }
 
     public override void Update(float frameTime)

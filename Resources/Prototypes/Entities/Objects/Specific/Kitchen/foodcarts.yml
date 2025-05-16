@@ -1,5 +1,5 @@
 - type: entity
-  name: food cart
+  name: Food Cart
   id: FoodCartBase
   abstract: true
   parent: BaseStructureDynamic
@@ -40,16 +40,15 @@
               acts: ["Destruction"]
             - !type:PlaySoundBehavior
               sound:
-                collection: MetalBreak
+                path: /Audio/Effects/metalbreak.ogg
     - type: Appearance
     - type: UserInterface
       interfaces:
-        enum.StorageUiKey.Key:
-          type: StorageBoundUserInterface
+      - key: enum.StorageUiKey.Key
+        type: StorageBoundUserInterface
     - type: Storage
       maxItemSize: Normal
-      grid:
-      - 0,0,7,4
+      maxTotalWeight: 40
     - type: TileFrictionModifier
       modifier: 0.4 # makes it slide
 
@@ -67,7 +66,7 @@
     #      startingItem: PowerCellMedium
 
 - type: entity
-  name: hot food cart
+  name: Hot Food Cart
   id: FoodCartHot
   parent: FoodCartBase
   description: Get out there and slang some dogs.
@@ -88,7 +87,7 @@
     - type: ItemSlots
       slots:
         coldsauce_slot:
-          name: foodcart-slot-component-slot-name-coldsauce
+          name: Cold Sauce
           insertSound: /Audio/Items/bottle_clunk.ogg
           ejectSound: /Audio/Items/bottle_clunk_2.ogg
           whitelist:
@@ -96,7 +95,7 @@
               - Coldsauce
           priority: 6
         hotsauce_slot:
-          name: foodcart-slot-component-slot-name-hotsauce
+          name: Hot Sauce
           insertSound: /Audio/Items/bottle_clunk.ogg
           ejectSound: /Audio/Items/bottle_clunk_2.ogg
           whitelist:
@@ -104,7 +103,7 @@
               - Hotsauce
           priority: 5
         bbqsauce_slot:
-          name: foodcart-slot-component-slot-name-bbqsauce
+          name: BBQ Sauce
           insertSound: /Audio/Items/bottle_clunk.ogg
           ejectSound: /Audio/Items/bottle_clunk_2.ogg
           whitelist:
@@ -112,7 +111,7 @@
               - BBQsauce
           priority: 4
         ketchup_slot:
-          name: foodcart-slot-component-slot-name-ketchup
+          name: Ketchup
           insertSound: /Audio/Items/bottle_clunk.ogg
           ejectSound: /Audio/Items/bottle_clunk_2.ogg
           whitelist:
@@ -148,7 +147,7 @@
         ketchup_slot: !type:ContainerSlot {}
 
 - type: entity
-  name: cold food cart
+  name: Cold Food Cart
   id: FoodCartCold
   parent: FoodCartBase
   description: It's the Ice Cream Man! It's the Ice Cream Man!
@@ -162,4 +161,3 @@
     - type: ContainerContainer
       containers:
         storagebase: !type:Container
-    - type: AntiRottingContainer

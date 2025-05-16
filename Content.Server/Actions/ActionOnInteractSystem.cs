@@ -1,4 +1,3 @@
-using System.Linq;
 using Content.Shared.Actions;
 using Content.Shared.Interaction;
 using Robust.Shared.Random;
@@ -39,46 +38,33 @@ public sealed class ActionOnInteractSystem : EntitySystem
 
     private void OnActivate(EntityUid uid, ActionOnInteractComponent component, ActivateInWorldEvent args)
     {
-        if (args.Handled || !args.Complex)
+        if (args.Handled || component.ActionEntities == null)
             return;
 
-        if (component.ActionEntities is not {} actionEnts)
-        {
-            if (!TryComp<ActionsContainerComponent>(uid,  out var actionsContainerComponent))
-                return;
-
-            actionEnts = actionsContainerComponent.Container.ContainedEntities.ToList();
-        }
-
-        var options = GetValidActions<InstantActionComponent>(actionEnts);
+        var options = GetValidActions<InstantActionComponent>(component.ActionEntities);
         if (options.Count == 0)
             return;
 
         var (actId, act) = _random.Pick(options);
+        if (act.Event != null)
+            act.Event.Performer = args.User;
+
         _actions.PerformAction(args.User, null, actId, act, act.Event, _timing.CurTime, false);
         args.Handled = true;
     }
 
     private void OnAfterInteract(EntityUid uid, ActionOnInteractComponent component, AfterInteractEvent args)
     {
-        if (args.Handled)
+        if (args.Handled || component.ActionEntities == null)
             return;
-
-        if (component.ActionEntities is not {} actionEnts)
-        {
-            if (!TryComp<ActionsContainerComponent>(uid,  out var actionsContainerComponent))
-                return;
-
-            actionEnts = actionsContainerComponent.Container.ContainedEntities.ToList();
-        }
 
         // First, try entity target actions
         if (args.Target != null)
         {
-            var entOptions = GetValidActions<EntityTargetActionComponent>(actionEnts, args.CanReach);
+            var entOptions = GetValidActions<EntityTargetActionComponent>(component.ActionEntities, args.CanReach);
             for (var i = entOptions.Count - 1; i >= 0; i--)
             {
-                var action = entOptions[i];
+                var action = entOptions[i].Comp;
                 if (!_actions.ValidateEntityTarget(args.User, args.Target.Value, action))
                     entOptions.RemoveAt(i);
             }
@@ -88,6 +74,7 @@ public sealed class ActionOnInteractSystem : EntitySystem
                 var (entActId, entAct) = _random.Pick(entOptions);
                 if (entAct.Event != null)
                 {
+                    entAct.Event.Performer = args.User;
                     entAct.Event.Target = args.Target.Value;
                 }
 
@@ -97,34 +84,11 @@ public sealed class ActionOnInteractSystem : EntitySystem
             }
         }
 
-        // Then EntityWorld target actions
-        var entWorldOptions = GetValidActions<EntityWorldTargetActionComponent>(actionEnts, args.CanReach);
-        for (var i = entWorldOptions.Count - 1; i >= 0; i--)
-        {
-            var action = entWorldOptions[i];
-            if (!_actions.ValidateEntityWorldTarget(args.User, args.Target, args.ClickLocation, action))
-                entWorldOptions.RemoveAt(i);
-        }
-
-        if (entWorldOptions.Count > 0)
-        {
-            var (entActId, entAct) = _random.Pick(entWorldOptions);
-            if (entAct.Event != null)
-            {
-                entAct.Event.Entity = args.Target;
-                entAct.Event.Coords = args.ClickLocation;
-            }
-
-            _actions.PerformAction(args.User, null, entActId, entAct, entAct.Event, _timing.CurTime, false);
-            args.Handled = true;
-            return;
-        }
-
         // else: try world target actions
         var options = GetValidActions<WorldTargetActionComponent>(component.ActionEntities, args.CanReach);
         for (var i = options.Count - 1; i >= 0; i--)
         {
-            var action = options[i];
+            var action = options[i].Comp;
             if (!_actions.ValidateWorldTarget(args.User, args.ClickLocation, action))
                 options.RemoveAt(i);
         }
@@ -135,11 +99,27 @@ public sealed class ActionOnInteractSystem : EntitySystem
         var (actId, act) = _random.Pick(options);
         if (act.Event != null)
         {
+            act.Event.Performer = args.User;
             act.Event.Target = args.ClickLocation;
         }
 
         _actions.PerformAction(args.User, null, actId, act, act.Event, _timing.CurTime, false);
         args.Handled = true;
+    }
+
+    private bool ValidAction(BaseActionComponent action, bool canReach = true)
+    {
+        if (!action.Enabled)
+            return false;
+
+        if (action.Charges.HasValue && action.Charges <= 0)
+            return false;
+
+        var curTime = _timing.CurTime;
+        if (action.Cooldown.HasValue && action.Cooldown.Value.End > curTime)
+            return false;
+
+        return canReach || action is BaseTargetActionComponent { CheckCanAccess: false };
     }
 
     private List<(EntityUid Id, T Comp)> GetValidActions<T>(List<EntityUid>? actions, bool canReach = true) where T : BaseActionComponent
@@ -153,7 +133,7 @@ public sealed class ActionOnInteractSystem : EntitySystem
         {
             if (!_actions.TryGetActionData(id, out var baseAction) ||
                 baseAction as T is not { } action ||
-                !_actions.ValidAction(action, canReach))
+                !ValidAction(action, canReach))
             {
                 continue;
             }

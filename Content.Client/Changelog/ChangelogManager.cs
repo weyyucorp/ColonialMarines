@@ -1,9 +1,10 @@
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Content.Shared.CCVar;
-using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
+using Robust.Shared.Serialization;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown;
 using Robust.Shared.Serialization.Markdown.Mapping;
@@ -126,27 +127,6 @@ namespace Content.Client.Changelog
             _sawmill = _logManager.GetSawmill(SawmillName);
         }
 
-        /// <summary>
-        ///     Tries to return a human-readable version number from the build.json file
-        /// </summary>
-        public string GetClientVersion()
-        {
-            var fork = _configManager.GetCVar(CVars.BuildForkId);
-            var version = _configManager.GetCVar(CVars.BuildVersion);
-
-            // This trimming might become annoying if down the line some codebases want to switch to a real
-            // version format like "104.11.3" while others are still using the git hashes
-            if (version.Length > 7)
-                version = version[..7];
-
-            if (string.IsNullOrEmpty(version) || string.IsNullOrEmpty(fork))
-                return Loc.GetString("changelog-version-unknown");
-
-            return Loc.GetString("changelog-version-tag",
-                ("fork", fork),
-                ("version", version));
-        }
-
         [DataDefinition]
         public sealed partial class Changelog
         {
@@ -182,7 +162,7 @@ namespace Content.Client.Changelog
         }
 
         [DataDefinition]
-        public sealed partial class ChangelogEntry
+        public sealed partial class ChangelogEntry : ISerializationHooks
         {
             [DataField("id")]
             public int Id { get; private set; }
@@ -190,11 +170,17 @@ namespace Content.Client.Changelog
             [DataField("author")]
             public string Author { get; private set; } = "";
 
-            [DataField]
+            [DataField("time")] private string _time = default!;
+
             public DateTime Time { get; private set; }
 
             [DataField("changes")]
             public List<ChangelogChange> Changes { get; private set; } = default!;
+
+            void ISerializationHooks.AfterDeserialization()
+            {
+                Time = DateTime.Parse(_time, null, DateTimeStyles.RoundtripKind);
+            }
         }
 
         [DataDefinition]

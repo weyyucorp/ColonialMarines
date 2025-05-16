@@ -1,15 +1,13 @@
-using System.Diagnostics.CodeAnalysis;
-using Content.Shared._RMC14.Prying;
-using Content.Shared.Administration.Logs;
-using Content.Shared.Database;
-using Content.Shared.DoAfter;
-using Content.Shared.Doors.Components;
-using Content.Shared.Interaction;
-using Content.Shared.Popups;
 using Content.Shared.Prying.Components;
 using Content.Shared.Verbs;
-using Robust.Shared.Audio.Systems;
+using Content.Shared.DoAfter;
 using Robust.Shared.Serialization;
+using Content.Shared.Administration.Logs;
+using Content.Shared.Database;
+using Content.Shared.Doors.Components;
+using System.Diagnostics.CodeAnalysis;
+using Content.Shared.Interaction;
+using Content.Shared.Popups;
 using PryUnpoweredComponent = Content.Shared.Prying.Components.PryUnpoweredComponent;
 
 namespace Content.Shared.Prying.Systems;
@@ -22,7 +20,7 @@ public sealed class PryingSystem : EntitySystem
     [Dependency] private readonly ISharedAdminLogManager _adminLog = default!;
     [Dependency] private readonly SharedDoAfterSystem _doAfterSystem = default!;
     [Dependency] private readonly SharedAudioSystem _audioSystem = default!;
-    [Dependency] private readonly SharedPopupSystem _popup = default!;
+    [Dependency] private readonly SharedPopupSystem Popup = default!;
 
     public override void Initialize()
     {
@@ -47,7 +45,7 @@ public sealed class PryingSystem : EntitySystem
         if (!args.CanInteract || !args.CanAccess)
             return;
 
-        if (!TryComp<PryingComponent>(args.User, out _))
+        if (!TryComp<PryingComponent>(args.User, out var tool))
             return;
 
         args.Verbs.Add(new AlternativeVerb()
@@ -74,8 +72,8 @@ public sealed class PryingSystem : EntitySystem
 
         if (!CanPry(target, user, out var message, comp))
         {
-            if (!string.IsNullOrWhiteSpace(message))
-                _popup.PopupClient(Loc.GetString(message), target, user);
+            if (message != null)
+                Popup.PopupEntity(Loc.GetString(message), target, user);
             // If we have reached this point we want the event that caused this
             // to be marked as handled.
             return true;
@@ -94,39 +92,31 @@ public sealed class PryingSystem : EntitySystem
         id = null;
 
         // We don't care about displaying a message if no tool was used.
-        if (!TryComp<PryUnpoweredComponent>(target, out var unpoweredComp) || !CanPry(target, user, out _, unpoweredComp: unpoweredComp))
+        if (!CanPry(target, user, out _))
             // If we have reached this point we want the event that caused this
             // to be marked as handled.
             return true;
 
-        if (HasComp<RMCUserPryingRequiresToolComponent>(user))
-        {
-            _popup.PopupClient("You can't pry that with your bare hands!", target, user, PopupType.SmallCaution);
-            return true;
-        }
-
-        // hand-prying is much slower
-        var modifier = CompOrNull<PryingComponent>(user)?.SpeedModifier ?? unpoweredComp.PryModifier;
-        return StartPry(target, user, null, modifier, out id);
+        return StartPry(target, user, null, 0.1f, out id); // hand-prying is much slower
     }
 
-    private bool CanPry(EntityUid target, EntityUid user, out string? message, PryingComponent? comp = null, PryUnpoweredComponent? unpoweredComp = null)
+    private bool CanPry(EntityUid target, EntityUid user, out string? message, PryingComponent? comp = null)
     {
         BeforePryEvent canev;
 
-        if (comp != null || Resolve(user, ref comp, false))
+        if (comp != null)
         {
-            canev = new BeforePryEvent(user, comp.PryPowered, comp.Force, true);
+            canev = new BeforePryEvent(user, comp.PryPowered, comp.Force);
         }
         else
         {
-            if (!Resolve(target, ref unpoweredComp))
+            if (!TryComp<PryUnpoweredComponent>(target, out _))
             {
                 message = null;
                 return false;
             }
 
-            canev = new BeforePryEvent(user, false, false, false);
+            canev = new BeforePryEvent(user, false, false);
         }
 
         RaiseLocalEvent(target, ref canev);
@@ -143,13 +133,12 @@ public sealed class PryingSystem : EntitySystem
         RaiseLocalEvent(target, ref modEv);
         var doAfterArgs = new DoAfterArgs(EntityManager, user, TimeSpan.FromSeconds(modEv.BaseTime * modEv.PryTimeModifier / toolModifier), new DoorPryDoAfterEvent(), target, target, tool)
         {
-            BreakOnDamage = false,
-            BreakOnMove = true,
-            NeedHand = tool != user,
-            ForceVisible = tool == null,
+            BreakOnDamage = true,
+            BreakOnUserMove = true,
+            BreakOnWeightlessMove = true,
         };
 
-        if (tool != user && tool != null)
+        if (tool != null)
         {
             _adminLog.Add(LogType.Action, LogImpact.Low, $"{ToPrettyString(user)} is using {ToPrettyString(tool.Value)} to pry {ToPrettyString(target)}");
         }
@@ -167,19 +156,10 @@ public sealed class PryingSystem : EntitySystem
         if (args.Target is null)
             return;
 
-        TryComp<PryingComponent>(args.Used, out var comp);
+        PryingComponent? comp = null;
 
-        if (!CanPry(uid, args.User, out var message, comp))
-        {
-            if (!string.IsNullOrWhiteSpace(message))
-                _popup.PopupClient(Loc.GetString(message), uid, args.User);
-            return;
-        }
-
-        if (args.Used != null && comp != null)
-        {
+        if (args.Used != null && Resolve(args.Used.Value, ref comp))
             _audioSystem.PlayPredicted(comp.UseSound, args.Used.Value, args.User);
-        }
 
         var ev = new PriedEvent(args.User);
         RaiseLocalEvent(uid, ref ev);
@@ -187,4 +167,6 @@ public sealed class PryingSystem : EntitySystem
 }
 
 [Serializable, NetSerializable]
-public sealed partial class DoorPryDoAfterEvent : SimpleDoAfterEvent;
+public sealed partial class DoorPryDoAfterEvent : SimpleDoAfterEvent
+{
+}

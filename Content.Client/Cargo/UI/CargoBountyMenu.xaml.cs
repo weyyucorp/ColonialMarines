@@ -9,25 +9,20 @@ namespace Content.Client.Cargo.UI;
 [GenerateTypedNameReferences]
 public sealed partial class CargoBountyMenu : FancyWindow
 {
-    public Action<string>? OnLabelButtonPressed;
-    public Action<string>? OnSkipButtonPressed;
+    public Action<int>? OnLabelButtonPressed;
 
     public CargoBountyMenu()
     {
         RobustXamlLoader.Load(this);
-
-        MasterTabContainer.SetTabTitle(0, Loc.GetString("bounty-console-tab-available-label"));
-        MasterTabContainer.SetTabTitle(1, Loc.GetString("bounty-console-tab-history-label"));
     }
 
-    public void UpdateEntries(List<CargoBountyData> bounties, List<CargoBountyHistoryData> history, TimeSpan untilNextSkip)
+    public void UpdateEntries(List<CargoBountyData> bounties)
     {
         BountyEntriesContainer.Children.Clear();
         foreach (var b in bounties)
         {
-            var entry = new BountyEntry(b, untilNextSkip);
-            entry.OnLabelButtonPressed += () => OnLabelButtonPressed?.Invoke(b.Id);
-            entry.OnSkipButtonPressed += () => OnSkipButtonPressed?.Invoke(b.Id);
+            var entry = new BountyEntry(b);
+            entry.OnButtonPressed += () => OnLabelButtonPressed?.Invoke(b.Id);
 
             BountyEntriesContainer.AddChild(entry);
         }
@@ -35,21 +30,5 @@ public sealed partial class CargoBountyMenu : FancyWindow
         {
             MinHeight = 10
         });
-
-        BountyHistoryContainer.Children.Clear();
-        if (history.Count == 0)
-        {
-            NoHistoryLabel.Visible = true;
-        }
-        else
-        {
-            NoHistoryLabel.Visible = false;
-
-            // Show the history in reverse, so last entry is first in the list
-            for (var i = history.Count - 1; i >= 0; i--)
-            {
-                BountyHistoryContainer.AddChild(new BountyHistoryEntry(history[i]));
-            }
-        }
     }
 }

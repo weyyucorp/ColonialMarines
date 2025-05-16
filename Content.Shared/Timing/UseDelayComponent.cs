@@ -1,53 +1,28 @@
 using Robust.Shared.GameStates;
-using Robust.Shared.Serialization;
 
 namespace Content.Shared.Timing;
 
 /// <summary>
-/// Timer that creates a cooldown each time an object is activated/used.
-/// Can support additional, separate cooldown timers on the object by passing a unique ID with the system methods.
+/// Timer that creates a cooldown each time an object is activated/used
 /// </summary>
-[RegisterComponent]
-[NetworkedComponent]
-[Access(typeof(UseDelaySystem))]
+[RegisterComponent, NetworkedComponent, AutoGenerateComponentState(true)]
 public sealed partial class UseDelayComponent : Component
 {
-    [DataField]
-    public Dictionary<string, UseDelayInfo> Delays = [];
+    [AutoNetworkedField]
+    public TimeSpan LastUseTime;
+
+    [AutoNetworkedField]
+    public TimeSpan? DelayEndTime;
+
+    [DataField, AutoNetworkedField]
+    [ViewVariables(VVAccess.ReadWrite)]
+    public TimeSpan Delay = TimeSpan.FromSeconds(1);
 
     /// <summary>
-    /// Default delay time.
+    ///     Stores remaining delay pausing (and eventually, serialization).
     /// </summary>
-    /// <remarks>
-    /// This is only used at MapInit and should not be expected
-    /// to reflect the length of the default delay after that.
-    /// Use <see cref="UseDelaySystem.TryGetDelayInfo"/> instead.
-    /// </remarks>
     [DataField]
-    public TimeSpan Delay = TimeSpan.FromSeconds(1);
-}
+    public TimeSpan? RemainingDelay;
 
-[Serializable, NetSerializable]
-public sealed class UseDelayComponentState : IComponentState
-{
-    public Dictionary<string, UseDelayInfo> Delays = new();
-}
-
-[Serializable, NetSerializable]
-[DataDefinition]
-public sealed partial class UseDelayInfo
-{
-    [DataField]
-    public TimeSpan Length { get; set; }
-    [DataField]
-    public TimeSpan StartTime { get; set; }
-    [DataField]
-    public TimeSpan EndTime { get; set; }
-
-    public UseDelayInfo(TimeSpan length, TimeSpan startTime = default, TimeSpan endTime = default)
-    {
-        Length = length;
-        StartTime = startTime;
-        EndTime = endTime;
-    }
+    public bool ActiveDelay => DelayEndTime != null;
 }

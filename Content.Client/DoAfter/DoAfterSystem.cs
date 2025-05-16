@@ -30,9 +30,7 @@ public sealed class DoAfterSystem : SharedDoAfterSystem
         _overlay.RemoveOverlay<DoAfterOverlay>();
     }
 
-#pragma warning disable RA0028 // No base call in overriden function
     public override void Update(float frameTime)
-#pragma warning restore RA0028 // No base call in overriden function
     {
         // Currently this only predicts do afters initiated by the player.
 
@@ -40,7 +38,7 @@ public sealed class DoAfterSystem : SharedDoAfterSystem
         // ones that depend on the target not moving, because the cancellation of those do afters should be readily
         // predictable by clients.
 
-        var playerEntity = _player.LocalEntity;
+        var playerEntity = _player.LocalPlayer?.ControlledEntity;
 
         if (!TryComp(playerEntity, out ActiveDoAfterComponent? active))
             return;
@@ -71,7 +69,7 @@ public sealed class DoAfterSystem : SharedDoAfterSystem
         out float progress)
         where T : DoAfterEvent
     {
-        var playerEntity = _player.LocalEntity;
+        var playerEntity = _player.LocalPlayer?.ControlledEntity;
 
         doAfter = null;
         @event = null;

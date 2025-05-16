@@ -13,22 +13,18 @@ namespace Content.Server.Chemistry.TileReactions
     {
         [DataField("temperatureMultiplier")] private float _temperatureMultiplier = 1.15f;
 
-        public FixedPoint2 TileReact(TileRef tile,
-            ReagentPrototype reagent,
-            FixedPoint2 reactVolume,
-            IEntityManager entityManager,
-            List<ReagentData>? data)
+        public FixedPoint2 TileReact(TileRef tile, ReagentPrototype reagent, FixedPoint2 reactVolume)
         {
             if (reactVolume <= FixedPoint2.Zero || tile.Tile.IsEmpty)
                 return FixedPoint2.Zero;
 
-            var atmosphereSystem = entityManager.System<AtmosphereSystem>();
+            var atmosphereSystem = EntitySystem.Get<AtmosphereSystem>();
 
             var environment = atmosphereSystem.GetTileMixture(tile.GridUid, null, tile.GridIndices, true);
             if (environment == null || !atmosphereSystem.IsHotspotActive(tile.GridUid, tile.GridIndices))
                 return FixedPoint2.Zero;
 
-            environment.Temperature += MathF.Max(_temperatureMultiplier * reactVolume.Float(), 1f);
+            environment.Temperature *= MathF.Max(_temperatureMultiplier * reactVolume.Float(), 1f);
             atmosphereSystem.ReactTile(tile.GridUid, tile.GridIndices);
 
             return reactVolume;

@@ -1,7 +1,7 @@
 using Content.Shared.Lathe;
 using Content.Shared.Research.Components;
 using JetBrains.Annotations;
-using Robust.Client.UserInterface;
+using Robust.Client.GameObjects;
 
 namespace Content.Client.Lathe.UI
 {
@@ -18,8 +18,9 @@ namespace Content.Client.Lathe.UI
         {
             base.Open();
 
-            _menu = this.CreateWindowCenteredRight<LatheMenu>();
-            _menu.SetEntity(Owner);
+            _menu = new LatheMenu(this);
+            _menu.OnClose += Close;
+
 
             _menu.OnServerListButtonPressed += _ =>
             {
@@ -30,6 +31,13 @@ namespace Content.Client.Lathe.UI
             {
                 SendMessage(new LatheQueueRecipeMessage(recipe, amount));
             };
+
+            _menu.OnEjectPressed += (material, sheetsToExtract) =>
+            {
+                SendMessage(new LatheEjectMaterialMessage(material, sheetsToExtract));
+            };
+
+            _menu.OpenCentered();
         }
 
         protected override void UpdateState(BoundUserInterfaceState state)
@@ -41,12 +49,21 @@ namespace Content.Client.Lathe.UI
                 case LatheUpdateState msg:
                     if (_menu != null)
                         _menu.Recipes = msg.Recipes;
-                    _menu?.PopulateRecipes();
-                    _menu?.UpdateCategories();
+                    _menu?.PopulateRecipes(Owner);
+                    _menu?.PopulateMaterials(Owner);
                     _menu?.PopulateQueueList(msg.Queue);
                     _menu?.SetQueueInfo(msg.CurrentlyProducing);
                     break;
             }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (!disposing)
+                return;
+            _menu?.Dispose();
+            //thom _materialsEjectionMenu?.Dispose();
         }
     }
 }

@@ -1,6 +1,8 @@
+using Content.Server.Atmos;
 using Content.Server.Atmos.Components;
 using Content.Server.Atmos.Piping.Components;
 using Content.Shared.Atmos;
+using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using System.Diagnostics.CodeAnalysis;
 
@@ -12,6 +14,7 @@ namespace Content.Server.Atmos.EntitySystems;
 public sealed class AirFilterSystem : EntitySystem
 {
     [Dependency] private readonly AtmosphereSystem _atmosphere = default!;
+    [Dependency] private readonly IMapManager _map = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
 
     public override void Initialize()
@@ -22,7 +25,7 @@ public sealed class AirFilterSystem : EntitySystem
         SubscribeLocalEvent<AirFilterComponent, AtmosDeviceUpdateEvent>(OnFilterUpdate);
     }
 
-    private void OnIntakeUpdate(EntityUid uid, AirIntakeComponent intake, ref AtmosDeviceUpdateEvent args)
+    private void OnIntakeUpdate(EntityUid uid, AirIntakeComponent intake, AtmosDeviceUpdateEvent args)
     {
         if (!GetAir(uid, out var air))
             return;
@@ -31,7 +34,7 @@ public sealed class AirFilterSystem : EntitySystem
         if (air.Pressure >= intake.Pressure)
             return;
 
-        var environment = _atmosphere.GetContainingMixture(uid, args.Grid, args.Map, true, true);
+        var environment = _atmosphere.GetContainingMixture(uid, true, true);
         // nothing to intake from
         if (environment == null)
             return;
@@ -48,12 +51,12 @@ public sealed class AirFilterSystem : EntitySystem
         _atmosphere.Merge(air, environment.Remove(transferMoles));
     }
 
-    private void OnFilterUpdate(EntityUid uid, AirFilterComponent filter, ref AtmosDeviceUpdateEvent args)
+    private void OnFilterUpdate(EntityUid uid, AirFilterComponent filter, AtmosDeviceUpdateEvent args)
     {
         if (!GetAir(uid, out var air))
             return;
 
-        var ratio = MathF.Min(1f, args.dt * filter.TransferRate * _atmosphere.PumpSpeedup());
+        var ratio = MathF.Min(1f, args.dt * filter.TransferRate);
         var removed = air.RemoveRatio(ratio);
         // nothing left to remove from the volume
         if (MathHelper.CloseToPercent(removed.TotalMoles, 0f))
@@ -63,11 +66,12 @@ public sealed class AirFilterSystem : EntitySystem
         var oxygen = air.GetMoles(filter.Oxygen) / air.TotalMoles;
         var gases = oxygen >= filter.TargetOxygen ? filter.Gases : filter.OverflowGases;
 
+        var coordinates = Transform(uid).MapPosition;
         GasMixture? destination = null;
-        if (args.Grid is {} grid)
+        if (_map.TryFindGridAt(coordinates, out _, out var grid))
         {
-            var position = _transform.GetGridTilePositionOrDefault(uid);
-            destination = _atmosphere.GetTileMixture(grid, args.Map, position, true);
+            var tile = grid.GetTileRef(coordinates);
+            destination = _atmosphere.GetTileMixture(tile.GridUid, null, tile.GridIndices, true);
         }
 
         if (destination != null)

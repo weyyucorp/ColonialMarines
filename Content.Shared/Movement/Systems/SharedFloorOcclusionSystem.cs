@@ -1,4 +1,3 @@
-using Content.Shared._RMC14.Water;
 using Content.Shared.Movement.Components;
 using Robust.Shared.Physics.Events;
 
@@ -9,8 +8,6 @@ namespace Content.Shared.Movement.Systems;
 /// </summary>
 public abstract class SharedFloorOcclusionSystem : EntitySystem
 {
-    [Dependency] private readonly RMCWaterSystem _rmcWater = default!;
-
     public override void Initialize()
     {
         base.Initialize();
@@ -18,40 +15,39 @@ public abstract class SharedFloorOcclusionSystem : EntitySystem
         SubscribeLocalEvent<FloorOccluderComponent, EndCollideEvent>(OnEndCollide);
     }
 
-    private void OnStartCollide(Entity<FloorOccluderComponent> entity, ref StartCollideEvent args)
+    private void OnStartCollide(EntityUid uid, FloorOccluderComponent component, ref StartCollideEvent args)
     {
         var other = args.OtherEntity;
 
         if (!TryComp<FloorOcclusionComponent>(other, out var occlusion) ||
-            occlusion.Colliding.Contains(entity.Owner))
+            occlusion.Colliding.Contains(uid))
         {
             return;
         }
 
-        if (!_rmcWater.CanCollide(entity.Owner, other))
-            return;
-
-        occlusion.Colliding.Add(entity.Owner);
-        Dirty(other, occlusion);
-        SetEnabled((other, occlusion));
+        SetEnabled(other, occlusion, true);
+        occlusion.Colliding.Add(uid);
     }
 
-    private void OnEndCollide(Entity<FloorOccluderComponent> entity, ref EndCollideEvent args)
+    private void OnEndCollide(EntityUid uid, FloorOccluderComponent component, ref EndCollideEvent args)
     {
         var other = args.OtherEntity;
 
         if (!TryComp<FloorOcclusionComponent>(other, out var occlusion))
             return;
 
-        if (!occlusion.Colliding.Remove(entity.Owner))
-            return;
+        occlusion.Colliding.Remove(uid);
 
-        Dirty(other, occlusion);
-        SetEnabled((other, occlusion));
+        if (occlusion.Colliding.Count == 0)
+            SetEnabled(other, occlusion, false);
     }
 
-    protected virtual void SetEnabled(Entity<FloorOcclusionComponent> entity)
+    protected virtual void SetEnabled(EntityUid uid, FloorOcclusionComponent component, bool enabled)
     {
+        if (component.Enabled == enabled)
+            return;
 
+        component.Enabled = enabled;
+        Dirty(uid, component);
     }
 }

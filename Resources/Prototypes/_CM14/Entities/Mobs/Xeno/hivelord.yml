@@ -1,0 +1,56 @@
+﻿- type: entity
+  parent:
+  - CMXenoDeveloped
+  - CMXenoTail
+  id: CMXenoHivelord
+  name: Hivelord
+  description: A builder of really big hives.
+  components:
+  - type: Sprite
+    sprite: _CM14/Mobs/Xenos/Hivelord/hivelord.rsi
+  - type: MobState
+    allowedStates:
+    - Alive
+    - Critical
+    - Dead
+  - type: MobThresholds
+    thresholds:
+      0: Alive
+      550: Critical
+      650: Dead
+  - type: Xeno
+    actionIds:
+    - ActionXenoRest
+    - ActionXenoRegurgitate
+    - ActionXenoWatch
+    - ActionXenoTailStab
+    - ActionXenoAcid
+    - ActionXenoPheromones
+    - ActionXenoOrderConstruction
+    - ActionXenoPlantWeeds
+    - ActionXenoChooseStructure
+    - ActionXenoSecreteStructure
+    - ActionXenoTransferPlasma
+    - ActionXenoResinWalker
+    tier: 2
+  - type: XenoAcid
+  - type: XenoConstruction
+    buildDelay: 1
+    canBuild:
+    - WallXenoResinThick
+    - WallXenoMembraneThick
+    - DoorXenoResinThick
+    canOrderConstruction:
+    - HiveCoreXenoConstructionNode
+  - type: XenoDevour
+  - type: XenoPheromones
+    pheromonesMultiplier: 2.5
+  - type: XenoPlasma
+    plasma: 1000
+    maxPlasma: 1000
+    plasmaRegenOnWeeds: 55
+  - type: XenoResinWalker
+  - type: MeleeWeapon
+    damage:
+      groups:
+        Brute: 22.5

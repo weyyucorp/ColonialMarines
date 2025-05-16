@@ -1,13 +1,13 @@
 - type: species
   id: Skeleton
-  name: species-name-skeleton
+  name: Skeleton
   roundStart: false
-  prototype: CMMobSkeletonPerson
+  prototype: MobSkeletonPerson
   sprites: MobSkeletonSprites
   defaultSkinTone: "#fff9e2"
   markingLimits: MobHumanMarkingLimits
-  maleFirstNames: NamesSkeletonFirst
-  femaleFirstNames: NamesSkeletonFirst
+  maleFirstNames: skeletonNamesFirst
+  femaleFirstNames: skeletonNamesFirst
   dollPrototype: MobSkeletonPersonDummy
   skinColoration: TintedHues
 

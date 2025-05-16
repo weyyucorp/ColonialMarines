@@ -1,25 +1,23 @@
 using System.Linq;
+using Content.Server.Construction;
+using Content.Server.Paper;
 using Content.Server.Power.Components;
 using Content.Server.Research.Systems;
-using Content.Shared.UserInterface;
+using Content.Server.UserInterface;
 using Content.Server.Xenoarchaeology.Equipment.Components;
 using Content.Server.Xenoarchaeology.XenoArtifacts;
 using Content.Server.Xenoarchaeology.XenoArtifacts.Events;
 using Content.Shared.Audio;
 using Content.Shared.DeviceLinking;
 using Content.Shared.DeviceLinking.Events;
-using Content.Shared.Paper;
 using Content.Shared.Placeable;
 using Content.Shared.Popups;
-using Content.Shared.Power;
-using Content.Shared.Power.EntitySystems;
 using Content.Shared.Research.Components;
 using Content.Shared.Xenoarchaeology.Equipment;
 using Content.Shared.Xenoarchaeology.XenoArtifacts;
 using JetBrains.Annotations;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
@@ -34,16 +32,14 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
 {
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly IPrototypeManager _prototype = default!;
+    [Dependency] private readonly SharedAudioSystem _audio = default!;
+    [Dependency] private readonly SharedAmbientSoundSystem _ambientSound = default!;
+    [Dependency] private readonly SharedPopupSystem _popup = default!;
+    [Dependency] private readonly UserInterfaceSystem _ui = default!;
     [Dependency] private readonly ArtifactSystem _artifact = default!;
-    [Dependency] private readonly MetaDataSystem _metaSystem = default!;
     [Dependency] private readonly PaperSystem _paper = default!;
     [Dependency] private readonly ResearchSystem _research = default!;
-    [Dependency] private readonly SharedAmbientSoundSystem _ambientSound = default!;
-    [Dependency] private readonly SharedAudioSystem _audio = default!;
-    [Dependency] private readonly SharedPopupSystem _popup = default!;
-    [Dependency] private readonly SharedPowerReceiverSystem _receiver = default!;
-    [Dependency] private readonly TraversalDistorterSystem _traversalDistorter = default!;
-    [Dependency] private readonly UserInterfaceSystem _ui = default!;
+    [Dependency] private readonly MetaDataSystem _metaSystem = default!;
 
     /// <inheritdoc/>
     public override void Initialize()
@@ -54,6 +50,8 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
         SubscribeLocalEvent<ActiveArtifactAnalyzerComponent, ComponentShutdown>(OnAnalyzeEnd);
         SubscribeLocalEvent<ActiveArtifactAnalyzerComponent, PowerChangedEvent>(OnPowerChanged);
 
+        SubscribeLocalEvent<ArtifactAnalyzerComponent, UpgradeExamineEvent>(OnUpgradeExamine);
+        SubscribeLocalEvent<ArtifactAnalyzerComponent, RefreshPartsEvent>(OnRefreshParts);
         SubscribeLocalEvent<ArtifactAnalyzerComponent, ItemPlacedEvent>(OnItemPlaced);
         SubscribeLocalEvent<ArtifactAnalyzerComponent, ItemRemovedEvent>(OnItemRemoved);
 
@@ -65,7 +63,6 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
         SubscribeLocalEvent<AnalysisConsoleComponent, AnalysisConsoleScanButtonPressedMessage>(OnScanButton);
         SubscribeLocalEvent<AnalysisConsoleComponent, AnalysisConsolePrintButtonPressedMessage>(OnPrintButton);
         SubscribeLocalEvent<AnalysisConsoleComponent, AnalysisConsoleExtractButtonPressedMessage>(OnExtractButton);
-        SubscribeLocalEvent<AnalysisConsoleComponent, AnalysisConsoleBiasButtonPressedMessage>(OnBiasButton);
 
         SubscribeLocalEvent<AnalysisConsoleComponent, ResearchClientServerSelectedMessage>((e, c, _) => UpdateUserInterface(e, c),
             after: new[] { typeof(ResearchSystem) });
@@ -81,10 +78,10 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
         var query = EntityQueryEnumerator<ActiveArtifactAnalyzerComponent, ArtifactAnalyzerComponent>();
         while (query.MoveNext(out var uid, out var active, out var scan))
         {
-            if (active.AnalysisPaused)
-                continue;
+            if (scan.Console != null)
+                UpdateUserInterface(scan.Console.Value);
 
-            if (_timing.CurTime - active.StartTime < scan.AnalysisDuration - active.AccumulatedRunTime)
+            if (_timing.CurTime - active.StartTime < scan.AnalysisDuration * scan.AnalysisDurationMulitplier)
                 continue;
 
             FinishScan(uid, scan, active);
@@ -193,16 +190,15 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
 
         EntityUid? artifact = null;
         FormattedMessage? msg = null;
-        TimeSpan? totalTime = null;
+        var totalTime = TimeSpan.Zero;
         var canScan = false;
         var canPrint = false;
         var points = 0;
-
-        if (TryComp<ArtifactAnalyzerComponent>(component.AnalyzerEntity, out var analyzer))
+        if (component.AnalyzerEntity != null && TryComp<ArtifactAnalyzerComponent>(component.AnalyzerEntity, out var analyzer))
         {
             artifact = analyzer.LastAnalyzedArtifact;
             msg = GetArtifactScanMessage(analyzer);
-            totalTime = analyzer.AnalysisDuration;
+            totalTime = analyzer.AnalysisDuration * analyzer.AnalysisDurationMulitplier;
             if (TryComp<ItemPlacerComponent>(component.AnalyzerEntity, out var placer))
                 canScan = placer.PlacedEntities.Any();
             canPrint = analyzer.ReadyToPrint;
@@ -211,22 +207,17 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
             if (GetArtifactForAnalysis(component.AnalyzerEntity, placer) is { } current)
                 points = _artifact.GetResearchPointValue(current);
         }
-
         var analyzerConnected = component.AnalyzerEntity != null;
         var serverConnected = TryComp<ResearchClientComponent>(uid, out var client) && client.ConnectedToServer;
 
         var scanning = TryComp<ActiveArtifactAnalyzerComponent>(component.AnalyzerEntity, out var active);
-        var paused = active != null ? active.AnalysisPaused : false;
+        var remaining = active != null ? _timing.CurTime - active.StartTime : TimeSpan.Zero;
 
-        var biasDirection = BiasDirection.Up;
+        var state = new AnalysisConsoleScanUpdateState(GetNetEntity(artifact), analyzerConnected, serverConnected,
+            canScan, canPrint, msg, scanning, remaining, totalTime, points);
 
-        if (TryComp<TraversalDistorterComponent>(component.AnalyzerEntity, out var trav))
-            biasDirection = trav.BiasDirection;
-
-        var state = new AnalysisConsoleUpdateState(GetNetEntity(artifact), analyzerConnected, serverConnected,
-            canScan, canPrint, msg, scanning, paused, active?.StartTime, active?.AccumulatedRunTime, totalTime, points, biasDirection == BiasDirection.Down);
-
-        _ui.SetUiState(uid, ArtifactAnalzyerUiKey.Key, state);
+        var bui = _ui.GetUi(uid, ArtifactAnalzyerUiKey.Key);
+        _ui.SetUiState(bui, state);
     }
 
     /// <summary>
@@ -237,7 +228,7 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
     /// <param name="args"></param>
     private void OnServerSelectionMessage(EntityUid uid, AnalysisConsoleComponent component, AnalysisConsoleServerSelectionMessage args)
     {
-        _ui.OpenUi(uid, ResearchClientUiKey.Key, args.Actor);
+        _ui.TryOpen(uid, ResearchClientUiKey.Key, args.Session);
     }
 
     /// <summary>
@@ -260,15 +251,10 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
 
         var activeComp = EnsureComp<ActiveArtifactAnalyzerComponent>(component.AnalyzerEntity.Value);
         activeComp.StartTime = _timing.CurTime;
-        activeComp.AccumulatedRunTime = TimeSpan.Zero;
         activeComp.Artifact = ent.Value;
-
-        if (TryComp<ApcPowerReceiverComponent>(component.AnalyzerEntity.Value, out var powa))
-            activeComp.AnalysisPaused = !powa.Powered;
 
         var activeArtifact = EnsureComp<ActiveScannedArtifactComponent>(ent.Value);
         activeArtifact.Scanner = component.AnalyzerEntity.Value;
-        UpdateUserInterface(uid, component);
     }
 
     private void OnPrintButton(EntityUid uid, AnalysisConsoleComponent component, AnalysisConsolePrintButtonPressedMessage args)
@@ -293,8 +279,7 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
             return;
 
         _popup.PopupEntity(Loc.GetString("analysis-console-print-popup"), uid);
-        if (TryComp<PaperComponent>(report, out var paperComp))
-            _paper.SetContent((report, paperComp), msg.ToMarkup());
+        _paper.SetContent(report, msg.ToMarkup());
         UpdateUserInterface(uid, component);
     }
 
@@ -306,15 +291,15 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
 
         var n = component.LastAnalyzedNode;
 
-        msg.AddMarkupOrThrow(Loc.GetString("analysis-console-info-id", ("id", n.Id)));
+        msg.AddMarkup(Loc.GetString("analysis-console-info-id", ("id", n.Id)));
         msg.PushNewline();
-        msg.AddMarkupOrThrow(Loc.GetString("analysis-console-info-depth", ("depth", n.Depth)));
+        msg.AddMarkup(Loc.GetString("analysis-console-info-depth", ("depth", n.Depth)));
         msg.PushNewline();
 
         var activated = n.Triggered
             ? "analysis-console-info-triggered-true"
             : "analysis-console-info-triggered-false";
-        msg.AddMarkupOrThrow(Loc.GetString(activated));
+        msg.AddMarkup(Loc.GetString(activated));
         msg.PushNewline();
 
         msg.PushNewline();
@@ -323,7 +308,7 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
         var triggerProto = _prototype.Index<ArtifactTriggerPrototype>(n.Trigger);
         if (triggerProto.TriggerHint != null)
         {
-            msg.AddMarkupOrThrow(Loc.GetString("analysis-console-info-trigger",
+            msg.AddMarkup(Loc.GetString("analysis-console-info-trigger",
                 ("trigger", Loc.GetString(triggerProto.TriggerHint))) + "\n");
             needSecondNewline = true;
         }
@@ -331,7 +316,7 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
         var effectproto = _prototype.Index<ArtifactEffectPrototype>(n.Effect);
         if (effectproto.EffectHint != null)
         {
-            msg.AddMarkupOrThrow(Loc.GetString("analysis-console-info-effect",
+            msg.AddMarkup(Loc.GetString("analysis-console-info-effect",
                 ("effect", Loc.GetString(effectproto.EffectHint))) + "\n");
             needSecondNewline = true;
         }
@@ -339,11 +324,11 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
         if (needSecondNewline)
             msg.PushNewline();
 
-        msg.AddMarkupOrThrow(Loc.GetString("analysis-console-info-edges", ("edges", n.Edges.Count)));
+        msg.AddMarkup(Loc.GetString("analysis-console-info-edges", ("edges", n.Edges.Count)));
         msg.PushNewline();
 
         if (component.LastAnalyzerPointValue != null)
-            msg.AddMarkupOrThrow(Loc.GetString("analysis-console-info-value", ("value", component.LastAnalyzerPointValue)));
+            msg.AddMarkup(Loc.GetString("analysis-console-info-value", ("value", component.LastAnalyzerPointValue)));
 
         return msg;
     }
@@ -379,20 +364,6 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
 
         _popup.PopupEntity(Loc.GetString("analyzer-artifact-extract-popup"),
             component.AnalyzerEntity.Value, PopupType.Large);
-
-        UpdateUserInterface(uid, component);
-    }
-
-    private void OnBiasButton(EntityUid uid, AnalysisConsoleComponent component, AnalysisConsoleBiasButtonPressedMessage args)
-    {
-        if (component.AnalyzerEntity == null)
-            return;
-
-        if (!TryComp<TraversalDistorterComponent>(component.AnalyzerEntity, out var trav))
-            return;
-
-        if (!_traversalDistorter.SetState(component.AnalyzerEntity.Value, trav, args.IsDown))
-            return;
 
         UpdateUserInterface(uid, component);
     }
@@ -446,31 +417,16 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
             UpdateUserInterface(component.Console.Value);
     }
 
-    [PublicAPI]
-    public void PauseScan(EntityUid uid, ArtifactAnalyzerComponent? component = null, ActiveArtifactAnalyzerComponent? active = null)
+    private void OnRefreshParts(EntityUid uid, ArtifactAnalyzerComponent component, RefreshPartsEvent args)
     {
-        if (!Resolve(uid, ref component, ref active) || active.AnalysisPaused)
-            return;
+        var analysisRating = args.PartRatings[component.MachinePartAnalysisDuration];
 
-        active.AnalysisPaused = true;
-        // As we pause, we store what was already completed.
-        active.AccumulatedRunTime = (_timing.CurTime - active.StartTime) + active.AccumulatedRunTime;
-
-        if (Exists(component.Console))
-            UpdateUserInterface(component.Console.Value);
+        component.AnalysisDurationMulitplier = MathF.Pow(component.PartRatingAnalysisDurationMultiplier, analysisRating - 1);
     }
 
-    [PublicAPI]
-    public void ResumeScan(EntityUid uid, ArtifactAnalyzerComponent? component = null, ActiveArtifactAnalyzerComponent? active = null)
+    private void OnUpgradeExamine(EntityUid uid, ArtifactAnalyzerComponent component, UpgradeExamineEvent args)
     {
-        if (!Resolve(uid, ref component, ref active) || !active.AnalysisPaused)
-            return;
-
-        active.StartTime = _timing.CurTime;
-        active.AnalysisPaused = false;
-
-        if (Exists(component.Console))
-            UpdateUserInterface(component.Console.Value);
+        args.AddPercentageUpgrade("analyzer-artifact-component-upgrade-analysis", component.AnalysisDurationMulitplier);
     }
 
     private void OnItemPlaced(EntityUid uid, ArtifactAnalyzerComponent component, ref ItemPlacedEvent args)
@@ -481,39 +437,32 @@ public sealed class ArtifactAnalyzerSystem : EntitySystem
 
     private void OnItemRemoved(EntityUid uid, ArtifactAnalyzerComponent component, ref ItemRemovedEvent args)
     {
-        // Scanners shouldn't give permanent remove vision to an artifact, and the scanned artifact doesn't have any
-        // component to track analyzers that have scanned it for removal if the artifact gets deleted.
-        // So we always clear this on removal.
-        component.LastAnalyzedArtifact = null;
-
         // cancel the scan if the artifact moves off the analyzer
         CancelScan(args.OtherEntity);
-        if (Exists(component.Console))
+        if (component.Console != null && Exists(component.Console))
             UpdateUserInterface(component.Console.Value);
     }
 
     private void OnAnalyzeStart(EntityUid uid, ActiveArtifactAnalyzerComponent component, ComponentStartup args)
     {
-        _receiver.SetNeedsPower(uid, true);
+        if (TryComp<ApcPowerReceiverComponent>(uid, out var powa))
+            powa.NeedsPower = true;
+
         _ambientSound.SetAmbience(uid, true);
     }
 
     private void OnAnalyzeEnd(EntityUid uid, ActiveArtifactAnalyzerComponent component, ComponentShutdown args)
     {
-        _receiver.SetNeedsPower(uid, false);
+        if (TryComp<ApcPowerReceiverComponent>(uid, out var powa))
+            powa.NeedsPower = false;
+
         _ambientSound.SetAmbience(uid, false);
     }
 
-    private void OnPowerChanged(EntityUid uid, ActiveArtifactAnalyzerComponent active, ref PowerChangedEvent args)
+    private void OnPowerChanged(EntityUid uid, ActiveArtifactAnalyzerComponent component, ref PowerChangedEvent args)
     {
         if (!args.Powered)
-        {
-            PauseScan(uid, null, active);
-        }
-        else
-        {
-            ResumeScan(uid, null, active);
-        }
+            CancelScan(component.Artifact);
     }
 }
 

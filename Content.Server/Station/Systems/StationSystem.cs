@@ -5,9 +5,7 @@ using Content.Server.Station.Components;
 using Content.Server.Station.Events;
 using Content.Shared.CCVar;
 using Content.Shared.Station;
-using Content.Shared.Station.Components;
 using JetBrains.Annotations;
-using Robust.Server.GameObjects;
 using Robust.Server.Player;
 using Robust.Shared.Collections;
 using Robust.Shared.Configuration;
@@ -28,35 +26,38 @@ namespace Content.Server.Station.Systems;
 [PublicAPI]
 public sealed class StationSystem : EntitySystem
 {
+    [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly ILogManager _logManager = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IPlayerManager _player = default!;
+    [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly ChatSystem _chatSystem = default!;
+    [Dependency] private readonly GameTicker _gameTicker = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly MetaDataSystem _metaData = default!;
-    [Dependency] private readonly MapSystem _map = default!;
 
     private ISawmill _sawmill = default!;
 
-    private EntityQuery<MapGridComponent> _gridQuery;
-    private EntityQuery<TransformComponent> _xformQuery;
-
-    private ValueList<MapId> _mapIds = new();
-    private ValueList<(Box2Rotated Bounds, MapId MapId)> _gridBounds = new();
+    private bool _randomStationOffset;
+    private bool _randomStationRotation;
+    private float _maxRandomStationOffset;
 
     /// <inheritdoc/>
     public override void Initialize()
     {
         _sawmill = _logManager.GetSawmill("station");
 
-        _gridQuery = GetEntityQuery<MapGridComponent>();
-        _xformQuery = GetEntityQuery<TransformComponent>();
-
         SubscribeLocalEvent<GameRunLevelChangedEvent>(OnRoundEnd);
+        SubscribeLocalEvent<PreGameMapLoad>(OnPreGameMapLoad);
         SubscribeLocalEvent<PostGameMapLoad>(OnPostGameMapLoad);
         SubscribeLocalEvent<StationDataComponent, ComponentStartup>(OnStationAdd);
         SubscribeLocalEvent<StationDataComponent, ComponentShutdown>(OnStationDeleted);
         SubscribeLocalEvent<StationMemberComponent, ComponentShutdown>(OnStationGridDeleted);
         SubscribeLocalEvent<StationMemberComponent, PostGridSplitEvent>(OnStationSplitEvent);
+
+        _configurationManager.OnValueChanged(CCVars.StationOffset, x => _randomStationOffset = x, true);
+        _configurationManager.OnValueChanged(CCVars.MaxStationOffset, x => _maxRandomStationOffset = x, true);
+        _configurationManager.OnValueChanged(CCVars.StationRotation, x => _randomStationRotation = x, true);
 
         _player.PlayerStatusChanged += OnPlayerStatusChanged;
     }
@@ -84,7 +85,7 @@ public sealed class StationSystem : EntitySystem
     {
         if (e.NewStatus == SessionStatus.Connected)
         {
-            RaiseNetworkEvent(new StationsUpdatedEvent(GetStationNames()), e.Session);
+            RaiseNetworkEvent(new StationsUpdatedEvent(GetNetEntitySet(GetStationsSet())), e.Session);
         }
     }
 
@@ -92,7 +93,7 @@ public sealed class StationSystem : EntitySystem
 
     private void OnStationAdd(EntityUid uid, StationDataComponent component, ComponentStartup args)
     {
-        RaiseNetworkEvent(new StationsUpdatedEvent(GetStationNames()), Filter.Broadcast());
+        RaiseNetworkEvent(new StationsUpdatedEvent(GetNetEntitySet(GetStationsSet())), Filter.Broadcast());
 
         var metaData = MetaData(uid);
         RaiseLocalEvent(new StationInitializedEvent(uid));
@@ -107,19 +108,46 @@ public sealed class StationSystem : EntitySystem
             RemComp<StationMemberComponent>(grid);
         }
 
-        RaiseNetworkEvent(new StationsUpdatedEvent(GetStationNames()), Filter.Broadcast());
+        RaiseNetworkEvent(new StationsUpdatedEvent(GetNetEntitySet(GetStationsSet())), Filter.Broadcast());
+    }
+
+    private void OnPreGameMapLoad(PreGameMapLoad ev)
+    {
+        // this is only for maps loaded during round setup!
+        if (_gameTicker.RunLevel == GameRunLevel.InRound)
+            return;
+
+        if (_randomStationOffset)
+            ev.Options.Offset += _random.NextVector2(_maxRandomStationOffset);
+
+        if (_randomStationRotation)
+            ev.Options.Rotation = _random.NextAngle();
     }
 
     private void OnPostGameMapLoad(PostGameMapLoad ev)
     {
         var dict = new Dictionary<string, List<EntityUid>>();
 
+        void AddGrid(string station, EntityUid grid)
+        {
+            if (dict.ContainsKey(station))
+            {
+                dict[station].Add(grid);
+            }
+            else
+            {
+                dict[station] = new List<EntityUid> {grid};
+            }
+        }
+
         // Iterate over all BecomesStation
         foreach (var grid in ev.Grids)
         {
             // We still setup the grid
-            if (TryComp<BecomesStationComponent>(grid, out var becomesStation))
-                dict.GetOrNew(becomesStation.Id).Add(grid);
+            if (!TryComp<BecomesStationComponent>(grid, out var becomesStation))
+                continue;
+
+            AddGrid(becomesStation.Id, grid);
         }
 
         if (!dict.Any())
@@ -181,23 +209,6 @@ public sealed class StationSystem : EntitySystem
     }
 
     /// <summary>
-    /// Returns the total number of tiles contained in the station's grids.
-    /// </summary>
-    public int GetTileCount(StationDataComponent component)
-    {
-        var count = 0;
-        foreach (var gridUid in component.Grids)
-        {
-            if (!TryComp<MapGridComponent>(gridUid, out var grid))
-                continue;
-
-            count += _map.GetAllTiles(gridUid, grid).Count();
-        }
-
-        return count;
-    }
-
-    /// <summary>
     /// Tries to retrieve a filter for everything in the station the source is on.
     /// </summary>
     /// <param name="source">The entity to use to find the station.</param>
@@ -220,72 +231,45 @@ public sealed class StationSystem : EntitySystem
     /// </summary>
     public Filter GetInStation(StationDataComponent dataComponent, float range = 32f)
     {
+        // Could also use circles if you wanted.
+        var bounds = new ValueList<Box2>(dataComponent.Grids.Count);
         var filter = Filter.Empty();
-        _mapIds.Clear();
+        var mapIds = new ValueList<MapId>();
+        var xformQuery = GetEntityQuery<TransformComponent>();
 
-        // First collect all valid map IDs where station grids exist
         foreach (var gridUid in dataComponent.Grids)
         {
-            if (!_xformQuery.TryGetComponent(gridUid, out var xform))
+            if (!TryComp(gridUid, out MapGridComponent? grid) ||
+                !xformQuery.TryGetComponent(gridUid, out var xform))
                 continue;
 
             var mapId = xform.MapID;
-            if (!_mapIds.Contains(mapId))
-                _mapIds.Add(mapId);
-        }
+            var position = _transform.GetWorldPosition(xform, xformQuery);
+            var bound = grid.LocalAABB.Enlarged(range).Translated(position);
 
-        // Cache the rotated bounds for each grid
-        _gridBounds.Clear();
-
-        foreach (var gridUid in dataComponent.Grids)
-        {
-            if (!_gridQuery.TryComp(gridUid, out var grid) ||
-                !_xformQuery.TryGetComponent(gridUid, out var gridXform))
+            bounds.Add(bound);
+            if (!mapIds.Contains(mapId))
             {
-                continue;
+                mapIds.Add(xform.MapID);
             }
-
-            var (worldPos, worldRot) = _transform.GetWorldPositionRotation(gridXform);
-            var localBounds = grid.LocalAABB.Enlarged(range);
-
-            // Create a rotated box using the grid's transform
-            var rotatedBounds = new Box2Rotated(
-                localBounds,
-                worldRot,
-                worldPos);
-
-            _gridBounds.Add((rotatedBounds, gridXform.MapID));
         }
 
         foreach (var session in Filter.GetAllPlayers(_player))
         {
             var entity = session.AttachedEntity;
-            if (entity == null || !_xformQuery.TryGetComponent(entity, out var xform))
+            if (entity == null || !xformQuery.TryGetComponent(entity, out var xform))
                 continue;
 
             var mapId = xform.MapID;
 
-            if (!_mapIds.Contains(mapId))
+            if (!mapIds.Contains(mapId))
                 continue;
 
-            // Check if the player is directly on any station grid
-            var gridUid = xform.GridUid;
-            if (gridUid != null && dataComponent.Grids.Contains(gridUid.Value))
+            var position = _transform.GetWorldPosition(xform, xformQuery);
+
+            foreach (var bound in bounds)
             {
-                filter.AddPlayer(session);
-                continue;
-            }
-
-            // If not directly on a grid, check against cached rotated bounds
-            var position = _transform.GetWorldPosition(xform);
-
-            foreach (var (bounds, boundsMapId) in _gridBounds)
-            {
-                // Skip bounds on different maps
-                if (boundsMapId != mapId)
-                    continue;
-
-                if (!bounds.Contains(position))
+                if (!bound.Contains(position))
                     continue;
 
                 filter.AddPlayer(session);
@@ -322,8 +306,8 @@ public sealed class StationSystem : EntitySystem
             AddGridToStation(station, grid, null, data, name);
         }
 
-        var ev = new StationPostInitEvent((station, data));
-        RaiseLocalEvent(station, ref ev, true);
+        var ev = new StationPostInitEvent();
+        RaiseLocalEvent(station, ref ev);
 
         return station;
     }
@@ -347,7 +331,7 @@ public sealed class StationSystem : EntitySystem
         if (!string.IsNullOrEmpty(name))
             _metaData.SetEntityName(mapGrid, name);
 
-        var stationMember = EnsureComp<StationMemberComponent>(mapGrid);
+        var stationMember = AddComp<StationMemberComponent>(mapGrid);
         stationMember.Station = station;
         stationData.Grids.Add(mapGrid);
 
@@ -417,14 +401,6 @@ public sealed class StationSystem : EntitySystem
         QueueDel(station);
     }
 
-    public EntityUid? GetOwningStation(EntityUid? entity, TransformComponent? xform = null)
-    {
-        if (entity == null)
-            return null;
-
-        return GetOwningStation(entity.Value, xform);
-    }
-
     /// <summary>
     /// Gets the station that "owns" the given entity (essentially, the station the grid it's on is attached to)
     /// </summary>
@@ -453,7 +429,7 @@ public sealed class StationSystem : EntitySystem
 
         if (xform.GridUid == EntityUid.Invalid)
         {
-            Log.Debug("Unable to get owning station - GridUid invalid.");
+            Log.Debug("A");
             return null;
         }
 
@@ -482,19 +458,6 @@ public sealed class StationSystem : EntitySystem
         }
 
         return stations;
-    }
-
-    public List<(string Name, NetEntity Entity)> GetStationNames()
-    {
-        var stations = GetStationsSet();
-        var stats = new List<(string Name, NetEntity Station)>();
-
-        foreach (var weh in stations)
-        {
-            stats.Add((MetaData(weh).EntityName, GetNetEntity(weh)));
-        }
-
-        return stats;
     }
 
     /// <summary>

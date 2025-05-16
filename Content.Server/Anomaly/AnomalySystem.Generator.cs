@@ -1,4 +1,5 @@
 using Content.Server.Anomaly.Components;
+using Content.Server.Power.Components;
 using Content.Server.Power.EntitySystems;
 using Content.Server.Station.Components;
 using Content.Shared.Anomaly;
@@ -10,7 +11,6 @@ using Content.Shared.Physics;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
-using Content.Shared.Power;
 
 namespace Content.Server.Anomaly;
 
@@ -21,16 +21,15 @@ namespace Content.Server.Anomaly;
 /// </summary>
 public sealed partial class AnomalySystem
 {
-    [Dependency] private readonly SharedMapSystem _mapSystem = default!;
-    [Dependency] private readonly SharedTransformSystem _transform = default!;
-
     private void InitializeGenerator()
     {
         SubscribeLocalEvent<AnomalyGeneratorComponent, BoundUIOpenedEvent>(OnGeneratorBUIOpened);
         SubscribeLocalEvent<AnomalyGeneratorComponent, MaterialAmountChangedEvent>(OnGeneratorMaterialAmountChanged);
         SubscribeLocalEvent<AnomalyGeneratorComponent, AnomalyGeneratorGenerateButtonPressedEvent>(OnGenerateButtonPressed);
         SubscribeLocalEvent<AnomalyGeneratorComponent, PowerChangedEvent>(OnGeneratorPowerChanged);
+        SubscribeLocalEvent<AnomalyGeneratorComponent, EntityUnpausedEvent>(OnGeneratorUnpaused);
         SubscribeLocalEvent<GeneratingAnomalyGeneratorComponent, ComponentStartup>(OnGeneratingStartup);
+        SubscribeLocalEvent<GeneratingAnomalyGeneratorComponent, EntityUnpausedEvent>(OnGeneratingUnpaused);
     }
 
     private void OnGeneratorPowerChanged(EntityUid uid, AnomalyGeneratorComponent component, ref PowerChangedEvent args)
@@ -53,12 +52,17 @@ public sealed partial class AnomalySystem
         TryGeneratorCreateAnomaly(uid, component);
     }
 
+    private void OnGeneratorUnpaused(EntityUid uid, AnomalyGeneratorComponent component, ref EntityUnpausedEvent args)
+    {
+        component.CooldownEndTime += args.PausedTime;
+    }
+
     public void UpdateGeneratorUi(EntityUid uid, AnomalyGeneratorComponent component)
     {
         var materialAmount = _material.GetMaterialAmount(uid, component.RequiredMaterial);
 
         var state = new AnomalyGeneratorUserInterfaceState(component.CooldownEndTime, materialAmount, component.MaterialPerAnomaly);
-        _ui.SetUiState(uid, AnomalyGeneratorUiKey.Key, state);
+        _ui.TrySetUiState(uid, AnomalyGeneratorUiKey.Key, state);
     }
 
     public void TryGeneratorCreateAnomaly(EntityUid uid, AnomalyGeneratorComponent? component = null)
@@ -77,7 +81,7 @@ public sealed partial class AnomalySystem
 
         var generating = EnsureComp<GeneratingAnomalyGeneratorComponent>(uid);
         generating.EndTime = Timing.CurTime + component.GenerationLength;
-        generating.AudioStream = Audio.PlayPvs(component.GeneratingSound, uid, AudioParams.Default.WithLoop(true))?.Entity;
+        generating.AudioStream = Audio.PlayPvs(component.GeneratingSound, uid, AudioParams.Default.WithLoop(true));
         component.CooldownEndTime = Timing.CurTime + component.CooldownLength;
         UpdateGeneratorUi(uid, component);
     }
@@ -100,7 +104,7 @@ public sealed partial class AnomalySystem
             var tile = new Vector2i(randomX, randomY);
 
             // no air-blocked areas.
-            if (_atmosphere.IsTileSpace(grid, xform.MapUid, tile) ||
+            if (_atmosphere.IsTileSpace(grid, xform.MapUid, tile, mapGridComp: gridComp) ||
                 _atmosphere.IsTileAirBlocked(grid, tile, mapGridComp: gridComp))
             {
                 continue;
@@ -109,9 +113,7 @@ public sealed partial class AnomalySystem
             // don't spawn inside of solid objects
             var physQuery = GetEntityQuery<PhysicsComponent>();
             var valid = true;
-
-            // TODO: This should be using static lookup.
-            foreach (var ent in _mapSystem.GetAnchoredEntities(grid, gridComp, tile))
+            foreach (var ent in gridComp.GetAnchoredEntities(tile))
             {
                 if (!physQuery.TryGetComponent(ent, out var body))
                     continue;
@@ -126,28 +128,7 @@ public sealed partial class AnomalySystem
             if (!valid)
                 continue;
 
-            var pos = _mapSystem.GridTileToLocal(grid, gridComp, tile);
-            var mapPos = _transform.ToMapCoordinates(pos);
-            // don't spawn in AntiAnomalyZones
-            var antiAnomalyZonesQueue = AllEntityQuery<AntiAnomalyZoneComponent, TransformComponent>();
-            while (antiAnomalyZonesQueue.MoveNext(out _, out var zone, out var antiXform))
-            {
-                if (antiXform.MapID != mapPos.MapId)
-                    continue;
-
-                var antiCoordinates = _transform.GetWorldPosition(antiXform);
-
-                var delta = antiCoordinates - mapPos.Position;
-                if (delta.LengthSquared() < zone.ZoneRadius * zone.ZoneRadius)
-                {
-                    valid = false;
-                    break;
-                }
-            }
-            if (!valid)
-                continue;
-
-            targetCoords = pos;
+            targetCoords = gridComp.GridTileToLocal(tile);
             break;
         }
 
@@ -157,6 +138,11 @@ public sealed partial class AnomalySystem
     private void OnGeneratingStartup(EntityUid uid, GeneratingAnomalyGeneratorComponent component, ComponentStartup args)
     {
         Appearance.SetData(uid, AnomalyGeneratorVisuals.Generating, true);
+    }
+
+    private void OnGeneratingUnpaused(EntityUid uid, GeneratingAnomalyGeneratorComponent component, ref EntityUnpausedEvent args)
+    {
+        component.EndTime += args.PausedTime;
     }
 
     private void OnGeneratingFinished(EntityUid uid, AnomalyGeneratorComponent component)
@@ -188,8 +174,7 @@ public sealed partial class AnomalySystem
         {
             if (Timing.CurTime < active.EndTime)
                 continue;
-
-            active.AudioStream = _audio.Stop(active.AudioStream);
+            active.AudioStream?.Stop();
             OnGeneratingFinished(ent, gen);
         }
     }

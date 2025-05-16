@@ -12,7 +12,6 @@ using Content.IntegrationTests.Tests;
 using Content.IntegrationTests.Tests.Destructible;
 using Content.IntegrationTests.Tests.DeviceNetwork;
 using Content.IntegrationTests.Tests.Interaction.Click;
-using Content.Shared._RMC14.Prototypes;
 using Robust.Client;
 using Robust.Server;
 using Robust.Shared.Configuration;
@@ -20,8 +19,11 @@ using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 using Robust.UnitTesting;
+
+[assembly: LevelOfParallelism(3)]
 
 namespace Content.IntegrationTests;
 
@@ -40,8 +42,6 @@ public static partial class PoolManager
     private static bool _dead;
     private static Exception? _poolFailureReason;
 
-    private static HashSet<Assembly> _contentAssemblies = default!;
-
     public static async Task<(RobustIntegrationTest.ServerIntegrationInstance, PoolTestLogHandler)> GenerateServer(
         PoolSettings poolSettings,
         TextWriter testOut)
@@ -54,7 +54,12 @@ public static partial class PoolManager
                 LoadConfigAndUserData = false,
                 LoadContentResources = !poolSettings.NoLoadContent,
             },
-            ContentAssemblies = _contentAssemblies.ToArray()
+            ContentAssemblies = new[]
+            {
+                typeof(Shared.Entry.EntryPoint).Assembly,
+                typeof(Server.Entry.EntryPoint).Assembly,
+                typeof(PoolManager).Assembly
+            }
         };
 
         var logHandler = new PoolTestLogHandler("SERVER");
@@ -63,11 +68,12 @@ public static partial class PoolManager
 
         options.BeforeStart += () =>
         {
-            // Server-only systems (i.e., systems that subscribe to events with server-only components)
             var entSysMan = IoCManager.Resolve<IEntitySystemManager>();
+            var compFactory = IoCManager.Resolve<IComponentFactory>();
+            entSysMan.LoadExtraSystemType<ResettingEntitySystemTests.TestRoundRestartCleanupEvent>();
+            entSysMan.LoadExtraSystemType<InteractionSystemTests.TestInteractionSystem>();
             entSysMan.LoadExtraSystemType<DeviceNetworkTestSystem>();
             entSysMan.LoadExtraSystemType<TestDestructibleListenerSystem>();
-
             IoCManager.Resolve<ILogManager>().GetSawmill("loc").Level = LogLevel.Error;
             IoCManager.Resolve<IConfigurationManager>()
                 .OnValueChanged(RTCVars.FailureLogLevel, value => logHandler.FailureLevel = value, true);
@@ -135,7 +141,7 @@ public static partial class PoolManager
             {
                 typeof(Shared.Entry.EntryPoint).Assembly,
                 typeof(Client.Entry.EntryPoint).Assembly,
-                typeof(PoolManager).Assembly,
+                typeof(PoolManager).Assembly
             }
         };
 
@@ -250,7 +256,7 @@ public static partial class PoolManager
         }
         finally
         {
-            if (pair != null && pair.TestHistory.Count > 0)
+            if (pair != null && pair.TestHistory.Count > 1)
             {
                 await testOut.WriteLineAsync($"{nameof(GetServerClientPair)}: Pair {pair.Id} Test History Start");
                 for (var i = 0; i < pair.TestHistory.Count; i++)
@@ -266,14 +272,10 @@ public static partial class PoolManager
         var poolRetrieveTime = poolRetrieveTimeWatch.Elapsed;
         await testOut.WriteLineAsync(
             $"{nameof(GetServerClientPair)}: Retrieving pair {pair.Id} from pool took {poolRetrieveTime.TotalMilliseconds} ms");
-
-        pair.ClearModifiedCvars();
+        await testOut.WriteLineAsync(
+            $"{nameof(GetServerClientPair)}: Returning pair {pair.Id}");
         pair.Settings = poolSettings;
         pair.TestHistory.Add(currentTestName);
-        pair.SetupSeed();
-        await testOut.WriteLineAsync(
-            $"{nameof(GetServerClientPair)}: Returning pair {pair.Id} with client/server seeds: {pair.ClientSeed}/{pair.ServerSeed}");
-
         pair.Watch.Restart();
         return pair;
     }
@@ -305,6 +307,11 @@ public static partial class PoolManager
                 Pairs[fallback!] = true;
             }
 
+            if (fallback == null && _pairId > 8)
+            {
+                var x = 2;
+            }
+
             return fallback;
         }
     }
@@ -331,10 +338,10 @@ public static partial class PoolManager
         {
             // If the _poolFailureReason is not null, we can assume at least one test failed.
             // So we say inconclusive so we don't add more failed tests to search through.
-            Assert.Inconclusive(@$"
+            Assert.Inconclusive(@"
 In a different test, the pool manager had an exception when trying to create a server/client pair.
 Instead of risking that the pool manager will fail at creating a server/client pairs for every single test,
-we are just going to end this here to save a lot of time. This is the exception that started this:\n {_poolFailureReason}");
+we are just going to end this here to save a lot of time. This is the exception that started this:\n {0}", _poolFailureReason);
         }
 
         if (_dead)
@@ -421,27 +428,13 @@ we are just going to end this here to save a lot of time. This is the exception 
     /// <summary>
     /// Initialize the pool manager.
     /// </summary>
-    /// <param name="extraAssemblies">Assemblies to search for to discover extra prototypes and systems.</param>
-    public static void Startup(params Assembly[] extraAssemblies)
+    /// <param name="assembly">Assembly to search for to discover extra test prototypes.</param>
+    public static void Startup(Assembly? assembly)
     {
         if (_initialized)
             throw new InvalidOperationException("Already initialized");
 
         _initialized = true;
-        _contentAssemblies =
-        [
-            typeof(Shared.Entry.EntryPoint).Assembly,
-            typeof(Server.Entry.EntryPoint).Assembly,
-            typeof(PoolManager).Assembly
-        ];
-        _contentAssemblies.UnionWith(extraAssemblies);
-
-        _testPrototypes.Clear();
-        CMPrototypeExtensions.FilterCM = false;
-        DiscoverTestPrototypes(typeof(PoolManager).Assembly);
-        foreach (var assembly in extraAssemblies)
-        {
-            DiscoverTestPrototypes(assembly);
-        }
+        DiscoverTestPrototypes(assembly);
     }
 }

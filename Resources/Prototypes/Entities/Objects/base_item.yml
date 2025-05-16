@@ -1,18 +1,16 @@
 - type: entity
   name: "item"
-  parent: CMCorrodible
   id: BaseItem
   abstract: true
   components:
   - type: Item
     size: Small
-  - type: Animateable
   - type: Clickable
   - type: InteractionOutline
   - type: MovedByPressure
   - type: EmitSoundOnCollide
     sound:
-      collection: WeakHit
+      path: /Audio/Effects/wall_bonk.ogg
   - type: EmitSoundOnLand
     sound:
       path: /Audio/Effects/drop.ogg
@@ -23,8 +21,10 @@
       types:
         Blunt: 5
     soundHit:
-      collection: MetalThud
+      path: /Audio/Effects/hit_kick.ogg
   - type: CollisionWake
+  - type: TileFrictionModifier
+    modifier: 0.5
   - type: Physics
     bodyType: Dynamic
     fixedRotation: false
@@ -44,7 +44,6 @@
     noRot: false
   - type: Pullable
   - type: DamageExaminable
-  - type: RMCItemPickup
 
 - type: entity
   name: "storage item"
@@ -55,8 +54,8 @@
   - type: Storage
   - type: UserInterface
     interfaces:
-      enum.StorageUiKey.Key:
-        type: StorageBoundUserInterface
+    - key: enum.StorageUiKey.Key
+      type: StorageBoundUserInterface
   - type: ContainerContainer
     containers:
       storagebase: !type:Container
@@ -69,13 +68,11 @@
   - type: Appearance
   - type: GenericVisualizer
     visuals:
-      enum.SharedBagOpenVisuals.BagState: # You don't have to use both of these if its not necessary.
-        closeLayer:
-          Open: { visible: false }
-          Closed: { visible: true }
+      enum.SharedBagOpenVisuals.BagState:
         openLayer:
           Open: { visible: true }
           Closed: { visible: false }
+
 
 # PowerCellSlot parents
 - type: entity

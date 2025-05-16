@@ -1,4 +1,3 @@
-# When adding new food also add to random spawner located in Resources\Prototypes\Entities\Markers\Spawners\Random\Food_Drinks\food_baked_whole.yml & food_baked_single.yml
 # Base
 
 - type: entity
@@ -6,8 +5,6 @@
   id: FoodPieBase
   abstract: true
   components:
-  - type: Item
-    storedRotation: -90
   - type: FlavorProfile
     flavors:
       - sweet
@@ -22,9 +19,6 @@
           Quantity: 11
         - ReagentId: Vitamin
           Quantity: 5
-  - type: Food #All pies here made with a pie tin; unless you're some kind of savage, you're probably not destroying this when you eat or slice the pie!
-    trash:
-    - FoodPlateTin
   - type: SliceableFood
     count: 4
   - type: Tag
@@ -37,8 +31,6 @@
   abstract: true
   description: A slice of pie. Tasty!
   components:
-  - type: Item
-    size: Tiny
   - type: FlavorProfile
     flavors:
       - sweet
@@ -53,10 +45,6 @@
           Quantity: 1.2
         - ReagentId: Vitamin
           Quantity: 1
-  - type: Tag
-    tags:
-    - Pie
-    - Slice
 
 # Pie
 
@@ -99,7 +87,6 @@
     tags:
     - Fruit
     - Pie
-    - Slice
 # Tastes like pie, apple.
 
 - type: entity
@@ -144,14 +131,13 @@
       - sweet
       - banana
       - creamy
+  - type: Food
+    trash: FoodPlateTin
   - type: Sprite
     layers:
     - state: tin
     - state: plain
   - type: CreamPie
-  - type: ThrowingAngle
-    angle: 180
-  - type: LandAtCursor
   - type: ContainerContainer
     containers:
       payloadSlot: !type:ContainerSlot
@@ -165,8 +151,6 @@
           path: /Audio/Weapons/Guns/Empty/empty.ogg
         ejectSound:
           path: /Audio/Weapons/Guns/Empty/empty.ogg
-        swap: false
-        disableEject: true
   - type: Tag
     tags:
     - Fruit
@@ -187,11 +171,6 @@
       - creamy
   - type: Sprite
     state: bananapie-slice
-  - type: Tag
-    tags:
-    - Fruit
-    - Pie
-    - Slice
 # Tastes like pie, cream, banana.
 
 - type: entity
@@ -234,7 +213,6 @@
     tags:
     - Fruit
     - Pie
-    - Slice
 # Tastes like pie, blackberries.
 
 - type: entity
@@ -274,7 +252,6 @@
     tags:
     - Fruit
     - Pie
-    - Slice
 # Tastes like pie, cherries.
 
 - type: entity
@@ -314,45 +291,7 @@
     tags:
     - Meat
     - Pie
-    - Slice
 # Tastes like pie, meat.
-
-- type: entity
-  name: pumpkin pie
-  parent: FoodPieBase
-  id: FoodPiePumpkin
-  description: Someone should turn this into a latte!
-  components:
-  - type: FlavorProfile
-    flavors:
-      - sweet
-      - pumpkin
-  - type: Sprite
-    layers:
-    - state: tin
-    - state: pumpkin
-  - type: SliceableFood
-    slice: FoodPiePumpkinSlice
-  - type: Tag
-    tags:
-    - Pie
-
-- type: entity
-  name: slice of pumpkin pie
-  parent: FoodPieSliceBase
-  id: FoodPiePumpkinSlice
-  components:
-  - type: FlavorProfile
-    flavors:
-      - sweet
-      - pumpkin
-  - type: Sprite
-    layers:
-    - state: pumpkin-slice
-  - type: Tag
-    tags:
-    - Pie
-    - Slice
 
 - type: entity
   name: xeno pie
@@ -392,7 +331,6 @@
     tags:
     - Meat
     - Pie
-    - Slice
 # Tastes like pie, meat, acid.
 
 - type: entity

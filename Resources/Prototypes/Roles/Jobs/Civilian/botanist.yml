@@ -13,18 +13,17 @@
   extendedAccess:
   - Kitchen
   - Bar
-  special:
-  - !type:GiveItemOnHolidaySpecial
-    holiday: FourTwenty
-    prototype: CannabisSeeds
 
 - type: startingGear
   id: BotanistGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitHydroponics
+    back: ClothingBackpackHydroponicsFilled
     shoes: ClothingShoesColorBrown
     id: BotanistPDA
     ears: ClothingHeadsetService
+    outerClothing: ClothingOuterApronBotanist
     belt: ClothingBeltPlantFilled
-  #storage:
-    #back:
-    #- Stuff
+  innerClothingSkirt: ClothingUniformJumpskirtHydroponics
+  satchel: ClothingBackpackSatchelHydroponicsFilled
+  duffelbag: ClothingBackpackDuffelHydroponicsFilled

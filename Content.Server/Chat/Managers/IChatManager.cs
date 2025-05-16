@@ -1,14 +1,14 @@
 using System.Diagnostics.CodeAnalysis;
-using Content.Shared.Administration;
 using Content.Shared.Chat;
-using Content.Shared.Players.RateLimiting;
 using Robust.Shared.Network;
 using Robust.Shared.Player;
 
 namespace Content.Server.Chat.Managers
 {
-    public interface IChatManager : ISharedChatManager
+    public interface IChatManager
     {
+        void Initialize();
+
         /// <summary>
         ///     Dispatch a server announcement to every connected player.
         /// </summary>
@@ -21,11 +21,12 @@ namespace Content.Server.Chat.Managers
         void TrySendOOCMessage(ICommonSession player, string message, OOCChatType type);
 
         void SendHookOOC(string sender, string message);
-        void SendAdminAnnouncement(string message, AdminFlags? flagBlacklist = null, AdminFlags? flagWhitelist = null);
-        void SendAdminAnnouncementMessage(ICommonSession player, string message, bool suppressLog = true);
+        void SendAdminAnnouncement(string message);
+        void SendAdminAlert(string message);
+        void SendAdminAlert(EntityUid player, string message);
 
         void ChatMessageToOne(ChatChannel channel, string message, string wrappedMessage, EntityUid source, bool hideChat,
-            INetChannel client, Color? colorOverride = null, bool recordReplay = false, string? audioPath = null, float audioVolume = 0, NetUserId? author = null, bool hidePopup = false);
+            INetChannel client, Color? colorOverride = null, bool recordReplay = false, string? audioPath = null, float audioVolume = 0, NetUserId? author = null);
 
         void ChatMessageToMany(ChatChannel channel, string message, string wrappedMessage, EntityUid source, bool hideChat, bool recordReplay,
             IEnumerable<INetChannel> clients, Color? colorOverride = null, string? audioPath = null, float audioVolume = 0, NetUserId? author = null);
@@ -36,17 +37,9 @@ namespace Content.Server.Chat.Managers
 
         bool MessageCharacterLimit(ICommonSession player, string message);
 
-        void DeleteMessagesBy(NetUserId uid);
+        void DeleteMessagesBy(ICommonSession player);
 
         [return: NotNullIfNotNull(nameof(author))]
         ChatUser? EnsurePlayer(NetUserId? author);
-
-        /// <summary>
-        /// Called when a player sends a chat message to handle rate limits.
-        /// Will update counts and do necessary actions if breached.
-        /// </summary>
-        /// <param name="player">The player sending a chat message.</param>
-        /// <returns>False if the player has violated rate limits and should be blocked from sending further messages.</returns>
-        RateLimitStatus HandleRateLimit(ICommonSession player);
     }
 }

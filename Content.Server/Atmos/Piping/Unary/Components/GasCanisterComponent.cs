@@ -1,6 +1,4 @@
 using Content.Shared.Atmos;
-using Content.Shared.Containers.ItemSlots;
-using Content.Shared.Guidebook;
 using Robust.Shared.Audio;
 
 namespace Content.Server.Atmos.Piping.Unary.Components
@@ -17,11 +15,7 @@ namespace Content.Server.Atmos.Piping.Unary.Components
         /// </summary>
         [ViewVariables(VVAccess.ReadWrite)]
         [DataField("container")]
-        public string ContainerName { get; set; } = "tank_slot";
-
-        [ViewVariables(VVAccess.ReadWrite)]
-        [DataField]
-        public ItemSlot GasTankSlot = new();
+        public string ContainerName { get; set; } = "GasCanisterTankHolder";
 
         [ViewVariables(VVAccess.ReadWrite)]
         [DataField("gasMixture")]
@@ -62,12 +56,5 @@ namespace Content.Server.Atmos.Piping.Unary.Components
 
         [DataField("accessDeniedSound")]
         public SoundSpecifier AccessDeniedSound = new SoundPathSpecifier("/Audio/Machines/custom_deny.ogg");
-
-        #region GuidebookData
-
-        [GuidebookData]
-        public float Volume => Air.Volume;
-
-        #endregion
     }
 }

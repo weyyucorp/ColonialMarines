@@ -4,14 +4,11 @@ using Content.Shared.Audio;
 using Content.Shared.CCVar;
 using Content.Shared.GameTicking;
 using Content.Shared.Random;
-using Content.Shared.Random.Rules;
 using Robust.Client.GameObjects;
 using Robust.Client.Player;
 using Robust.Client.ResourceManagement;
 using Robust.Client.State;
 using Robust.Shared.Audio;
-using Robust.Shared.Audio.Components;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Configuration;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
@@ -27,6 +24,7 @@ public sealed partial class ContentAudioSystem
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly IPlayerManager _player = default!;
     [Dependency] private readonly IPrototypeManager _proto = default!;
+    [Dependency] private readonly IResourceCache _resource = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly IStateManager _state = default!;
     [Dependency] private readonly RulesSystem _rules = default!;
@@ -41,7 +39,7 @@ public sealed partial class ContentAudioSystem
     // Don't need to worry about this being serializable or pauseable as it doesn't affect the sim.
     private TimeSpan _nextAudio;
 
-    private EntityUid? _ambientMusicStream;
+    private AudioSystem.PlayingStream? _ambientMusicStream;
     private AmbientMusicPrototype? _musicProto;
 
     /// <summary>
@@ -60,14 +58,20 @@ public sealed partial class ContentAudioSystem
 
     private void InitializeAmbientMusic()
     {
-        Subs.CVar(_configManager, CCVars.AmbientMusicVolume, AmbienceCVarChanged, true);
+        // TODO: Shitty preload
+        foreach (var audio in _proto.Index<SoundCollectionPrototype>("AmbienceSpace").PickFiles)
+        {
+            _resource.GetResource<AudioResource>(audio.ToString());
+        }
+
+        _configManager.OnValueChanged(CCVars.AmbientMusicVolume, AmbienceCVarChanged, true);
         _sawmill = IoCManager.Resolve<ILogManager>().GetSawmill("audio.ambience");
 
         // Reset audio
         _nextAudio = TimeSpan.MaxValue;
 
         SetupAmbientSounds();
-        SubscribeLocalEvent<PrototypesReloadedEventArgs>(OnProtoReload);
+        _proto.PrototypesReloaded += OnProtoReload;
         _state.OnStateChanged += OnStateChange;
         // On round end summary OR lobby cut audio.
         SubscribeNetworkEvent<RoundEndMessageEvent>(OnRoundEndMessage);
@@ -75,24 +79,32 @@ public sealed partial class ContentAudioSystem
 
     private void AmbienceCVarChanged(float obj)
     {
-        _volumeSlider = SharedAudioSystem.GainToVolume(obj);
+        _volumeSlider = obj;
 
         if (_ambientMusicStream != null && _musicProto != null)
         {
-            _audio.SetVolume(_ambientMusicStream, _musicProto.Sound.Params.Volume + _volumeSlider);
+            _ambientMusicStream.Volume = _musicProto.Sound.Params.Volume + _volumeSlider;
         }
     }
 
     private void ShutdownAmbientMusic()
     {
+        _configManager.UnsubValueChanged(CCVars.AmbientMusicVolume, AmbienceCVarChanged);
+        _proto.PrototypesReloaded -= OnProtoReload;
         _state.OnStateChanged -= OnStateChange;
-        _ambientMusicStream = _audio.Stop(_ambientMusicStream);
+        _ambientMusicStream?.Stop();
     }
 
     private void OnProtoReload(PrototypesReloadedEventArgs obj)
     {
-        if (obj.WasModified<AmbientMusicPrototype>() || obj.WasModified<RulesPrototype>())
-            SetupAmbientSounds();
+        if (!obj.ByType.ContainsKey(typeof(AmbientMusicPrototype)) &&
+            !obj.ByType.ContainsKey(typeof(RulesPrototype)))
+        {
+            return;
+        }
+
+        _ambientSounds.Clear();
+        SetupAmbientSounds();
     }
 
     private void OnStateChange(StateChangedEventArgs obj)
@@ -106,7 +118,6 @@ public sealed partial class ContentAudioSystem
 
     private void SetupAmbientSounds()
     {
-        _ambientSounds.Clear();
         foreach (var ambience in _proto.EnumeratePrototypes<AmbientMusicPrototype>())
         {
             var tracks = _ambientSounds.GetOrNew(ambience.ID);
@@ -118,7 +129,8 @@ public sealed partial class ContentAudioSystem
     private void OnRoundEndMessage(RoundEndMessageEvent ev)
     {
         // If scoreboard shows then just stop the music
-        _ambientMusicStream = _audio.Stop(_ambientMusicStream);
+        _ambientMusicStream?.Stop();
+        _ambientMusicStream = null;
         _nextAudio = TimeSpan.FromMinutes(3);
     }
 
@@ -152,25 +164,21 @@ public sealed partial class ContentAudioSystem
         // Update still runs in lobby so just ignore it.
         if (_state.CurrentState is not GameplayState)
         {
-            _ambientMusicStream = Audio.Stop(_ambientMusicStream);
+            FadeOut(_ambientMusicStream);
+            _ambientMusicStream = null;
             _musicProto = null;
             return;
         }
 
-        bool? isDone = null;
-
-        if (TryComp(_ambientMusicStream, out AudioComponent? audioComp))
-        {
-            isDone = !audioComp.Playing;
-        }
+        var isDone = _ambientMusicStream?.Done;
 
         if (_interruptable)
         {
-            var player = _player.LocalSession?.AttachedEntity;
+            var player = _player.LocalPlayer?.ControlledEntity;
 
             if (player == null || _musicProto == null || !_rules.IsTrue(player.Value, _proto.Index<RulesPrototype>(_musicProto.Rules)))
             {
-                FadeOut(_ambientMusicStream, duration: AmbientMusicFadeTime);
+                FadeOut(_ambientMusicStream, AmbientMusicFadeTime);
                 _musicProto = null;
                 _interruptable = false;
                 isDone = true;
@@ -213,11 +221,14 @@ public sealed partial class ContentAudioSystem
             false,
             AudioParams.Default.WithVolume(_musicProto.Sound.Params.Volume + _volumeSlider));
 
-        _ambientMusicStream = strim?.Entity;
-
-        if (_musicProto.FadeIn && strim != null)
+        if (strim != null)
         {
-            FadeIn(_ambientMusicStream, strim.Value.Component, AmbientMusicFadeTime);
+            _ambientMusicStream = (AudioSystem.PlayingStream) strim;
+
+            if (_musicProto.FadeIn)
+            {
+                FadeIn(_ambientMusicStream, AmbientMusicFadeTime);
+            }
         }
 
         // Refresh the list
@@ -229,7 +240,7 @@ public sealed partial class ContentAudioSystem
 
     private AmbientMusicPrototype? GetAmbience()
     {
-        var player = _player.LocalEntity;
+        var player = _player.LocalPlayer?.ControlledEntity;
 
         if (player == null)
             return null;

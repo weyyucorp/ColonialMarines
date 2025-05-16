@@ -16,13 +16,18 @@ namespace Content.Client.Stack
         public override void Initialize()
         {
             base.Initialize();
+            SubscribeLocalEvent<StackComponent, ItemStatusCollectMessage>(OnItemStatus);
             SubscribeLocalEvent<StackComponent, AppearanceChangeEvent>(OnAppearanceChange);
-            Subs.ItemStatus<StackComponent>(ent => new StackStatusControl(ent));
+        }
+
+        private void OnItemStatus(EntityUid uid, StackComponent component, ItemStatusCollectMessage args)
+        {
+            args.Controls.Add(new StackStatusControl(component));
         }
 
         public override void SetCount(EntityUid uid, int amount, StackComponent? component = null)
         {
-            if (!Resolve(uid, ref component, false))
+            if (!Resolve(uid, ref component))
                 return;
 
             base.SetCount(uid, amount, component);
@@ -44,7 +49,7 @@ namespace Content.Client.Stack
             // TODO PREDICT ENTITY DELETION: This should really just be a normal entity deletion call.
             if (component.Count <= 0 && !component.Lingering)
             {
-                Xform.DetachEntity(uid, Transform(uid));
+                Xform.DetachParentToNull(uid, Transform(uid));
                 return;
             }
 

@@ -1,4 +1,3 @@
-using System.Numerics;
 using Content.Shared.Salvage.Fulton;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
@@ -6,12 +5,10 @@ using Robust.Shared.Random;
 
 namespace Content.Server.Salvage;
 
-/// <summary>
-/// Transports attached entities to the linked beacon after a timer has elapsed.
-/// </summary>
 public sealed class FultonSystem : SharedFultonSystem
 {
     [Dependency] private readonly IRobustRandom _random = default!;
+    [Dependency] private readonly SharedContainerSystem _container = default!;
 
     public override void Initialize()
     {
@@ -54,17 +51,15 @@ public sealed class FultonSystem : SharedFultonSystem
     private void Fulton(EntityUid uid, FultonedComponent component)
     {
         if (!Deleted(component.Beacon) &&
-            TryComp(component.Beacon, out TransformComponent? beaconXform) &&
-            !Container.IsEntityOrParentInContainer(component.Beacon.Value, xform: beaconXform) &&
-            CanFulton(uid))
+            TryComp<TransformComponent>(component.Beacon, out var beaconXform) &&
+            !_container.IsEntityOrParentInContainer(component.Beacon.Value, xform: beaconXform))
         {
             var xform = Transform(uid);
             var metadata = MetaData(uid);
             var oldCoords = xform.Coordinates;
             var offset = _random.NextVector2(1.5f);
-            var localPos = Vector2.Transform(
-                    TransformSystem.GetWorldPosition(beaconXform),
-                    TransformSystem.GetInvWorldMatrix(beaconXform.ParentUid)) + offset;
+            var localPos = TransformSystem.GetInvWorldMatrix(beaconXform.ParentUid)
+                .Transform(TransformSystem.GetWorldPosition(beaconXform)) + offset;
 
             TransformSystem.SetCoordinates(uid, new EntityCoordinates(beaconXform.ParentUid, localPos));
 

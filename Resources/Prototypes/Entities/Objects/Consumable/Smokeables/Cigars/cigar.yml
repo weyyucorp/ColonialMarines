@@ -20,8 +20,6 @@
     equippedPrefix: unlit
   - type: Item
     size: Tiny
-    sprite: Objects/Consumable/Smokeables/Cigars/cigar.rsi
-    heldPrefix: unlit
 
 - type: entity
   id: CigarSpent
@@ -36,11 +34,6 @@
     solutions:
       smokable:
         maxVol: 20
-  - type: Tag
-    tags:
-      - Cigar
-      - Trash
-      - Burnt
 
 - type: entity
   id: CigarGold

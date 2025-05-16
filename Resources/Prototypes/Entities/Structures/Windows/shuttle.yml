@@ -1,7 +1,7 @@
 - type: entity
   id: ShuttleWindow
   name: shuttle window
-  parent: WindowRCDResistant
+  parent: Window
   components:
   - type: Sprite
     drawdepth: WallTops
@@ -12,7 +12,7 @@
     fuelCost: 15
     doAfterDelay: 3
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: RGlass
   - type: Destructible
     thresholds:
@@ -28,7 +28,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WindowShatter
+          collection: GlassBreak
       - !type:SpawnEntitiesBehavior
         spawn:
           ShardGlassReinforced:
@@ -46,17 +46,18 @@
     node: shuttleWindow
   - type: Appearance
   - type: DamageVisuals
-    thresholds: [5, 10, 20]
-    damageDivisor: 20
+    thresholds: [4, 8, 12]
+    damageDivisor: 36
     trackAllDamage: true
     damageOverlay:
       sprite: Structures/Windows/cracks.rsi
   - type: StaticPrice
-    price: 150
+    price: 100
 
 - type: entity
   parent: ShuttleWindow
   id: ShuttleWindowDiagonal
+  name: diagonal shuttle window
   suffix: diagonal
   placement:
     mode: SnapgridCenter
@@ -67,9 +68,6 @@
     drawdepth: WallTops
     sprite: Structures/Windows/shuttle_window_diagonal.rsi
     state: state0
-  - type: Tag
-    tags:
-    - Diagonal
   - type: IconSmooth
     mode: Diagonal
     key: windows
@@ -90,11 +88,6 @@
         - FullTileMask
         layer:
         - GlassLayer
-  - type: Airtight
-    noAirWhenFullyAirBlocked: false
-    airBlockedDirection:
-    - South
-    - East
   - type: DamageVisuals
     damageOverlay:
       sprite: Structures/Windows/cracks_diagonal.rsi

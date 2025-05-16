@@ -1,17 +1,15 @@
 using Content.Server.Store.Components;
-using Content.Shared.UserInterface;
+using Content.Server.UserInterface;
 using Content.Shared.FixedPoint;
 using Content.Shared.Implants.Components;
 using Content.Shared.Interaction;
 using Content.Shared.Popups;
 using Content.Shared.Stacks;
-using Content.Shared.Store.Components;
+using Content.Shared.Store;
 using JetBrains.Annotations;
+using Robust.Server.GameObjects;
 using Robust.Shared.Prototypes;
-using Robust.Shared.Utility;
 using System.Linq;
-using Robust.Shared.Timing;
-using Content.Shared.Mind;
 
 namespace Content.Server.Store.Systems;
 
@@ -23,13 +21,11 @@ public sealed partial class StoreSystem : EntitySystem
 {
     [Dependency] private readonly IPrototypeManager _proto = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
-    [Dependency] private readonly IGameTiming _timing = default!;
 
     public override void Initialize()
     {
         base.Initialize();
 
-        SubscribeLocalEvent<StoreComponent, ActivatableUIOpenAttemptEvent>(OnStoreOpenAttempt);
         SubscribeLocalEvent<CurrencyComponent, AfterInteractEvent>(OnAfterInteract);
         SubscribeLocalEvent<StoreComponent, BeforeActivatableUIOpenEvent>(BeforeActivatableUiOpen);
 
@@ -40,13 +36,12 @@ public sealed partial class StoreSystem : EntitySystem
 
         InitializeUi();
         InitializeCommand();
-        InitializeRefund();
     }
 
     private void OnMapInit(EntityUid uid, StoreComponent component, MapInitEvent args)
     {
         RefreshAllListings(component);
-        component.StartingMap = Transform(uid).MapUid;
+        InitializeFromPreset(component.Preset, uid, component);
     }
 
     private void OnStartup(EntityUid uid, StoreComponent component, ComponentStartup args)
@@ -55,6 +50,7 @@ public sealed partial class StoreSystem : EntitySystem
         if (MetaData(uid).EntityLifeStage == EntityLifeStage.MapInitialized)
         {
             RefreshAllListings(component);
+            InitializeFromPreset(component.Preset, uid, component);
         }
 
         var ev = new StoreAddedEvent();
@@ -65,24 +61,6 @@ public sealed partial class StoreSystem : EntitySystem
     {
         var ev = new StoreRemovedEvent();
         RaiseLocalEvent(uid, ref ev, true);
-    }
-
-    private void OnStoreOpenAttempt(EntityUid uid, StoreComponent component, ActivatableUIOpenAttemptEvent args)
-    {
-        if (!component.OwnerOnly)
-            return;
-
-        if (!_mind.TryGetMind(args.User, out var mind, out _))
-            return;
-
-        component.AccountOwner ??= mind;
-        DebugTools.Assert(component.AccountOwner != null);
-
-        if (component.AccountOwner == mind)
-            return;
-
-        _popup.PopupEntity(Loc.GetString("store-not-account-owner", ("store", uid)), uid, args.User);
-        args.Cancel();
     }
 
     private void OnAfterInteract(EntityUid uid, CurrencyComponent component, AfterInteractEvent args)
@@ -98,12 +76,14 @@ public sealed partial class StoreSystem : EntitySystem
         if (ev.Cancelled)
             return;
 
-        if (!TryAddCurrency((uid, component), (args.Target.Value, store)))
-            return;
+        args.Handled = TryAddCurrency(GetCurrencyValue(uid, component), args.Target.Value, store);
 
-        args.Handled = true;
-        var msg = Loc.GetString("store-currency-inserted", ("used", args.Used), ("target", args.Target));
-        _popup.PopupEntity(msg, args.Target.Value, args.User);
+        if (args.Handled)
+        {
+            var msg = Loc.GetString("store-currency-inserted", ("used", args.Used), ("target", args.Target));
+            _popup.PopupEntity(msg, args.Target.Value);
+            QueueDel(args.Used);
+        }
     }
 
     private void OnImplantActivate(EntityUid uid, StoreComponent component, OpenUplinkImplantEvent args)
@@ -115,10 +95,6 @@ public sealed partial class StoreSystem : EntitySystem
     /// Gets the value from an entity's currency component.
     /// Scales with stacks.
     /// </summary>
-    /// <remarks>
-    /// If this result is intended to be used with <see cref="TryAddCurrency(Robust.Shared.GameObjects.Entity{Content.Server.Store.Components.CurrencyComponent?},Robust.Shared.GameObjects.Entity{Content.Shared.Store.Components.StoreComponent?})"/>,
-    /// consider using <see cref="TryAddCurrency(Robust.Shared.GameObjects.Entity{Content.Server.Store.Components.CurrencyComponent?},Robust.Shared.GameObjects.Entity{Content.Shared.Store.Components.StoreComponent?})"/> instead to ensure that the currency is consumed in the process.
-    /// </remarks>
     /// <param name="uid"></param>
     /// <param name="component"></param>
     /// <returns>The value of the currency</returns>
@@ -129,34 +105,19 @@ public sealed partial class StoreSystem : EntitySystem
     }
 
     /// <summary>
-    /// Tries to add a currency to a store's balance. Note that if successful, this will consume the currency in the process.
+    /// Tries to add a currency to a store's balance.
     /// </summary>
-    public bool TryAddCurrency(Entity<CurrencyComponent?> currency, Entity<StoreComponent?> store)
+    /// <param name="currencyEnt"></param>
+    /// <param name="storeEnt"></param>
+    /// <param name="currency">The currency to add</param>
+    /// <param name="store">The store to add it to</param>
+    /// <returns>Whether or not the currency was succesfully added</returns>
+    [PublicAPI]
+    public bool TryAddCurrency(EntityUid currencyEnt, EntityUid storeEnt, StoreComponent? store = null, CurrencyComponent? currency = null)
     {
-        if (!Resolve(currency.Owner, ref currency.Comp))
+        if (!Resolve(currencyEnt, ref currency) || !Resolve(storeEnt, ref store))
             return false;
-
-        if (!Resolve(store.Owner, ref store.Comp))
-            return false;
-
-        var value = currency.Comp.Price;
-        if (TryComp(currency.Owner, out StackComponent? stack) && stack.Count != 1)
-        {
-            value = currency.Comp.Price
-                .ToDictionary(v => v.Key, p => p.Value * stack.Count);
-        }
-
-        if (!TryAddCurrency(value, store, store.Comp))
-            return false;
-
-        // Avoid having the currency accidentally be re-used. E.g., if multiple clients try to use the currency in the
-        // same tick
-        currency.Comp.Price.Clear();
-        if (stack != null)
-            _stack.SetCount(currency.Owner, 0, stack);
-
-        QueueDel(currency);
-        return true;
+        return TryAddCurrency(GetCurrencyValue(currencyEnt, currency), storeEnt, store);
     }
 
     /// <summary>
@@ -186,6 +147,44 @@ public sealed partial class StoreSystem : EntitySystem
 
         UpdateUserInterface(null, uid, store);
         return true;
+    }
+
+    /// <summary>
+    /// Initializes a store based on a preset ID
+    /// </summary>
+    /// <param name="preset">The ID of a store preset prototype</param>
+    /// <param name="uid"></param>
+    /// <param name="component">The store being initialized</param>
+    public void InitializeFromPreset(string? preset, EntityUid uid, StoreComponent component)
+    {
+        if (preset == null)
+            return;
+
+        if (!_proto.TryIndex<StorePresetPrototype>(preset, out var proto))
+            return;
+
+        InitializeFromPreset(proto, uid, component);
+    }
+
+    /// <summary>
+    /// Initializes a store based on a given preset
+    /// </summary>
+    /// <param name="preset">The StorePresetPrototype</param>
+    /// <param name="uid"></param>
+    /// <param name="component">The store being initialized</param>
+    public void InitializeFromPreset(StorePresetPrototype preset, EntityUid uid, StoreComponent component)
+    {
+        component.Preset = preset.ID;
+        component.CurrencyWhitelist.UnionWith(preset.CurrencyWhitelist);
+        component.Categories.UnionWith(preset.Categories);
+        if (component.Balance == new Dictionary<string, FixedPoint2>() && preset.InitialBalance != null) //if we don't have a value stored, use the preset
+            TryAddCurrency(preset.InitialBalance, uid, component);
+
+        var ui = _ui.GetUiOrNull(uid, StoreUiKey.Key);
+        if (ui != null)
+        {
+            _ui.SetUiState(ui, new StoreInitializeState(preset.StoreName));
+        }
     }
 }
 

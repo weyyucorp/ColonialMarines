@@ -9,7 +9,7 @@
       path: /Audio/Machines/microwave_loop.ogg
       params:
         loop: true
-        maxDistance: 5
+        maxdistance: 5
   - type: Sprite
     sprite: Structures/Machines/fat_sucker.rsi
     snapCardinals: true
@@ -35,7 +35,7 @@
       visible: false
       map: ["enum.FatExtractorVisualLayers.Smoke"]
   - type: Lock
-    breakOnAccessBreaker: false
+    breakOnEmag: false
   - type: GenericVisualizer
     visuals:
       enum.StorageVisuals.Open:
@@ -80,17 +80,14 @@
     containers:
      - entity_storage
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallicStrong
+    damageContainer: Inorganic
+    damageModifierSet: StrongMetallic
   - type: Destructible
     thresholds:
     - trigger:
         !type:DamageTrigger
         damage: 100
       behaviors:
-      - !type:PlaySoundBehavior
-        sound:
-          collection: MetalGlassBreak
       - !type:ChangeConstructionNodeBehavior
         node: machineFrame
       - !type:DoActsBehavior
@@ -98,6 +95,9 @@
   - type: Machine
     board: FatExtractorMachineCircuitboard
   - type: WiresPanel
+  - type: Wires
+    boardName: wires-board-name-fatextractor
+    layoutId: FatExtractor
   - type: Appearance
   - type: Speech
     speechVerb: Robotic

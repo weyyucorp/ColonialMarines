@@ -14,7 +14,7 @@ public abstract partial class SharedEntityStorageComponent : Component
     public readonly float MaxSize = 1.0f; // maximum width or height of an entity allowed inside the storage.
 
     public static readonly TimeSpan InternalOpenAttemptDelay = TimeSpan.FromSeconds(0.5);
-    public TimeSpan NextInternalOpenAttempt;
+    public TimeSpan LastInternalOpenAttempt;
 
     /// <summary>
     ///     Collision masks that get removed when the storage gets opened.
@@ -63,6 +63,12 @@ public abstract partial class SharedEntityStorageComponent : Component
     /// </summary>
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public float EnteringRange = 0.18f;
+
+    /// <summary>
+    /// If true, there may be mobs inside the container, even if the container is an Item
+    /// </summary>
+    [DataField]
+    public bool ItemCanStoreMobs = false;
 
     /// <summary>
     /// Whether or not to show the contents when the storage is closed
@@ -118,6 +124,12 @@ public abstract partial class SharedEntityStorageComponent : Component
     /// </summary>
     [ViewVariables]
     public Container Contents = default!;
+
+    /// <summary>
+    /// Multiplier for explosion damage that gets applied to contained entities.
+    /// </summary>
+    [DataField]
+    public float ExplosionDamageCoefficient = 1;
 }
 
 [Serializable, NetSerializable]
@@ -133,21 +145,21 @@ public sealed class EntityStorageComponentState : ComponentState
 
     public float EnteringRange;
 
-    public TimeSpan NextInternalOpenAttempt;
-
-    public EntityStorageComponentState(bool open, int capacity, bool isCollidableWhenOpen, bool openOnMove, float enteringRange, TimeSpan nextInternalOpenAttempt)
+    public EntityStorageComponentState(bool open, int capacity, bool isCollidableWhenOpen, bool openOnMove, float enteringRange)
     {
         Open = open;
         Capacity = capacity;
         IsCollidableWhenOpen = isCollidableWhenOpen;
         OpenOnMove = openOnMove;
         EnteringRange = enteringRange;
-        NextInternalOpenAttempt = nextInternalOpenAttempt;
     }
 }
 
 [ByRefEvent]
-public record struct InsertIntoEntityStorageAttemptEvent(EntityUid ItemToInsert, EntityUid Container, bool Cancelled = false);
+public record struct InsertIntoEntityStorageAttemptEvent(bool Cancelled = false);
+
+[ByRefEvent]
+public record struct StoreMobInItemContainerAttemptEvent(bool Handled, bool Cancelled = false);
 
 [ByRefEvent]
 public record struct StorageOpenAttemptEvent(EntityUid User, bool Silent, bool Cancelled = false);

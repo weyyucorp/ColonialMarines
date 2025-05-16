@@ -1,109 +1,55 @@
 using Content.Shared.Damage;
-using Content.Shared.FixedPoint;
 using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 
 namespace Content.Shared.Projectiles;
 
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class ProjectileComponent : Component
 {
-    /// <summary>
-    ///     The angle of the fired projectile.
-    /// </summary>
-    [DataField, AutoNetworkedField]
-    public Angle Angle;
+    [ViewVariables(VVAccess.ReadWrite), DataField("impactEffect", customTypeSerializer:typeof(PrototypeIdSerializer<EntityPrototype>))]
+    public string? ImpactEffect;
 
     /// <summary>
-    ///     The effect that appears when a projectile collides with an entity.
+    /// User that shot this projectile.
     /// </summary>
-    [DataField, ViewVariables(VVAccess.ReadWrite)]
-    public EntProtoId? ImpactEffect;
-
-    /// <summary>
-    ///     User that shot this projectile.
-    /// </summary>
-    [DataField, AutoNetworkedField]
+    [DataField("shooter"), AutoNetworkedField]
     public EntityUid? Shooter;
 
     /// <summary>
-    ///     Weapon used to shoot.
+    /// Weapon used to shoot.
     /// </summary>
-    [DataField, AutoNetworkedField]
+    [DataField("weapon"), AutoNetworkedField]
     public EntityUid? Weapon;
 
-    /// <summary>
-    ///     The projectile spawns inside the shooter most of the time, this prevents entities from shooting themselves.
-    /// </summary>
-    [DataField, AutoNetworkedField]
+    [DataField("ignoreShooter"), AutoNetworkedField]
     public bool IgnoreShooter = true;
 
-    /// <summary>
-    ///     The amount of damage the projectile will do.
-    /// </summary>
-    [DataField(required: true)] [ViewVariables(VVAccess.ReadWrite)]
+    [DataField("damage", required: true)] [ViewVariables(VVAccess.ReadWrite)]
     public DamageSpecifier Damage = new();
 
-    /// <summary>
-    ///     If the projectile should be deleted on collision.
-    /// </summary>
-    [DataField]
+    [DataField("deleteOnCollide")]
     public bool DeleteOnCollide = true;
 
-    /// <summary>
-    ///     Ignore all damage resistances the target has.
-    /// </summary>
-    [DataField]
+    [DataField("ignoreResistances")]
     public bool IgnoreResistances = false;
 
-    /// <summary>
-    ///     Get that juicy FPS hit sound.
-    /// </summary>
-    [DataField]
-    public SoundSpecifier? SoundHit;
+    // Get that juicy FPS hit sound
+    [DataField("soundHit")] public SoundSpecifier? SoundHit;
 
-    /// <summary>
-    ///     Force the projectiles sound to play rather than potentially playing the entity's sound.
-    /// </summary>
-    [DataField]
+    [DataField("soundForce")]
     public bool ForceSound = false;
 
     /// <summary>
-    ///     Whether this projectile will only collide with entities if it was shot from a gun (if <see cref="Weapon"/> is not null).
+    ///     Whether this projectile will only collide with entities if it was shot from a gun (if <see cref="Weapon"/> is not null)
     /// </summary>
-    [DataField]
+    [DataField("onlyCollideWhenShot")]
     public bool OnlyCollideWhenShot = false;
 
     /// <summary>
-    ///     If true, the projectile has hit enough targets and should no longer interact with further collisions pending deletion.
+    ///     Whether this projectile has already damaged an entity.
     /// </summary>
-    [DataField, AutoNetworkedField]
-    public bool ProjectileSpent;
-
-    /// <summary>
-    ///     When a projectile has this threshold set, it will continue to penetrate entities until the damage dealt reaches this threshold.
-    /// </summary>
-    [DataField]
-    public FixedPoint2 PenetrationThreshold = FixedPoint2.Zero;
-
-    /// <summary>
-    ///     If set, the projectile will not penetrate objects that lack the ability to take these damage types.
-    /// </summary>
-    [DataField]
-    public List<string>? PenetrationDamageTypeRequirement;
-
-    /// <summary>
-    ///     Tracks the amount of damage dealt for penetration purposes.
-    /// </summary>
-    [DataField]
-    public FixedPoint2 PenetrationAmount = FixedPoint2.Zero;
-
-    /// <summary>
-    /// Sets the maximum range for a projectile fired with ShootAtFixedPointComponent.
-    /// This can be set on both the Projectile and ShootAtFixedPoint Components.
-    /// The default value is null for no cap. The minimum value between the two is used.
-    /// </summary>
-    [DataField, AutoNetworkedField]
-    public float? MaxFixedRange;
+    public bool DamagedEntity;
 }

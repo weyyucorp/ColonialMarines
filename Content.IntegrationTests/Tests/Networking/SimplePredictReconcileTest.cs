@@ -10,7 +10,6 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.GameStates;
 using Robust.Shared.IoC;
 using Robust.Shared.Map;
-using Robust.Shared.Serialization;
 using Robust.Shared.Timing;
 
 namespace Content.IntegrationTests.Tests.Networking
@@ -51,12 +50,11 @@ namespace Content.IntegrationTests.Tests.Networking
             PredictionTestComponent clientComponent = default!;
             var serverSystem = sEntityManager.System<PredictionTestEntitySystem>();
             var clientSystem = cEntityManager.System<PredictionTestEntitySystem>();
-            var sMapSys = sEntityManager.System<SharedMapSystem>();
 
             await server.WaitPost(() =>
             {
                 // Spawn dummy component entity.
-                sMapSys.CreateMap(out var map);
+                var map = sMapManager.CreateMap();
                 serverEnt = sEntityManager.SpawnEntity(null, new MapCoordinates(new Vector2(0, 0), map));
                 serverComponent = sEntityManager.AddComponent<PredictionTestComponent>(serverEnt);
             });
@@ -68,7 +66,7 @@ namespace Content.IntegrationTests.Tests.Networking
             Assert.That(sGameTiming.TickTimingAdjustment, Is.EqualTo(0));
 
             // Check client buffer is full
-            Assert.That(cGameStateManager.GetApplicableStateCount(), Is.EqualTo(cGameStateManager.TargetBufferSize));
+            Assert.That(cGameStateManager.CurrentBufferSize, Is.EqualTo(cGameStateManager.TargetBufferSize));
             Assert.That(cGameStateManager.TargetBufferSize, Is.EqualTo(2));
 
             // This isn't required anymore, but the test had this for the sake of "technical things", and I cbf shifting
@@ -100,7 +98,7 @@ namespace Content.IntegrationTests.Tests.Networking
 
                 // Client last ran tick 15 meaning it's ahead of the last server tick it processed (12)
                 Assert.That(cGameTiming.CurTick, Is.EqualTo(expected));
-                Assert.That(cGameTiming.LastProcessedTick, Is.EqualTo(new GameTick((uint) (baseTick - cGameStateManager.TargetBufferSize))));
+                Assert.That(cGameTiming.LastProcessedTick, Is.EqualTo(new GameTick((uint)(baseTick - cGameStateManager.TargetBufferSize))));
             });
 
             // *** I am using block scopes to visually distinguish these sections of the test to make it more readable.
@@ -265,7 +263,7 @@ namespace Content.IntegrationTests.Tests.Networking
                 // Assert timing is still correct.
                 Assert.That(sGameTiming.CurTick, Is.EqualTo(new GameTick(baseTick + 8)));
                 Assert.That(cGameTiming.CurTick, Is.EqualTo(new GameTick(baseTick + 8 + delta)));
-                Assert.That(cGameTiming.LastProcessedTick, Is.EqualTo(new GameTick((uint) (baseTick + 8 - cGameStateManager.TargetBufferSize))));
+                Assert.That(cGameTiming.LastProcessedTick, Is.EqualTo(new GameTick((uint)(baseTick + 8 - cGameStateManager.TargetBufferSize))));
             });
 
             {
@@ -422,7 +420,6 @@ namespace Content.IntegrationTests.Tests.Networking
             }
         }
 
-        [Serializable, NetSerializable]
         public sealed class SetFooMessage : EntityEventArgs
         {
             public SetFooMessage(NetEntity uid, bool newFoo)

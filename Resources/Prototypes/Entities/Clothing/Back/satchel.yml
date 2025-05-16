@@ -6,11 +6,6 @@
   components:
   - type: Sprite
     sprite: Clothing/Back/Satchels/satchel.rsi
-  - type: Storage
-    grid:
-    - 0,0,1,3
-    - 3,0,6,3
-    - 8,0,9,3
 
 - type: entity
   parent: ClothingBackpackSatchel
@@ -106,7 +101,7 @@
     sprite: Clothing/Back/Satchels/science.rsi
 
 - type: entity
-  parent: [ClothingBackpackSatchel, BaseSecurityContraband]
+  parent: ClothingBackpackSatchel
   id: ClothingBackpackSatchelSecurity
   name: security satchel
   description: A robust satchel for security related needs.
@@ -115,7 +110,7 @@
     sprite: Clothing/Back/Satchels/security.rsi
 
 - type: entity
-  parent: [ClothingBackpackSatchel, BaseSecurityContraband]
+  parent: ClothingBackpackSatchel
   id: ClothingBackpackSatchelBrigmedic
   name: brigmedic satchel
   description: A sterile satchel for medical related needs.
@@ -124,7 +119,7 @@
     sprite: Clothing/Back/Satchels/brigmedic.rsi
 
 - type: entity
-  parent: [ClothingBackpackSatchel, BaseCommandContraband]
+  parent: ClothingBackpackSatchel
   id: ClothingBackpackSatchelCaptain
   name: captain's satchel
   description: An exclusive satchel for Nanotrasen officers.
@@ -176,5 +171,4 @@
     size: Ginormous
   - type: Storage
     maxItemSize: Huge
-    grid:
-    - 0,0,19,9
+    maxTotalWeight: 200 #5 duffels worth of gear

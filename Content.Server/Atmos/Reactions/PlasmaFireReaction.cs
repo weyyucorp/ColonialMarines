@@ -1,6 +1,5 @@
 using Content.Server.Atmos.EntitySystems;
 using Content.Shared.Atmos;
-using Content.Shared.Atmos.Reactions;
 using JetBrains.Annotations;
 
 namespace Content.Server.Atmos.Reactions
@@ -9,13 +8,13 @@ namespace Content.Server.Atmos.Reactions
     [DataDefinition]
     public sealed partial class PlasmaFireReaction : IGasReactionEffect
     {
-        public ReactionResult React(GasMixture mixture, IGasMixtureHolder? holder, AtmosphereSystem atmosphereSystem, float heatScale)
+        public ReactionResult React(GasMixture mixture, IGasMixtureHolder? holder, AtmosphereSystem atmosphereSystem)
         {
             var energyReleased = 0f;
-            var oldHeatCapacity = atmosphereSystem.GetHeatCapacity(mixture, true);
+            var oldHeatCapacity = atmosphereSystem.GetHeatCapacity(mixture);
             var temperature = mixture.Temperature;
             var location = holder as TileAtmosphere;
-            mixture.ReactionResults[(byte)GasReaction.Fire] = 0;
+            mixture.ReactionResults[GasReaction.Fire] = 0;
 
             // More plasma released at higher temperatures.
             var temperatureScale = 0f;
@@ -23,10 +22,8 @@ namespace Content.Server.Atmos.Reactions
             if (temperature > Atmospherics.PlasmaUpperTemperature)
                 temperatureScale = 1f;
             else
-            {
                 temperatureScale = (temperature - Atmospherics.PlasmaMinimumBurnTemperature) /
                                    (Atmospherics.PlasmaUpperTemperature - Atmospherics.PlasmaMinimumBurnTemperature);
-            }
 
             if (temperatureScale > 0)
             {
@@ -59,14 +56,13 @@ namespace Content.Server.Atmos.Reactions
                     mixture.AdjustMoles(Gas.CarbonDioxide, plasmaBurnRate * (1.0f - supersaturation));
 
                     energyReleased += Atmospherics.FirePlasmaEnergyReleased * plasmaBurnRate;
-                    energyReleased /= heatScale; // adjust energy to make sure speedup doesn't cause mega temperature rise
-                    mixture.ReactionResults[(byte)GasReaction.Fire] += plasmaBurnRate * (1 + oxygenBurnRate);
+                    mixture.ReactionResults[GasReaction.Fire] += plasmaBurnRate * (1 + oxygenBurnRate);
                 }
             }
 
             if (energyReleased > 0)
             {
-                var newHeatCapacity = atmosphereSystem.GetHeatCapacity(mixture, true);
+                var newHeatCapacity = atmosphereSystem.GetHeatCapacity(mixture);
                 if (newHeatCapacity > Atmospherics.MinimumHeatCapacity)
                     mixture.Temperature = (temperature * oldHeatCapacity + energyReleased) / newHeatCapacity;
             }
@@ -76,11 +72,11 @@ namespace Content.Server.Atmos.Reactions
                 var mixTemperature = mixture.Temperature;
                 if (mixTemperature > Atmospherics.FireMinimumTemperatureToExist)
                 {
-                    atmosphereSystem.HotspotExpose(location, mixTemperature, mixture.Volume);
+                    atmosphereSystem.HotspotExpose(location.GridIndex, location.GridIndices, mixTemperature, mixture.Volume);
                 }
             }
 
-            return mixture.ReactionResults[(byte)GasReaction.Fire] != 0 ? ReactionResult.Reacting : ReactionResult.NoReaction;
+            return mixture.ReactionResults[GasReaction.Fire] != 0 ? ReactionResult.Reacting : ReactionResult.NoReaction;
         }
     }
 }

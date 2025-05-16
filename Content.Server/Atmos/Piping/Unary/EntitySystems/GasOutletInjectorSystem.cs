@@ -33,12 +33,8 @@ namespace Content.Server.Atmos.Piping.Unary.EntitySystems
 
         private void OnActivate(EntityUid uid, GasOutletInjectorComponent component, ActivateInWorldEvent args)
         {
-            if (args.Handled || !args.Complex)
-                return;
-
             component.Enabled = !component.Enabled;
             UpdateAppearance(uid, component);
-            args.Handled = true;
         }
 
         public void UpdateAppearance(EntityUid uid, GasOutletInjectorComponent component, AppearanceComponent? appearance = null)
@@ -49,15 +45,21 @@ namespace Content.Server.Atmos.Piping.Unary.EntitySystems
             _appearance.SetData(uid, OutletInjectorVisuals.Enabled, component.Enabled, appearance);
         }
 
-        private void OnOutletInjectorUpdated(EntityUid uid, GasOutletInjectorComponent injector, ref AtmosDeviceUpdateEvent args)
+        private void OnOutletInjectorUpdated(EntityUid uid, GasOutletInjectorComponent injector, AtmosDeviceUpdateEvent args)
         {
             if (!injector.Enabled)
                 return;
 
-            if (!_nodeContainer.TryGetNode(uid, injector.InletName, out PipeNode? inlet))
+            if (!EntityManager.TryGetComponent(uid, out NodeContainerComponent? nodeContainer))
                 return;
 
-            var environment = _atmosphereSystem.GetContainingMixture(uid, args.Grid, args.Map, true, true);
+            if (!TryComp(uid, out AtmosDeviceComponent? device))
+                return;
+
+            if (!_nodeContainer.TryGetNode(nodeContainer, injector.InletName, out PipeNode? inlet))
+                return;
+
+            var environment = _atmosphereSystem.GetContainingMixture(uid, true, true);
 
             if (environment == null)
                 return;
@@ -71,7 +73,7 @@ namespace Content.Server.Atmos.Piping.Unary.EntitySystems
             var timeDelta = args.dt;
 
             // TODO adjust ratio so that environment does not go above MaxPressure?
-            var ratio = MathF.Min(1f, timeDelta * injector.TransferRate * _atmosphereSystem.PumpSpeedup() / inlet.Air.Volume);
+            var ratio = MathF.Min(1f, timeDelta * injector.TransferRate / inlet.Air.Volume);
             var removed = inlet.Air.RemoveRatio(ratio);
 
             _atmosphereSystem.Merge(environment, removed);

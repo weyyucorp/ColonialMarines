@@ -1,3 +1,4 @@
+using Content.Shared.Chemistry.Components;
 using Content.Shared.Chemistry.Reagent;
 using Robust.Shared.Serialization;
 
@@ -54,16 +55,13 @@ namespace Content.Shared.Kitchen.Components
         public int ActiveButtonIndex;
         public uint CurrentCookTime;
 
-        public TimeSpan CurrentCookTimeEnd;
-
         public MicrowaveUpdateUserInterfaceState(NetEntity[] containedSolids,
-            bool isMicrowaveBusy, int activeButtonIndex, uint currentCookTime, TimeSpan currentCookTimeEnd)
+            bool isMicrowaveBusy, int activeButtonIndex, uint currentCookTime)
         {
             ContainedSolids = containedSolids;
             IsMicrowaveBusy = isMicrowaveBusy;
             ActiveButtonIndex = activeButtonIndex;
             CurrentCookTime = currentCookTime;
-            CurrentCookTimeEnd = currentCookTimeEnd;
         }
 
     }

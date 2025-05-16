@@ -1,26 +1,13 @@
+using Content.Server.Shuttle.Components;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Events;
-using Content.Shared.Station.Components;
-using Content.Shared.UserInterface;
+using Content.Server.Station.Components;
+using Content.Server.UserInterface;
 
 namespace Content.Server.Shuttles.Systems;
 
 public sealed partial class ShuttleConsoleSystem
 {
-    /// <summary>
-    /// Gets the drone console target if applicable otherwise returns itself.
-    /// </summary>
-    public EntityUid? GetDroneConsole(EntityUid consoleUid)
-    {
-        var getShuttleEv = new ConsoleShuttleEvent
-        {
-            Console = consoleUid,
-        };
-
-        RaiseLocalEvent(consoleUid, ref getShuttleEv);
-        return getShuttleEv.Console;
-    }
-
     /// <summary>
     /// Refreshes all drone console entities.
     /// </summary>
@@ -41,9 +28,7 @@ public sealed partial class ShuttleConsoleSystem
 
     private void OnDronePilotConsoleClose(EntityUid uid, DroneConsoleComponent component, BoundUIClosedEvent args)
     {
-        // Only if last person closed UI.
-        if (!_ui.IsUiOpen(uid, args.UiKey))
-            component.Entity = null;
+        component.Entity = null;
     }
 
     private void OnCargoGetConsole(EntityUid uid, DroneConsoleComponent component, ref ConsoleShuttleEvent args)

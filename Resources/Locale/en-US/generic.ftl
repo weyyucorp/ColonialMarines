@@ -10,8 +10,5 @@ generic-error = error
 generic-invalid = invalid
 
 generic-hours = hours
-generic-minutes = minutes
 
 generic-playtime-title = Playtime
-
-generic-confirm = Confirm

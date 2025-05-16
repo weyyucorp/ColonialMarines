@@ -17,7 +17,8 @@ public sealed class ChemistryGuideDataSystem : SharedChemistryGuideDataSystem
     {
         base.Initialize();
 
-        SubscribeLocalEvent<PrototypesReloadedEventArgs>(PrototypeManagerReload);
+        PrototypeManager.PrototypesReloaded += PrototypeManagerReload;
+
         _player.PlayerStatusChanged += OnPlayerStatusChanged;
 
         InitializeServerRegistry();
@@ -63,10 +64,5 @@ public sealed class ChemistryGuideDataSystem : SharedChemistryGuideDataSystem
 
         var ev = new ReagentGuideRegistryChangedEvent(changeset);
         RaiseNetworkEvent(ev);
-    }
-
-    public override void ReloadAllReagentPrototypes()
-    {
-        InitializeServerRegistry();
     }
 }

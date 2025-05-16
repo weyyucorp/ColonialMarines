@@ -9,7 +9,6 @@
   - type: Damageable
     damageContainer: Biological
   - type: BodyPart
-  - type: Gibbable
   - type: ContainerContainer
     containers:
       bodypart: !type:Container
@@ -94,8 +93,6 @@
     partType: Leg
     symmetry: Left
   - type: MovementBodyPart
-    walkSpeed: 2.7
-    sprintSpeed: 4
 
 - type: entity
   id: BaseRightLeg
@@ -107,8 +104,6 @@
     partType: Leg
     symmetry: Right
   - type: MovementBodyPart
-    walkSpeed: 2.7
-    sprintSpeed: 4
 
 - type: entity
   id: BaseLeftFoot

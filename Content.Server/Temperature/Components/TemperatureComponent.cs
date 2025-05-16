@@ -1,8 +1,7 @@
-using Content.Shared.Alert;
+using Content.Server.Temperature.Systems;
 using Content.Shared.Atmos;
 using Content.Shared.Damage;
 using Content.Shared.FixedPoint;
-using Robust.Shared.Prototypes;
 
 namespace Content.Server.Temperature.Components;
 
@@ -50,6 +49,15 @@ public sealed partial class TemperatureComponent : Component
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public float AtmosTemperatureTransferEfficiency = 0.1f;
 
+    [Obsolete("Use system method")]
+    public float HeatCapacity
+    {
+        get
+        {
+            return IoCManager.Resolve<IEntityManager>().System<TemperatureSystem>().GetHeatCapacity(Owner, this);
+        }
+    }
+
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public DamageSpecifier ColdDamage = new();
 
@@ -61,7 +69,7 @@ public sealed partial class TemperatureComponent : Component
     /// </summary>
     /// <remarks>
     /// Okay it genuinely reaches this basically immediately for a plasma fire.
-    /// </remarks>
+    /// </summary>
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public FixedPoint2 DamageCap = FixedPoint2.New(8);
 
@@ -69,11 +77,5 @@ public sealed partial class TemperatureComponent : Component
     /// Used to keep track of when damage starts/stops. Useful for logs.
     /// </summary>
     [DataField]
-    public bool TakingDamage;
-
-    [DataField]
-    public ProtoId<AlertPrototype> HotAlert = "Hot";
-
-    [DataField]
-    public ProtoId<AlertPrototype> ColdAlert = "Cold";
+    public bool TakingDamage = false;
 }

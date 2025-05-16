@@ -1,5 +1,4 @@
 using System.Linq;
-using Content.Server._RMC14.NPC;
 using Content.Server.Fluids.EntitySystems;
 using Content.Server.NPC.Queries;
 using Content.Server.NPC.Queries.Considerations;
@@ -8,36 +7,20 @@ using Content.Server.NPC.Queries.Queries;
 using Content.Server.Nutrition.Components;
 using Content.Server.Nutrition.EntitySystems;
 using Content.Server.Storage.Components;
-using Content.Shared._RMC14.Interaction;
-using Content.Shared._RMC14.Xenonids;
-using Content.Shared._RMC14.Xenonids.Construction;
-using Content.Shared._RMC14.Xenonids.Construction.EggMorpher;
-using Content.Shared._RMC14.Xenonids.Construction.Nest;
-using Content.Shared._RMC14.Xenonids.Construction.ResinHole;
-using Content.Shared._RMC14.Xenonids.Egg;
-using Content.Shared._RMC14.Xenonids.Parasite;
-using Content.Shared.Atmos.Components;
 using Content.Shared.Chemistry.EntitySystems;
-using Content.Shared.Damage;
 using Content.Shared.Examine;
 using Content.Shared.Fluids.Components;
 using Content.Shared.Hands.Components;
 using Content.Shared.Inventory;
-using Content.Shared.Mobs;
 using Content.Shared.Mobs.Systems;
-using Content.Shared.NPC.Systems;
 using Content.Shared.Nutrition.Components;
-using Content.Shared.Nutrition.EntitySystems;
-using Content.Shared.Standing;
-using Content.Shared.Stunnable;
 using Content.Shared.Tools.Systems;
-using Content.Shared.Turrets;
 using Content.Shared.Weapons.Melee;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Weapons.Ranged.Events;
-using Content.Shared.Whitelist;
 using Microsoft.Extensions.ObjectPool;
 using Robust.Server.Containers;
+using Robust.Shared.Collections;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 
@@ -59,14 +42,8 @@ public sealed class NPCUtilitySystem : EntitySystem
     [Dependency] private readonly OpenableSystem _openable = default!;
     [Dependency] private readonly PuddleSystem _puddle = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
-    [Dependency] private readonly SharedSolutionContainerSystem _solutions = default!;
+    [Dependency] private readonly SolutionContainerSystem _solutions = default!;
     [Dependency] private readonly WeldableSystem _weldable = default!;
-    [Dependency] private readonly ExamineSystemShared _examine = default!;
-    [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
-    [Dependency] private readonly MobThresholdSystem _thresholdSystem = default!;
-    [Dependency] private readonly TurretTargetSettingsSystem _turretTargetSettings = default!;
-    [Dependency] private readonly RMCInteractionSystem _rmcInteraction = default!;
-    [Dependency] private readonly StandingStateSystem _standing = default!;
 
     private EntityQuery<PuddleComponent> _puddleQuery;
     private EntityQuery<TransformComponent> _xformQuery;
@@ -270,7 +247,7 @@ public sealed class NPCUtilitySystem : EntitySystem
                     return 0f;
                 }
 
-                if (_whitelistSystem.IsWhitelistFailOrNull(heldGun.Whitelist, targetUid))
+                if (heldGun.Whitelist?.IsValid(targetUid, EntityManager) != true)
                 {
                     return 0f;
                 }
@@ -279,10 +256,10 @@ public sealed class NPCUtilitySystem : EntitySystem
             }
             case TargetDistanceCon:
             {
-                var radius = blackboard.GetValueOrDefault<float>(blackboard.GetVisionRadiusKey(EntityManager), EntityManager);
+                var radius = blackboard.GetValueOrDefault<float>(NPCBlackboard.VisionRadius, EntityManager);
 
-                if (!TryComp(targetUid, out TransformComponent? targetXform) ||
-                    !TryComp(owner, out TransformComponent? xform))
+                if (!TryComp<TransformComponent>(targetUid, out var targetXform) ||
+                    !TryComp<TransformComponent>(owner, out var xform))
                 {
                     return 0f;
                 }
@@ -312,38 +289,32 @@ public sealed class NPCUtilitySystem : EntitySystem
 
                 return (float) ev.Count / ev.Capacity;
             }
-            case TargetHealthCon con:
+            case TargetHealthCon:
             {
-                if (!TryComp(targetUid, out DamageableComponent? damage))
-                    return 0f;
-                if (con.TargetState != MobState.Invalid && _thresholdSystem.TryGetPercentageForState(targetUid, con.TargetState, damage.TotalDamage, out var percentage))
-                    return Math.Clamp((float)(1 - percentage), 0f, 1f);
-                if (_thresholdSystem.TryGetIncapPercentage(targetUid, damage.TotalDamage, out var incapPercentage))
-                    return Math.Clamp((float)(1 - incapPercentage), 0f, 1f);
                 return 0f;
             }
             case TargetInLOSCon:
             {
-                var radius = blackboard.GetValueOrDefault<float>(blackboard.GetVisionRadiusKey(EntityManager), EntityManager);
+                var radius = blackboard.GetValueOrDefault<float>(NPCBlackboard.VisionRadius, EntityManager);
 
-                return _examine.InRangeUnOccluded(owner, targetUid, radius + 0.5f, null) ? 1f : 0f;
+                return ExamineSystemShared.InRangeUnOccluded(owner, targetUid, radius + 0.5f, null) ? 1f : 0f;
             }
             case TargetInLOSOrCurrentCon:
             {
-                var radius = blackboard.GetValueOrDefault<float>(blackboard.GetVisionRadiusKey(EntityManager), EntityManager);
+                var radius = blackboard.GetValueOrDefault<float>(NPCBlackboard.VisionRadius, EntityManager);
                 const float bufferRange = 0.5f;
 
                 if (blackboard.TryGetValue<EntityUid>("Target", out var currentTarget, EntityManager) &&
                     currentTarget == targetUid &&
-                    TryComp(owner, out TransformComponent? xform) &&
-                    TryComp(targetUid, out TransformComponent? targetXform) &&
+                    TryComp<TransformComponent>(owner, out var xform) &&
+                    TryComp<TransformComponent>(targetUid, out var targetXform) &&
                     xform.Coordinates.TryDistance(EntityManager, _transform, targetXform.Coordinates, out var distance) &&
                     distance <= radius + bufferRange)
                 {
                     return 1f;
                 }
 
-                return _examine.InRangeUnOccluded(owner, targetUid, radius + bufferRange, null) ? 1f : 0f;
+                return ExamineSystemShared.InRangeUnOccluded(owner, targetUid, radius + bufferRange, null) ? 1f : 0f;
             }
             case TargetIsAliveCon:
             {
@@ -361,80 +332,10 @@ public sealed class NPCUtilitySystem : EntitySystem
             {
                 if (TryComp<MeleeWeaponComponent>(targetUid, out var melee))
                 {
-                    return melee.Damage.GetTotal().Float() * melee.AttackRate / 100f;
+                    return melee.Damage.Total.Float() * melee.AttackRate / 100f;
                 }
 
                 return 0f;
-            }
-            case TargetOnFireCon:
-                {
-                    if (TryComp(targetUid, out FlammableComponent? fire) && fire.OnFire)
-                        return 1f;
-                    return 0f;
-                }
-            case TargetIsStunnedCon:
-                {
-                    return HasComp<StunnedComponent>(targetUid) ? 1f : 0f;
-                }
-            case TurretTargetingCon:
-                {
-                    if (!TryComp<TurretTargetSettingsComponent>(owner, out var turretTargetSettings) ||
-                        _turretTargetSettings.EntityIsTargetForTurret((owner, turretTargetSettings), targetUid))
-                        return 1f;
-
-                    return 0f;
-                }
-            case TargetIsNotDeadCon:
-            {
-                return !_mobState.IsDead(targetUid) ? 1f : 0f;
-            }
-            case TargetXenoCon:
-            {
-                return HasComp<XenoComponent>(targetUid) ? 1f : 0f;
-            }
-            case TargetIsNotConstructCon:
-            {
-                return HasComp<XenoConstructComponent>(targetUid) ? 0f : 1f;
-            }
-            case CanFaceCon:
-            {
-                var ownerCoords = _transform.GetMapCoordinates(owner);
-                var targetCoords = _transform.GetMapCoordinates(targetUid);
-                if (ownerCoords.MapId != targetCoords.MapId)
-                    return 0f;
-
-                var vector = targetCoords.Position - ownerCoords.Position;
-                var angle = Angle.FromWorldVec(vector);
-                if (!_rmcInteraction.CanFaceMaxRotation(owner,angle))
-                    return 0f;
-
-                return 1f;
-            }
-            case TargetInfectableCon:
-            {
-                return TryComp<InfectableComponent>(targetUid, out var infectable)
-                        && !infectable.BeingInfected
-                        && !HasComp<VictimInfectedComponent>(targetUid) ? 1f : 0f;
-            }
-            case TargetOpenEggCon:
-            {
-                return TryComp<XenoEggComponent>(targetUid, out var egg) && egg.State == XenoEggState.Opened ? 1f : 0f;
-            }
-            case TargetIsEmptyResinTrapCon:
-                {
-                    return TryComp<XenoResinHoleComponent>(targetUid, out var trap) && trap.TrapPrototype == null ? 1f : 0f;
-                }
-            case TargetIsDownCon:
-            {
-                return _standing.IsDown(targetUid) || HasComp<XenoNestedComponent>(targetUid) ? 1f : 0f;
-            }
-            case TargetIsStandingCon:
-            {
-                return _standing.IsDown(targetUid) && !HasComp<XenoNestedComponent>(targetUid) ? 0f : 1f;
-            }
-            case TargetAvailibleEggMorpherCon:
-            {
-                return TryComp<EggMorpherComponent>(targetUid, out var eggmorpher) && eggmorpher.CurParasites < eggmorpher.MaxParasites ? 1f : 0f;
             }
             default:
                 throw new NotImplementedException();
@@ -460,7 +361,7 @@ public sealed class NPCUtilitySystem : EntitySystem
     private void Add(NPCBlackboard blackboard, HashSet<EntityUid> entities, UtilityQuery query)
     {
         var owner = blackboard.GetValue<EntityUid>(NPCBlackboard.Owner);
-        var vision = blackboard.GetValueOrDefault<float>(blackboard.GetVisionRadiusKey(EntityManager), EntityManager);
+        var vision = blackboard.GetValueOrDefault<float>(NPCBlackboard.VisionRadius, EntityManager);
 
         switch (query)
         {
@@ -469,7 +370,7 @@ public sealed class NPCUtilitySystem : EntitySystem
                 if (compQuery.Components.Count == 0)
                     return;
 
-                var mapPos = _transform.GetMapCoordinates(owner, xform: _xformQuery.GetComponent(owner));
+                var mapPos = _xformQuery.GetComponent(owner).MapPosition;
                 _compTypes.Clear();
                 var i = -1;
                 EntityPrototype.ComponentRegistryEntry compZero = default!;
@@ -553,7 +454,7 @@ public sealed class NPCUtilitySystem : EntitySystem
 
         while (enumerator.MoveNext(out var child))
         {
-            RecursiveAdd(child, entities);
+            RecursiveAdd(child.Value, entities);
         }
     }
 
@@ -584,26 +485,6 @@ public sealed class NPCUtilitySystem : EntitySystem
 
                 break;
             }
-            case RemoveAnchoredFilter:
-            {
-                _entityList.Clear();
-
-                foreach (var ent in entities)
-                {
-                    if (!TryComp(ent, out TransformComponent? xform))
-                        continue;
-
-                    if (xform.Anchored)
-                        _entityList.Add(ent);
-                }
-
-                foreach (var ent in _entityList)
-                {
-                    entities.Remove(ent);
-                }
-
-                break;
-            }
             case PuddleFilter:
             {
                 _entityList.Clear();
@@ -611,7 +492,7 @@ public sealed class NPCUtilitySystem : EntitySystem
                 foreach (var ent in entities)
                 {
                     if (!_puddleQuery.TryGetComponent(ent, out var puddleComp) ||
-                        !_solutions.TryGetSolution(ent, puddleComp.SolutionName, out _, out var sol) ||
+                        !_solutions.TryGetSolution(ent, puddleComp.SolutionName, out var sol) ||
                         _puddle.CanFullyEvaporate(sol))
                     {
                         _entityList.Add(ent);

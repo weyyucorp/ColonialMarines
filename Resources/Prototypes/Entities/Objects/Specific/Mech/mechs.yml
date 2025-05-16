@@ -13,7 +13,7 @@
     - Plasma
     - Tritium
     - WaterVapor
-    - Ammonia
+    - Miasma
     - NitrousOxide
     - Frezon
     #- Helium3 TODO: fusion
@@ -24,7 +24,7 @@
     - Plasma
     - Tritium
     - WaterVapor
-    - Ammonia
+    - Miasma
     - NitrousOxide
     - Frezon
     #- Helium3 TODO: fusion
@@ -39,8 +39,8 @@
     doAfterDelay: 10
   - type: UserInterface
     interfaces:
-      enum.MechUiKey.Key:
-        type: MechBoundUserInterface
+    - key: enum.MechUiKey.Key
+      type: MechBoundUserInterface
   - type: MeleeWeapon
     hidden: true
     attackRate: 0.75
@@ -48,8 +48,6 @@
       types:
         Blunt: 25 #thwack
         Structural: 20
-    soundHit:
-      collection: MetalThud
   - type: Puller
     needsHands: false
   - type: InputMover
@@ -66,6 +64,9 @@
     bodyType: KinematicController
   - type: Clickable
   - type: WiresPanel
+  - type: Wires #we just want the panel
+    boardName: wires-board-name-mech
+    layoutId: Mech
   - type: Fixtures
     fixtures:
       fix1:
@@ -92,19 +93,6 @@
   - type: GuideHelp
     guides:
     - Robotics
-  - type: Destructible
-    thresholds:
-    - trigger:
-        !type:DamageTrigger
-        damage: 400
-      behaviors:
-      - !type:PlaySoundBehavior
-        sound:
-          collection: MetalBreak
-      - !type:ChangeConstructionNodeBehavior
-        node: start
-      - !type:DoActsBehavior
-        acts: ["Destruction"]
 
 - type: entity
   id: MechRipley
@@ -167,8 +155,6 @@
   - type: FootstepModifier
     footstepSoundCollection:
       collection: FootstepClown
-      params:
-        variation: 0.17
   - type: Mech
     baseState: honker
     openState: honker-open
@@ -244,7 +230,7 @@
   parent: BaseMech
   id: MechVim
   name: Vim
-  description: A miniature exosuit from Nanotrasen, developed to let the irreplaceable station pets live a little longer.
+  description: A minature exosuit from Nanotrasen, developed to let the irreplacable station pets live a little longer.
   components:
   - type: Sprite
     drawdepth: Mobs
@@ -290,9 +276,6 @@
   - type: MovementSpeedModifier
     baseWalkSpeed: 2.25
     baseSprintSpeed: 3.6
-  - type: Access
-    tags:
-    - Maintenance
   # TOOD: buzz / chime actions
   # TODO: builtin flashlight
 

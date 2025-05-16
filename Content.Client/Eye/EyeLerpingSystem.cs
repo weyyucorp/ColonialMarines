@@ -41,7 +41,7 @@ public sealed class EyeLerpingSystem : EntitySystem
 
     private void OnEyeStartup(EntityUid uid, EyeComponent component, ComponentStartup args)
     {
-        if (_playerManager.LocalEntity == uid)
+        if (_playerManager.LocalPlayer?.ControlledEntity == uid)
             AddEye(uid, component, true);
     }
 
@@ -77,7 +77,7 @@ public sealed class EyeLerpingSystem : EntitySystem
             return;
 
         // If this is the currently controlled entity, we keep the component.
-        if (_playerManager.LocalEntity == uid)
+        if (_playerManager.LocalPlayer?.ControlledEntity == uid)
             lerp.ManuallyAdded = false;
         else
             RemComp(uid, lerp);
@@ -86,7 +86,7 @@ public sealed class EyeLerpingSystem : EntitySystem
     private void HandleMapChange(EntityUid uid, LerpingEyeComponent component, ref EntParentChangedMessage args)
     {
         // Is this actually a map change? If yes, stop any lerps
-        if (args.OldMapId != args.Transform.MapUid)
+        if (args.OldMapId != args.Transform.MapID)
             component.LastRotation = GetRotation(uid, args.Transform);
     }
 

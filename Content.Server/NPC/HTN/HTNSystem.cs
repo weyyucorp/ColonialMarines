@@ -10,6 +10,7 @@ using Content.Shared.Administration;
 using Content.Shared.Mobs;
 using Content.Shared.NPC;
 using JetBrains.Annotations;
+using Robust.Server.GameObjects;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
@@ -37,7 +38,8 @@ public sealed class HTNSystem : EntitySystem
         SubscribeLocalEvent<HTNComponent, PlayerDetachedEvent>(_npc.OnPlayerNPCDetach);
         SubscribeLocalEvent<HTNComponent, ComponentShutdown>(OnHTNShutdown);
         SubscribeNetworkEvent<RequestHTNMessage>(OnHTNMessage);
-        SubscribeLocalEvent<PrototypesReloadedEventArgs>(OnPrototypeLoad);
+
+        _prototypeManager.PrototypesReloaded += OnPrototypeLoad;
         OnLoad();
     }
 
@@ -53,6 +55,12 @@ public sealed class HTNSystem : EntitySystem
             return;
 
         _subscribers.Remove(args.SenderSession);
+    }
+
+    public override void Shutdown()
+    {
+        base.Shutdown();
+        _prototypeManager.PrototypesReloaded -= OnPrototypeLoad;
     }
 
     private void OnLoad()
@@ -134,39 +142,6 @@ public sealed class HTNSystem : EntitySystem
     }
 
     /// <summary>
-    /// Enable / disable the hierarchical task network of an entity
-    /// </summary>
-    /// <param name="ent">The entity and its <see cref="HTNComponent"/></param>
-    /// <param name="state">Set 'true' to enable, or 'false' to disable, the HTN</param>
-    /// <param name="planCooldown">Specifies a time in seconds before the entity can start planning a new action (only takes effect when the HTN is enabled)</param>
-    // ReSharper disable once InconsistentNaming
-    [PublicAPI]
-    public void SetHTNEnabled(Entity<HTNComponent> ent, bool state, float planCooldown = 0f)
-    {
-        if (ent.Comp.Enabled == state)
-            return;
-
-        ent.Comp.Enabled = state;
-        ent.Comp.PlanAccumulator = planCooldown;
-
-        ent.Comp.PlanningToken?.Cancel();
-        ent.Comp.PlanningToken = null;
-
-        if (ent.Comp.Plan != null)
-        {
-            var currentOperator = ent.Comp.Plan.CurrentOperator;
-
-            ShutdownTask(currentOperator, ent.Comp.Blackboard, HTNOperatorStatus.Failed);
-            ShutdownPlan(ent.Comp);
-
-            ent.Comp.Plan = null;
-        }
-
-        if (ent.Comp.Enabled && ent.Comp.PlanAccumulator <= 0)
-            RequestPlan(ent.Comp);
-    }
-
-    /// <summary>
     /// Forces the NPC to replan.
     /// </summary>
     [PublicAPI]
@@ -180,14 +155,11 @@ public sealed class HTNSystem : EntitySystem
         _planQueue.Process();
         var query = EntityQueryEnumerator<ActiveNPCComponent, HTNComponent>();
 
-        while (query.MoveNext(out var uid, out _, out var comp))
+        while(query.MoveNext(out var uid, out _, out var comp))
         {
             // If we're over our max count or it's not MapInit then ignore the NPC.
             if (count >= maxUpdates)
                 break;
-
-            if (!comp.Enabled)
-                continue;
 
             if (comp.PlanningJob != null)
             {
@@ -259,7 +231,7 @@ public sealed class HTNSystem : EntitySystem
                         {
                             Uid = GetNetEntity(uid),
                             Text = text.ToString(),
-                        }, session.Channel);
+                        }, session.ConnectedClient);
                     }
                 }
                 // Keeping old plan

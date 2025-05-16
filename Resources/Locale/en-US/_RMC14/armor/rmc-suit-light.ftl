@@ -1,1 +1,0 @@
-﻿rmc-suit-light-short = Your source of light shorts out.

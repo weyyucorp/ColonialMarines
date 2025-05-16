@@ -1,8 +1,0 @@
-- type: constructionGraph
-  id: RMCPlatformStrata2Destructible
-  start: start
-  graph:
-  - node: start
-
-  - node: platformBroken
-    entity: RMCPlatformStrata2Broken

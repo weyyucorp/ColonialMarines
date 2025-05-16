@@ -1,7 +1,7 @@
 - type: entity
   id: ReinforcedPlasmaWindow
   name: reinforced plasma window
-  parent: WindowRCDResistant
+  parent: Window
   components:
   - type: Sprite
     drawdepth: WallTops
@@ -9,7 +9,7 @@
   - type: Icon
     sprite: Structures/Windows/reinforced_plasma_window.rsi
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: RGlass
   - type: RadiationBlocker
     resistance: 4
@@ -17,20 +17,17 @@
     thresholds:
     - trigger:
         !type:DamageTrigger
-        damage: 300
+        damage: 1000
       behaviors: #excess damage, don't spawn entities.
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-      - !type:PlaySoundBehavior
-        sound:
-          collection: WindowShatter
     - trigger:
         !type:DamageTrigger
-        damage: 150
+        damage: 600
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WindowShatter
+          collection: GlassBreak
       - !type:SpawnEntitiesBehavior
         spawn:
           ShardGlassPlasma:
@@ -48,8 +45,8 @@
     node: reinforcedPlasmaWindow
   - type: Appearance
   - type: DamageVisuals
-    thresholds: [5, 10, 20]
-    damageDivisor: 6
+    thresholds: [4, 8, 12]
+    damageDivisor: 36
     trackAllDamage: true
     damageOverlay:
       sprite: Structures/Windows/cracks.rsi
@@ -58,7 +55,7 @@
 
 - type: entity
   id: PlasmaReinforcedWindowDirectional
-  parent: WindowDirectionalRCDResistant
+  parent: WindowDirectional
   name: directional reinforced plasma window
   description: Don't smudge up the glass down there.
   placement:
@@ -77,36 +74,34 @@
     node: plasmaReinforcedWindowDirectional
   - type: Appearance
   - type: DamageVisuals
-    thresholds: [5, 10, 20]
-    damageDivisor: 3
+    thresholds: [4, 8, 12]
+    damageDivisor: 36
     trackAllDamage: true
     damageOverlay:
       sprite: Structures/Windows/cracks_directional.rsi
-  - type: RadiationBlocker
-    resistance: 2
   - type: Destructible
     thresholds:
     - trigger:
         !type:DamageTrigger
-        damage: 150
+        damage: 1000
       behaviors: #excess damage, don't spawn entities.
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
     - trigger:
         !type:DamageTrigger
-        damage: 75
+        damage: 600
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WindowShatter
+          collection: GlassBreak
       - !type:SpawnEntitiesBehavior
         spawn:
           ShardGlassPlasma:
             min: 1
-            max: 1
+            max: 2
           PartRodMetal:
             min: 1
-            max: 1
+            max: 2
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
   - type: StaticPrice
@@ -115,6 +110,7 @@
 - type: entity
   parent: ReinforcedPlasmaWindow
   id: ReinforcedPlasmaWindowDiagonal
+  name: diagonal reinforced plasma window
   suffix: diagonal
   placement:
     mode: SnapgridCenter
@@ -125,9 +121,6 @@
     drawdepth: WallTops
     sprite: Structures/Windows/reinforced_plasma_diagonal.rsi
     state: state0
-  - type: Tag
-    tags:
-    - Diagonal
   - type: IconSmooth
     mode: Diagonal
     key: windows
@@ -148,11 +141,6 @@
         - FullTileMask
         layer:
         - GlassLayer
-  - type: Airtight
-    noAirWhenFullyAirBlocked: false
-    airBlockedDirection:
-    - South
-    - East
   - type: DamageVisuals
     damageOverlay:
       sprite: Structures/Windows/cracks_diagonal.rsi

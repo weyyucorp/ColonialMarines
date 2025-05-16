@@ -1,13 +1,12 @@
 using Content.Server.DeviceLinking.Components;
 using Content.Server.DeviceNetwork;
 using Content.Shared.DeviceLinking;
-using Content.Shared.DeviceLinking.Events;
 using Content.Shared.Examine;
 using Content.Shared.Interaction;
+using Content.Shared.Tools;
 using Content.Shared.Popups;
-using Content.Shared.Timing;
-using Content.Shared.Tools.Systems;
-using Robust.Shared.Audio.Systems;
+using SharedToolSystem = Content.Shared.Tools.Systems.SharedToolSystem;
+using SignalReceivedEvent = Content.Server.DeviceLinking.Events.SignalReceivedEvent;
 
 namespace Content.Server.DeviceLinking.Systems;
 
@@ -18,7 +17,6 @@ public sealed class LogicGateSystem : EntitySystem
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly SharedToolSystem _tool = default!;
-    [Dependency] private readonly UseDelaySystem _useDelay = default!;
 
     private readonly int GateCount = Enum.GetValues(typeof(LogicGate)).Length;
 
@@ -44,7 +42,7 @@ public sealed class LogicGateSystem : EntitySystem
             }
             if (comp.StateB == SignalState.Momentary)
             {
-                comp.StateB = SignalState.Low;
+                comp.StateB = SignalState.High;
             }
 
             // output most likely changed so update it
@@ -69,11 +67,6 @@ public sealed class LogicGateSystem : EntitySystem
     private void OnInteractUsing(EntityUid uid, LogicGateComponent comp, InteractUsingEvent args)
     {
         if (args.Handled || !_tool.HasQuality(args.Used, comp.CycleQuality))
-            return;
-
-        // no sound spamming
-        if (TryComp<UseDelayComponent>(uid, out var useDelay)
-            && !_useDelay.TryResetDelay((uid, useDelay), true))
             return;
 
         // cycle through possible gates
@@ -102,12 +95,10 @@ public sealed class LogicGateSystem : EntitySystem
         if (args.Port == comp.InputPortA)
         {
             comp.StateA = state;
-            _appearance.SetData(uid, LogicGateVisuals.InputA, state == SignalState.High); //If A == High => Sets input A sprite to True
         }
         else if (args.Port == comp.InputPortB)
         {
             comp.StateB = state;
-            _appearance.SetData(uid, LogicGateVisuals.InputB, state == SignalState.High); //If B == High => Sets input B sprite to True
         }
 
         UpdateOutput(uid, comp);
@@ -144,8 +135,6 @@ public sealed class LogicGateSystem : EntitySystem
                 output = a == b;
                 break;
         }
-
-        _appearance.SetData(uid, LogicGateVisuals.Output, output);
 
         // only send a payload if it actually changed
         if (output != comp.LastOutput)

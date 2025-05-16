@@ -2,7 +2,6 @@ using System.Numerics;
 using Content.Server.DeviceNetwork;
 using Content.Server.DeviceNetwork.Components;
 using Content.Server.DeviceNetwork.Systems;
-using Content.Shared.DeviceNetwork;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Map;
@@ -104,7 +103,7 @@ namespace Content.IntegrationTests.Tests.DeviceNetwork
 
             await server.WaitAssertion(() =>
             {
-                Assert.That(payload, Is.EquivalentTo(deviceNetTestSystem.LastPayload));
+                CollectionAssert.AreEquivalent(deviceNetTestSystem.LastPayload, payload);
             });
             await pair.CleanReturnAsync();
         }
@@ -171,7 +170,7 @@ namespace Content.IntegrationTests.Tests.DeviceNetwork
 
             await server.WaitAssertion(() =>
             {
-                Assert.That(payload, Is.EqualTo(deviceNetTestSystem.LastPayload).AsCollection);
+                CollectionAssert.AreEqual(deviceNetTestSystem.LastPayload, payload);
 
                 payload = new NetworkPayload
                 {
@@ -188,7 +187,7 @@ namespace Content.IntegrationTests.Tests.DeviceNetwork
 
             await server.WaitAssertion(() =>
             {
-                Assert.That(payload, Is.Not.EqualTo(deviceNetTestSystem.LastPayload).AsCollection);
+                CollectionAssert.AreNotEqual(deviceNetTestSystem.LastPayload, payload);
             });
 
             await pair.CleanReturnAsync();
@@ -212,7 +211,7 @@ namespace Content.IntegrationTests.Tests.DeviceNetwork
             DeviceNetworkComponent networkComponent1 = null;
             DeviceNetworkComponent networkComponent2 = null;
             WiredNetworkComponent wiredNetworkComponent = null;
-            var grid = testMap.Grid.Comp;
+            var grid = testMap.MapGrid;
 
             var testValue = "test";
             var payload = new NetworkPayload
@@ -271,7 +270,7 @@ namespace Content.IntegrationTests.Tests.DeviceNetwork
 
             await server.WaitAssertion(() =>
             {
-                Assert.That(payload, Is.EqualTo(deviceNetTestSystem.LastPayload).AsCollection);
+                CollectionAssert.AreEqual(deviceNetTestSystem.LastPayload, payload);
             });
 
             await pair.CleanReturnAsync();

@@ -2,7 +2,6 @@ using Content.Shared.Stunnable;
 using Content.Shared.Damage.Components;
 using Content.Shared.Effects;
 using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Physics.Events;
 using Robust.Shared.Player;
 using Robust.Shared.Random;
@@ -38,8 +37,7 @@ public sealed class DamageOnHighSpeedImpactSystem : EntitySystem
         if (speed < component.MinimumSpeed)
             return;
 
-        if (component.LastHit != null
-            && (_gameTiming.CurTime - component.LastHit.Value).TotalSeconds < component.DamageCooldown)
+        if ((_gameTiming.CurTime - component.LastHit).TotalSeconds < component.DamageCooldown)
             return;
 
         component.LastHit = _gameTiming.CurTime;

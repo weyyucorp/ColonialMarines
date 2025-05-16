@@ -6,17 +6,19 @@
   components:
   - type: Sprite
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/green.rsi
-    state: icon
+    layers:
+      - state: closed
+      - state: open
+        map: ["openLayer"]
   - type: Item
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/green.rsi
     size: Normal
   - type: Storage
-    grid:
-    - 0,0,4,1
+    maxSlots: 6
   - type: StorageFill
     contents:
       - id: CigPackGreen
-        amount: 5
+        amount: 6
   - type: Tag
     tags:
     - Trash
@@ -28,18 +30,19 @@
 - type: entity
   id: CigCartonRed
   parent: CigCartonGreen
-  name: DromedaryCo carton
+  name: Dromedaryco carton
   description: A carton containing 6 packets of Dromedarycos.
   components:
   - type: Sprite
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/red.rsi
-    state: icon
+    layers:
+      - state: closed
   - type: Item
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/red.rsi
   - type: StorageFill
     contents:
       - id: CigPackRed
-        amount: 5
+        amount: 6
 
 - type: entity
   id: CigCartonBlue
@@ -49,13 +52,14 @@
   components:
   - type: Sprite
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/blue.rsi
-    state: icon
+    layers:
+      - state: closed
   - type: Item
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/blue.rsi
   - type: StorageFill
     contents:
       - id: CigPackBlue
-        amount: 5
+        amount: 6
 
 - type: entity
   id: CigCartonBlack
@@ -65,13 +69,14 @@
   components:
   - type: Sprite
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/black.rsi
-    state: icon
+    layers:
+      - state: closed
   - type: Item
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/black.rsi
   - type: StorageFill
     contents:
       - id: CigPackBlack
-        amount: 5
+        amount: 6
 
 - type: entity
   id: CigCartonMixed
@@ -81,7 +86,8 @@
   components:
   - type: Sprite
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/mixed.rsi
-    state: icon
+    layers:
+      - state: closed
   - type: Item
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/mixed.rsi
   - type: StorageFill

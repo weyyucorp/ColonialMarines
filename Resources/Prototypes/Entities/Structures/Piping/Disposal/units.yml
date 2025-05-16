@@ -10,15 +10,14 @@
   components:
   - type: Sprite
     sprite: Structures/Piping/disposal.rsi
+    snapCardinals: true
     layers:
     - state: condisposal
       map: [ "enum.DisposalUnitVisualLayers.Unanchored" ]
     - state: disposal
       map: [ "enum.DisposalUnitVisualLayers.Base" ]
-    - state: disposal-charging
-      map: [ "enum.DisposalUnitVisualLayers.BaseCharging" ]
     - state: disposal-flush
-      map: [ "enum.DisposalUnitVisualLayers.OverlayFlush" ]
+      map: [ "enum.DisposalUnitVisualLayers.BaseFlush" ]
     - state: dispover-charge
       map: [ "enum.DisposalUnitVisualLayers.OverlayCharging" ]
     - state: dispover-ready
@@ -29,6 +28,17 @@
       map: [ "enum.DisposalUnitVisualLayers.OverlayEngaged" ]
   - type: Physics
     bodyType: Static
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.25,-0.4,0.25,0.4"
+        density: 75
+        mask:
+        - MachineMask
+        layer:
+        - MachineLayer
   - type: Destructible
     thresholds:
     - trigger:
@@ -45,9 +55,7 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
-          params:
-            volume: -6
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
@@ -56,13 +64,13 @@
   - type: Appearance
   - type: UserInterface
     interfaces:
-      enum.DisposalUnitUiKey.Key:
-        type: DisposalUnitBoundUserInterface
+    - key: enum.DisposalUnitUiKey.Key
+      type: DisposalUnitBoundUserInterface
   - type: ContainerContainer
     containers:
       disposals: !type:Container
   - type: StaticPrice
-    price: 70
+    price: 62
   - type: PowerSwitch
 
 - type: entity
@@ -70,21 +78,15 @@
   parent: DisposalUnitBase
   name: disposal unit
   components:
-  - type: Sprite
-    sprite: Structures/Piping/disposal.rsi
-    snapCardinals: true
   - type: Construction
     graph: DisposalMachine
     node: disposal_unit
   - type: DisposalUnit
-  - type: ThrowInsertContainer
-    containerId: disposals
   - type: UserInterface
     interfaces:
-      enum.DisposalUnitUiKey.Key:
-        type: DisposalUnitBoundUserInterface
+    - key: enum.DisposalUnitUiKey.Key
+      type: DisposalUnitBoundUserInterface
   - type: RatKingRummageable
-  - type: RequireProjectileTarget
 
 - type: entity
   id: MailingUnit
@@ -94,7 +96,6 @@
   components:
   - type: Sprite
     sprite: Structures/Piping/disposal.rsi
-    snapCardinals: true
     layers:
       - state: conmailing
         map: [ "enum.DisposalUnitVisualLayers.Unanchored" ]
@@ -103,7 +104,7 @@
       - state: mailing-charging
         map: [ "enum.DisposalUnitVisualLayers.BaseCharging" ]
       - state: mailing-flush
-        map: [ "enum.DisposalUnitVisualLayers.OverlayFlush" ]
+        map: [ "enum.DisposalUnitVisualLayers.BaseFlush" ]
       - state: dispover-charge
         map: [ "enum.DisposalUnitVisualLayers.OverlayCharging" ]
       - state: dispover-ready
@@ -117,12 +118,7 @@
     node: mailing_unit
   - type: DisposalUnit
     autoEngageEnabled: false
-    whitelist:
-      components:
-      - Item
-    blacklist:
-      components:
-      - EntityStorage
+    mobsCanEnter: false
   - type: MailingUnit
   - type: DeviceNetwork
     deviceNetId: Wired
@@ -135,7 +131,7 @@
   - type: Appearance
   - type: UserInterface
     interfaces:
-      enum.MailingUnitUiKey.Key:
-        type: DisposalUnitBoundUserInterface
-      enum.ConfigurationUiKey.Key:
-        type: ConfigurationBoundUserInterface
+    - key: enum.MailingUnitUiKey.Key
+      type: DisposalUnitBoundUserInterface
+    - key: enum.ConfigurationUiKey.Key
+      type: ConfigurationBoundUserInterface

@@ -1,6 +1,5 @@
 using Content.Server.Actions;
 using Content.Server.Popups;
-using Content.Server.Power.EntitySystems;
 using Content.Server.PowerCell;
 using Content.Shared.Actions;
 using Content.Shared.Examine;
@@ -9,10 +8,7 @@ using Content.Shared.Light;
 using Content.Shared.Light.Components;
 using Content.Shared.Rounding;
 using Content.Shared.Toggleable;
-using JetBrains.Annotations;
-using Robust.Server.GameObjects;
-using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
+using Content.Shared.Verbs;
 using Robust.Shared.Containers;
 using Robust.Shared.GameStates;
 using Robust.Shared.Utility;
@@ -25,7 +21,6 @@ namespace Content.Server.Light.EntitySystems
         [Dependency] private readonly ActionContainerSystem _actionContainer = default!;
         [Dependency] private readonly PopupSystem _popup = default!;
         [Dependency] private readonly PowerCellSystem _powerCell = default!;
-        [Dependency] private readonly BatterySystem _battery = default!;
         [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
         [Dependency] private readonly SharedAudioSystem _audio = default!;
         [Dependency] private readonly SharedPointLightSystem _lights = default!;
@@ -45,6 +40,7 @@ namespace Content.Server.Light.EntitySystems
             SubscribeLocalEvent<HandheldLightComponent, ComponentShutdown>(OnShutdown);
 
             SubscribeLocalEvent<HandheldLightComponent, ExaminedEvent>(OnExamine);
+            SubscribeLocalEvent<HandheldLightComponent, GetVerbsEvent<ActivationVerb>>(AddToggleLightVerb);
 
             SubscribeLocalEvent<HandheldLightComponent, ActivateInWorldEvent>(OnActivate);
 
@@ -124,7 +120,7 @@ namespace Content.Server.Light.EntitySystems
 
         private void OnActivate(Entity<HandheldLightComponent> ent, ref ActivateInWorldEvent args)
         {
-            if (args.Handled || !args.Complex || !ent.Comp.ToggleOnInteract)
+            if (args.Handled || !ent.Comp.ToggleOnInteract)
                 return;
 
             if (ToggleStatus(args.User, ent))
@@ -177,7 +173,25 @@ namespace Content.Server.Light.EntitySystems
             }
         }
 
-        public override bool TurnOff(Entity<HandheldLightComponent> ent, bool makeNoise = true)
+        private void AddToggleLightVerb(Entity<HandheldLightComponent> ent, ref GetVerbsEvent<ActivationVerb> args)
+        {
+            if (!args.CanAccess || !args.CanInteract || !ent.Comp.ToggleOnInteract)
+                return;
+
+            var @event = args;
+            ActivationVerb verb = new()
+            {
+                Text = Loc.GetString("verb-common-toggle-light"),
+                Icon = new SpriteSpecifier.Texture(new ("/Textures/Interface/VerbIcons/light.svg.192dpi.png")),
+                Act = ent.Comp.Activated
+                    ? () => TurnOff(ent)
+                    : () => TurnOn(@event.User, ent)
+            };
+
+            args.Verbs.Add(verb);
+        }
+
+        public bool TurnOff(Entity<HandheldLightComponent> ent, bool makeNoise = true)
         {
             if (!ent.Comp.Activated || !_lights.TryGetLight(ent, out var pointLightComponent))
             {
@@ -191,7 +205,7 @@ namespace Content.Server.Light.EntitySystems
             return true;
         }
 
-        public override bool TurnOn(EntityUid user, Entity<HandheldLightComponent> uid)
+        public bool TurnOn(EntityUid user, Entity<HandheldLightComponent> uid)
         {
             var component = uid.Comp;
             if (component.Activated || !_lights.TryGetLight(uid, out var pointLightComponent))
@@ -202,7 +216,7 @@ namespace Content.Server.Light.EntitySystems
             if (!_powerCell.TryGetBatteryFromSlot(uid, out var battery) &&
                 !TryComp(uid, out battery))
             {
-                _audio.PlayPvs(_audio.ResolveSound(component.TurnOnFailSound), uid);
+                _audio.PlayPvs(_audio.GetSound(component.TurnOnFailSound), uid);
                 _popup.PopupEntity(Loc.GetString("handheld-light-component-cell-missing-message"), uid, user);
                 return false;
             }
@@ -212,7 +226,7 @@ namespace Content.Server.Light.EntitySystems
             // Simple enough.
             if (component.Wattage > battery.CurrentCharge)
             {
-                _audio.PlayPvs(_audio.ResolveSound(component.TurnOnFailSound), uid);
+                _audio.PlayPvs(_audio.GetSound(component.TurnOnFailSound), uid);
                 _popup.PopupEntity(Loc.GetString("handheld-light-component-cell-dead-message"), uid, user);
                 return false;
             }
@@ -227,15 +241,12 @@ namespace Content.Server.Light.EntitySystems
         public void TryUpdate(Entity<HandheldLightComponent> uid, float frameTime)
         {
             var component = uid.Comp;
-            if (!_powerCell.TryGetBatteryFromSlot(uid, out var batteryUid, out var battery, null) &&
+            if (!_powerCell.TryGetBatteryFromSlot(uid, out var battery) &&
                 !TryComp(uid, out battery))
             {
                 TurnOff(uid, false);
                 return;
             }
-
-            if (batteryUid == null)
-                return;
 
             var appearanceComponent = EntityManager.GetComponentOrNull<AppearanceComponent>(uid);
 
@@ -253,7 +264,7 @@ namespace Content.Server.Light.EntitySystems
                 _appearance.SetData(uid, HandheldLightVisuals.Power, HandheldLightPowerStates.Dying, appearanceComponent);
             }
 
-            if (component.Activated && !_battery.TryUseCharge(batteryUid.Value, component.Wattage * frameTime, battery))
+            if (component.Activated && !battery.TryUseCharge(component.Wattage * frameTime))
                 TurnOff(uid, false);
 
             UpdateLevel(uid);

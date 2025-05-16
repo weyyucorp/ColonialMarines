@@ -98,29 +98,10 @@
             "name": "rock_carbon"
         },
         {
-            "name": "rock_coal"
-        },
-        {
             "name": "rock_copper"
         },
         {
-            "name": "rock_diamond",
-            "delays": [
-              [
-               0.2,
-               0.2,
-               0.2,
-               0.2,
-               0.2,
-               0.2,
-               0.2,
-               0.2,
-               0.2,
-               0.2,
-               0.2,
-               0.2
-              ]
-            ]
+            "name": "rock_diamond"
         },
         {
             "name": "rock_gold"
@@ -166,9 +147,6 @@
         },
         {
             "name": "rock_bananium"
-        },
-        {
-            "name": "rock_salt"
         },
         {
             "name": "rock_sand"

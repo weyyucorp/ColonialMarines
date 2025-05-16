@@ -1,5 +1,4 @@
 ﻿- type: entity
-  parent: RMCBaseEffect
   name: pointing arrow
   id: PointingArrow
   save: false

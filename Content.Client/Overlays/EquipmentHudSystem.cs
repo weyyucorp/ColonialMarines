@@ -3,8 +3,7 @@ using Content.Shared.Inventory;
 using Content.Shared.Inventory.Events;
 using Robust.Client.Player;
 using Robust.Shared.Player;
-using Content.Shared.Item;
-using Content.Shared.Item.ItemToggle.Components;
+
 namespace Content.Client.Overlays;
 
 /// <summary>
@@ -15,7 +14,6 @@ public abstract class EquipmentHudSystem<T> : EntitySystem where T : IComponent
 {
     [Dependency] private readonly IPlayerManager _player = default!;
 
-    [ViewVariables]
     protected bool IsActive;
     protected virtual SlotFlags TargetSlots => ~SlotFlags.POCKET;
 
@@ -57,35 +55,35 @@ public abstract class EquipmentHudSystem<T> : EntitySystem where T : IComponent
 
     protected virtual void DeactivateInternal() { }
 
-    private void OnStartup(Entity<T> ent, ref ComponentStartup args)
+    private void OnStartup(EntityUid uid, T component, ComponentStartup args)
     {
-        RefreshOverlay();
+        RefreshOverlay(uid);
     }
 
-    private void OnRemove(Entity<T> ent, ref ComponentRemove args)
+    private void OnRemove(EntityUid uid, T component, ComponentRemove args)
     {
-        RefreshOverlay();
+        RefreshOverlay(uid);
     }
 
     private void OnPlayerAttached(LocalPlayerAttachedEvent args)
     {
-        RefreshOverlay();
+        RefreshOverlay(args.Entity);
     }
 
     private void OnPlayerDetached(LocalPlayerDetachedEvent args)
     {
-        if (_player.LocalSession?.AttachedEntity is null)
+        if (_player.LocalPlayer?.ControlledEntity == null)
             Deactivate();
     }
 
-    private void OnCompEquip(Entity<T> ent, ref GotEquippedEvent args)
+    private void OnCompEquip(EntityUid uid, T component, GotEquippedEvent args)
     {
-        RefreshOverlay();
+        RefreshOverlay(args.Equipee);
     }
 
-    private void OnCompUnequip(Entity<T> ent, ref GotUnequippedEvent args)
+    private void OnCompUnequip(EntityUid uid, T component, GotUnequippedEvent args)
     {
-        RefreshOverlay();
+        RefreshOverlay(args.Equipee);
     }
 
     private void OnRoundRestart(RoundRestartCleanupEvent args)
@@ -93,24 +91,23 @@ public abstract class EquipmentHudSystem<T> : EntitySystem where T : IComponent
         Deactivate();
     }
 
-    protected virtual void OnRefreshEquipmentHud(Entity<T> ent, ref InventoryRelayedEvent<RefreshEquipmentHudEvent<T>> args)
+    protected virtual void OnRefreshEquipmentHud(EntityUid uid, T component, InventoryRelayedEvent<RefreshEquipmentHudEvent<T>> args)
     {
-        OnRefreshComponentHud(ent, ref args.Args);
+        args.Args.Active = true;
     }
 
-    protected virtual void OnRefreshComponentHud(Entity<T> ent, ref RefreshEquipmentHudEvent<T> args)
+    protected virtual void OnRefreshComponentHud(EntityUid uid, T component, RefreshEquipmentHudEvent<T> args)
     {
         args.Active = true;
-        args.Components.Add(ent.Comp);
     }
 
-    protected void RefreshOverlay()
+    private void RefreshOverlay(EntityUid uid)
     {
-        if (_player.LocalSession?.AttachedEntity is not { } entity)
+        if (uid != _player.LocalPlayer?.ControlledEntity)
             return;
 
         var ev = new RefreshEquipmentHudEvent<T>(TargetSlots);
-        RaiseLocalEvent(entity, ref ev);
+        RaiseLocalEvent(uid, ev);
 
         if (ev.Active)
             Update(ev);

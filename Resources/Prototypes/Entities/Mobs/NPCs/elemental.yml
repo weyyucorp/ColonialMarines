@@ -1,4 +1,5 @@
 - type: entity
+  save: false
   abstract: true
   id: MobElementalBase
   components:
@@ -44,6 +45,7 @@
   - type: Tag
     tags:
     - DoorBumpOpener
+    - ShoesRequiredStepTriggerImmune
   - type: MobState
     allowedStates:
       - Alive
@@ -72,43 +74,29 @@
   - type: InputMover
   - type: MobMover
   - type: ZombieImmune
-  - type: ProtectedFromStepTriggers
 
 - type: entity
-  abstract: true
-  id: MobOreCrab
-  name: ore crab
   parent: [ MobElementalBase, MobCombat ]
+  id: MobQuartzCrab
+  name: quartz crab
+  description: An ore crab made from quartz.
   components:
   - type: Sprite
     sprite: Mobs/Elemental/orecrab.rsi
-    state: uranium_crab
+    state: quartzcrab
   - type: HTN
     rootTask:
       task: SimpleHostileCompound
   - type: MeleeWeapon
-    hidden: true
     soundHit:
       path: /Audio/Weapons/Xeno/alien_claw_flesh3.ogg
     damage:
       types:
-        Blunt: 6
-  - type: MovementSpeedModifier
-    baseWalkSpeed : 2
-    baseSprintSpeed : 2.5
+        Piercing: 12
+  - type: CombatMode
   - type: NpcFactionMember
     factions:
       - SimpleHostile
-  - type: Damageable
-    damageContainer: StructuralInorganic
-
-- type: entity
-  parent: MobOreCrab
-  id: MobQuartzCrab
-  description: An ore crab made from Quartz.
-  components:
-  - type: Sprite
-    state: quartz_crab
   - type: Destructible
     thresholds:
     - trigger:
@@ -120,26 +108,37 @@
           collection: GlassBreak
       - !type:SpawnEntitiesBehavior
         spawn:
-          SpaceQuartz1:
-            min: 2
-            max: 4
+          SpaceQuartz:
+            min: 4
+            max: 6
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
 
 - type: entity
-  parent: MobOreCrab
+  parent: [ MobElementalBase, MobCombat ]
   id: MobIronCrab
+  name: ore crab
   description: An ore crab made from iron.
   components:
   - type: Sprite
-    state: iron_crab
+    sprite: Mobs/Elemental/orecrab.rsi
+    state: ironcrab
+  - type: HTN
+    rootTask:
+      task: SimpleHostileCompound
   - type: MeleeWeapon
+    soundHit:
+      path: /Audio/Weapons/Xeno/alien_claw_flesh3.ogg
     damage:
       types:
-        Blunt: 5
+        Blunt: 8
+  - type: CombatMode
   - type: MovementSpeedModifier
     baseWalkSpeed : 1.5
     baseSprintSpeed : 2
+  - type: NpcFactionMember
+    factions:
+      - SimpleHostile
   - type: Destructible
     thresholds:
     - trigger:
@@ -152,53 +151,36 @@
       - !type:SpawnEntitiesBehavior
         spawn:
           SteelOre1:
-            min: 2
-            max: 4
+            min: 4
+            max: 6
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
 
 - type: entity
-  parent: MobOreCrab
-  id: MobCoalCrab
-  description: An ore crab made from coal.
-  components:
-  - type: Sprite
-    state: coal_crab
-  - type: MeleeWeapon
-    damage:
-      types:
-        Blunt: 2.5
-  - type: MovementSpeedModifier
-    baseWalkSpeed : 1.0
-    baseSprintSpeed : 1.5
-  - type: Destructible
-    thresholds:
-    - trigger:
-        !type:DamageTrigger
-        damage: 100
-      behaviors:
-      - !type:PlaySoundBehavior
-        sound:
-          collection: GlassBreak
-      - !type:SpawnEntitiesBehavior
-        spawn:
-          Coal1:
-            min: 2
-            max: 4
-      - !type:DoActsBehavior
-        acts: [ "Destruction" ]
-
-- type: entity
-  parent: MobOreCrab
+  parent: [ MobElementalBase, MobCombat ]
   id: MobUraniumCrab
+  name: ore crab
   description: An ore crab made from uranium.
   components:
-  - type: FactionException
-  - type: NPCRetaliation
-    attackMemoryLength: 10
+  - type: Sprite
+    sprite: Mobs/Elemental/orecrab.rsi
+    state: uraniumcrab
+  - type: HTN
+    rootTask:
+      task: IdleCompound
+  - type: MeleeWeapon
+    soundHit:
+      path: /Audio/Weapons/Xeno/alien_claw_flesh3.ogg
+    damage:
+      types:
+        Blunt: 8
+  - type: CombatMode
+  - type: MovementSpeedModifier
+    baseWalkSpeed : 2
+    baseSprintSpeed : 2.5
   - type: NpcFactionMember
     factions:
-      - SimpleNeutral
+      - SimpleHostile
   - type: RadiationSource
     intensity: 2
     slope: 0.3
@@ -214,8 +196,8 @@
       - !type:SpawnEntitiesBehavior
         spawn:
           UraniumOre1:
-            min: 1
-            max: 3
+            min: 8
+            max: 10
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
   - type: PointLight
@@ -224,78 +206,12 @@
     color: "#06DF24"
 
 - type: entity
-  parent: MobOreCrab
-  id: MobSilverCrab
-  name: ore crab
-  description: An ore crab made from silver.
-  components:
-  - type: Sprite
-    state: silver_crab
-  - type: MeleeWeapon
-    damage:
-      types:
-        Blunt: 5
-  - type: Destructible
-    thresholds:
-    - trigger:
-        !type:DamageTrigger
-        damage: 70
-      behaviors:
-      - !type:PlaySoundBehavior
-        sound:
-          collection: GlassBreak
-      - !type:SpawnEntitiesBehavior
-        spawn:
-          SilverOre1:
-            min: 1
-            max: 3
-      - !type:DoActsBehavior
-        acts: [ "Destruction" ]
-
-- type: entity
-  parent: MobOreCrab
-  id: MobGoldCrab
-  name: ore crab
-  description: An ore crab made from gold.
-  components:
-  - type: Sprite
-    state: gold_crab
-  - type: MeleeWeapon
-    damage:
-      types:
-        Blunt: 5
-  - type: Destructible
-    thresholds:
-    - trigger:
-        !type:DamageTrigger
-        damage: 70
-      behaviors:
-      - !type:PlaySoundBehavior
-        sound:
-          collection: GlassBreak
-      - !type:SpawnEntitiesBehavior
-        spawn:
-          GoldOre1:
-            min: 1
-            max: 3
-      - !type:DoActsBehavior
-        acts: [ "Destruction" ]
-
-- type: entity
-  name: reagent slime
+  name: Reagent slime
   id: ReagentSlime
   suffix: Water
   parent: [ MobAdultSlimes, MobCombat ]
   description: It consists of a liquid, and it wants to dissolve you in itself.
   components:
-  - type: GhostRole
-    prob: 0
-    description: ghost-role-information-angry-slimes-description
-    rules: ghost-role-information-angry-slimes-rules
-    mindRoles:
-    - MindRoleGhostRoleTeamAntagonist
-    raffle:
-      settings: short
   - type: NpcFactionMember
     factions:
     - SimpleHostile
@@ -334,7 +250,7 @@
     animation: WeaponArcBite
     damage:
       types:
-        Slash: 8
+        Slash: 15
   - type: MeleeChemicalInjector
     solution: bloodstream
     transferAmount: 5
@@ -380,10 +296,6 @@
         - ReagentSlimeToxin
         - ReagentSlimeNapalm
         - ReagentSlimeOmnizine
-        - ReagentSlimeMuteToxin
-        - ReagentSlimeNorepinephricAcid
-        - ReagentSlimeEphedrine
-        - ReagentSlimeRobustHarvest
       chance: 1
 
 - type: entity
@@ -419,9 +331,6 @@
       - map: [ "enum.DamageStateVisualLayers.Base" ]
         state: alive
         color: "#AAAAAA"
-  - type: MeleeChemicalInjector
-    solution: bloodstream
-    transferAmount: 1
 
 - type: entity
   id: ReagentSlimeNocturine
@@ -439,9 +348,6 @@
       - map: [ "enum.DamageStateVisualLayers.Base" ]
         state: alive
         color: "#128e80"
-  - type: MeleeChemicalInjector
-    solution: bloodstream
-    transferAmount: 3
 
 - type: entity
   id: ReagentSlimeTHC
@@ -527,71 +433,3 @@
       - map: [ "enum.DamageStateVisualLayers.Base" ]
         state: alive
         color: "#fcf7f9"
-
-- type: entity
-  id: ReagentSlimeMuteToxin
-  parent: ReagentSlime
-  suffix: Mute Toxin
-  components:
-  - type: Bloodstream
-    bloodReagent: MuteToxin
-  - type: PointLight
-    color: "#0f0f0f"
-  - type: Sprite
-    drawdepth: Mobs
-    sprite: Mobs/Aliens/elemental.rsi
-    layers:
-      - map: [ "enum.DamageStateVisualLayers.Base" ]
-        state: alive
-        color: "#0f0f0f"
-
-- type: entity
-  id: ReagentSlimeNorepinephricAcid
-  parent: ReagentSlime
-  suffix: Norepinephric Acid
-  components:
-  - type: Bloodstream
-    bloodReagent: NorepinephricAcid
-  - type: PointLight
-    color: "#96a8b5"
-  - type: Sprite
-    drawdepth: Mobs
-    sprite: Mobs/Aliens/elemental.rsi
-    layers:
-      - map: [ "enum.DamageStateVisualLayers.Base" ]
-        state: alive
-        color: "#96a8b5"
-
-- type: entity
-  id: ReagentSlimeEphedrine
-  parent: ReagentSlime
-  suffix: Ephedrine
-  components:
-  - type: Bloodstream
-    bloodReagent: Ephedrine
-  - type: PointLight
-    color: "#D2FFFA"
-  - type: Sprite
-    drawdepth: Mobs
-    sprite: Mobs/Aliens/elemental.rsi
-    layers:
-      - map: [ "enum.DamageStateVisualLayers.Base" ]
-        state: alive
-        color: "#D2FFFA"
-
-- type: entity
-  id: ReagentSlimeRobustHarvest
-  parent: ReagentSlime
-  suffix: Robust Harvest
-  components:
-  - type: Bloodstream
-    bloodReagent: RobustHarvest
-  - type: PointLight
-    color: "#3e901c"
-  - type: Sprite
-    drawdepth: Mobs
-    sprite: Mobs/Aliens/elemental.rsi
-    layers:
-      - map: [ "enum.DamageStateVisualLayers.Base" ]
-        state: alive
-        color: "#3e901c"

@@ -6,8 +6,6 @@ using Content.Server.Chat.Systems;
 using Content.Server.Station.Systems;
 using Robust.Shared.Timing;
 using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
-using Content.Server.Power.EntitySystems;
 
 namespace Content.Server.PowerSink
 {
@@ -32,13 +30,13 @@ namespace Content.Server.PowerSink
         [Dependency] private readonly ExplosionSystem _explosionSystem = default!;
         [Dependency] private readonly SharedAudioSystem _audio = default!;
         [Dependency] private readonly StationSystem _station = default!;
-        [Dependency] private readonly BatterySystem _battery = default!;
 
         public override void Initialize()
         {
             base.Initialize();
 
             SubscribeLocalEvent<PowerSinkComponent, ExaminedEvent>(OnExamine);
+            SubscribeLocalEvent<PowerSinkComponent, EntityUnpausedEvent>(OnUnpaused);
         }
 
         private void OnExamine(EntityUid uid, PowerSinkComponent component, ExaminedEvent args)
@@ -55,6 +53,14 @@ namespace Content.Server.PowerSink
             );
         }
 
+        private void OnUnpaused(EntityUid uid, PowerSinkComponent component, ref EntityUnpausedEvent args)
+        {
+            if (component.ExplosionTime == null)
+                return;
+
+            component.ExplosionTime = component.ExplosionTime + args.PausedTime;
+        }
+
         public override void Update(float frameTime)
         {
             var toRemove = new RemQueue<(EntityUid Entity, PowerSinkComponent Sink)>();
@@ -66,7 +72,7 @@ namespace Content.Server.PowerSink
                 if (!transform.Anchored)
                     continue;
 
-                _battery.SetCharge(entity, battery.CurrentCharge + networkLoad.NetworkLoad.ReceivingPower / 1000, battery);
+                battery.CurrentCharge += networkLoad.NetworkLoad.ReceivingPower / 1000;
 
                 var currentBatteryThreshold = battery.CurrentCharge / battery.MaxCharge;
 
@@ -128,7 +134,7 @@ namespace Content.Server.PowerSink
 
             _chat.DispatchStationAnnouncement(
                 station.Value,
-                Loc.GetString("powersink-imminent-explosion-announcement"),
+                Loc.GetString("powersink-immiment-explosion-announcement"),
                 playDefaultSound: true,
                 colorOverride: Color.Yellow
             );

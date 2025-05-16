@@ -1,17 +1,14 @@
-﻿- type: localizedDataset
-  id: NamesMilitaryFirstLeader
+﻿- type: dataset
+  id: NamesFirstMilitaryLeader
   values:
-    prefix: names-military-leader-first-dataset-
-    count: 4
-
-- type: localizedDataset
-  id: NamesMilitaryFirst
+  - Colonel
+  - Commander
+  - Lieutenant
+  - Major
+  
+- type: dataset
+  id: NamesFirstMilitary
   values:
-    prefix: names-military-first-dataset-
-    count: 3
-
-- type: localizedDataset
-  id: NamesMilitaryLast
-  values:
-    prefix: names-military-last-dataset-
-    count: 42
+  - Corporal
+  - Sergeant
+  - Specialist

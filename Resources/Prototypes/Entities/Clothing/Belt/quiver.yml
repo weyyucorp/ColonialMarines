@@ -12,17 +12,12 @@
       visible: false
   - type: Clothing
   - type: Storage
-    grid:
-    - 0,0,7,3
+    maxSlots: 15
     maxItemSize: Small
     whitelist:
       tags:
       - Arrow
-      - Plunger
   - type: Appearance
   - type: StorageContainerVisuals
     maxFillLevels: 3
     fillBaseName: fill-
-  - type: Construction
-    graph: Quiver
-    node: Quiver

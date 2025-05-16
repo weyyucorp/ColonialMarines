@@ -5,7 +5,6 @@ using Content.Shared.Interaction;
 using Content.Shared.Inventory.Events;
 using Content.Shared.Radiation.Components;
 using Content.Shared.Radiation.Systems;
-using Robust.Server.Audio;
 using Robust.Server.GameObjects;
 using Robust.Server.Player;
 
@@ -35,7 +34,7 @@ public sealed class GeigerSystem : SharedGeigerSystem
 
     private void OnActivate(Entity<GeigerComponent> geiger, ref ActivateInWorldEvent args)
     {
-        if (args.Handled || !args.Complex || geiger.Comp.AttachedToSuit)
+        if (args.Handled || geiger.Comp.AttachedToSuit)
             return;
         args.Handled = true;
 
@@ -150,7 +149,7 @@ public sealed class GeigerSystem : SharedGeigerSystem
         if (!Resolve(uid, ref component, false))
             return;
 
-        component.Stream = _audio.Stop(component.Stream);
+        component.Stream?.Stop();
 
         if (!component.Sounds.TryGetValue(component.DangerLevel, out var sounds))
             return;
@@ -161,10 +160,10 @@ public sealed class GeigerSystem : SharedGeigerSystem
         if (!_player.TryGetSessionByEntity(component.User.Value, out var session))
             return;
 
-        var sound = _audio.ResolveSound(sounds);
+        var sound = _audio.GetSound(sounds);
         var param = sounds.Params.WithLoop(true).WithVolume(-4f);
 
-        component.Stream = _audio.PlayGlobal(sound, session, param)?.Entity;
+        component.Stream = _audio.PlayGlobal(sound, session, param);
     }
 
     public static GeigerDangerLevel RadsToLevel(float rads)

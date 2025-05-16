@@ -1,0 +1,44 @@
+- type: job
+  id: CombatTech
+  parent: JobBaseCM
+  name: job-name-combat-tech
+  description: job-description-combat-tech
+  playTimeTracker: JobCombatTech
+  requirements:
+    - !type:DepartmentTimeRequirement
+      department: Marine
+      time: 3600 #1 hrs
+  startingGear: CombatTechGear
+  icon: "JobIconCombatTech"
+  supervisors: job-supervisors-squad-leader
+  canBeAntag: false
+  accessGroups:
+  - CombatTech
+
+- type: startingGear
+  id: CombatTechGear
+  equipment:
+    jumpsuit: CMJumpsuitMarineEngineer
+    back: CMBackpackMarineTech
+    shoes: CMBootsBlackFilled
+    eyes: ClothingEyesGlassesMeson
+    head: ArmorHelmetM10
+    outerClothing: ArmorMarineM3
+    gloves: CMHandsInsulated
+    id: DogtagCombatTech
+    ears: CMHeadsetAlphaEngineer
+    belt: ClothingBeltUtilityEngineering
+  satchel: CMSatchelMarineTech
+
+- type: entity
+  id: SpawnPointCombatTech
+  parent: CMSpawnPointJobBase
+  name: combat tech spawn point
+  components:
+  - type: SpawnPoint
+    job_id: CombatTech
+  - type: Sprite
+    layers:
+    - sprite: Markers/jobs.rsi
+      state: green
+    - state: combat_tech

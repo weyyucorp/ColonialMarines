@@ -30,8 +30,7 @@ namespace Content.Client.Jittering
 
             var animationPlayer = EnsureComp<AnimationPlayerComponent>(uid);
 
-            jittering.StartOffset = sprite.Offset;
-            _animationPlayer.Play((uid, animationPlayer), GetAnimation(jittering, sprite), _jitterAnimationKey);
+            _animationPlayer.Play(uid, animationPlayer, GetAnimation(jittering, sprite), _jitterAnimationKey);
         }
 
         private void OnShutdown(EntityUid uid, JitteringComponent jittering, ComponentShutdown args)
@@ -40,7 +39,7 @@ namespace Content.Client.Jittering
                 _animationPlayer.Stop(uid, animationPlayer, _jitterAnimationKey);
 
             if (TryComp(uid, out SpriteComponent? sprite))
-                sprite.Offset = jittering.StartOffset;
+                sprite.Offset = Vector2.Zero;
         }
 
         private void OnAnimationCompleted(EntityUid uid, JitteringComponent jittering, AnimationCompletedEvent args)
@@ -48,12 +47,9 @@ namespace Content.Client.Jittering
             if(args.Key != _jitterAnimationKey)
                 return;
 
-            if (!args.Finished)
-                return;
-
             if (TryComp(uid, out AnimationPlayerComponent? animationPlayer)
                 && TryComp(uid, out SpriteComponent? sprite))
-                _animationPlayer.Play((uid, animationPlayer), GetAnimation(jittering, sprite), _jitterAnimationKey);
+                _animationPlayer.Play(uid, animationPlayer, GetAnimation(jittering, sprite), _jitterAnimationKey);
         }
 
         private Animation GetAnimation(JitteringComponent jittering, SpriteComponent sprite)
@@ -95,7 +91,7 @@ namespace Content.Client.Jittering
                         KeyFrames =
                         {
                             new AnimationTrackProperty.KeyFrame(sprite.Offset, 0f),
-                            new AnimationTrackProperty.KeyFrame(jittering.StartOffset + offset, length),
+                            new AnimationTrackProperty.KeyFrame(offset, length),
                         }
                     }
                 }

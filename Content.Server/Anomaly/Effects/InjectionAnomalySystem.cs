@@ -1,9 +1,8 @@
+using System.Linq;
 using Content.Server.Anomaly.Components;
-using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.Anomaly.Components;
 using Content.Shared.Chemistry.Components.SolutionManager;
-using System.Linq;
-using Robust.Server.GameObjects;
+using Content.Shared.Chemistry.EntitySystems;
 
 namespace Content.Server.Anomaly.Effects;
 /// <summary>
@@ -16,53 +15,53 @@ namespace Content.Server.Anomaly.Effects;
 public sealed class InjectionAnomalySystem : EntitySystem
 {
     [Dependency] private readonly EntityLookupSystem _lookup = default!;
-    [Dependency] private readonly SharedSolutionContainerSystem _solutionContainer = default!;
-    [Dependency] private readonly TransformSystem _transform = default!;
+    [Dependency] private readonly SolutionContainerSystem _solutionContainer = default!;
 
     private EntityQuery<InjectableSolutionComponent> _injectableQuery;
 
     public override void Initialize()
     {
         SubscribeLocalEvent<InjectionAnomalyComponent, AnomalyPulseEvent>(OnPulse);
-        SubscribeLocalEvent<InjectionAnomalyComponent, AnomalySupercriticalEvent>(OnSupercritical, before: new[] { typeof(SharedSolutionContainerSystem) });
+        SubscribeLocalEvent<InjectionAnomalyComponent, AnomalySupercriticalEvent>(OnSupercritical, before: new[] { typeof(SolutionContainerSystem) });
 
         _injectableQuery = GetEntityQuery<InjectableSolutionComponent>();
     }
 
-    private void OnPulse(Entity<InjectionAnomalyComponent> entity, ref AnomalyPulseEvent args)
+    private void OnPulse(EntityUid uid, InjectionAnomalyComponent component, ref AnomalyPulseEvent args)
     {
-        PulseScalableEffect(entity, entity.Comp.InjectRadius * args.PowerModifier, entity.Comp.MaxSolutionInjection * args.Severity * args.PowerModifier);
+        PulseScalableEffect(uid, component, component.InjectRadius, component.MaxSolutionInjection * args.Severity);
     }
 
-    private void OnSupercritical(Entity<InjectionAnomalyComponent> entity, ref AnomalySupercriticalEvent args)
+    private void OnSupercritical(EntityUid uid, InjectionAnomalyComponent component, ref AnomalySupercriticalEvent args)
     {
-        PulseScalableEffect(entity, entity.Comp.SuperCriticalInjectRadius * args.PowerModifier, entity.Comp.SuperCriticalSolutionInjection * args.PowerModifier);
+        PulseScalableEffect(uid, component, component.SuperCriticalInjectRadius, component.SuperCriticalSolutionInjection);
     }
 
-    private void PulseScalableEffect(Entity<InjectionAnomalyComponent> entity, float injectRadius, float maxInject)
+    private void PulseScalableEffect(EntityUid uid, InjectionAnomalyComponent component, float injectRadius, float maxInject)
     {
-        if (!_solutionContainer.TryGetSolution(entity.Owner, entity.Comp.Solution, out _, out var sol))
+        if (!_solutionContainer.TryGetSolution(uid, component.Solution, out var sol))
             return;
-
         //We get all the entity in the radius into which the reagent will be injected.
         var xformQuery = GetEntityQuery<TransformComponent>();
-        var xform = xformQuery.GetComponent(entity);
-        var allEnts = _lookup.GetEntitiesInRange<InjectableSolutionComponent>(_transform.GetMapCoordinates(entity, xform: xform), injectRadius)
+        var xform = xformQuery.GetComponent(uid);
+        var allEnts = _lookup.GetEntitiesInRange<InjectableSolutionComponent>(xform.MapPosition, injectRadius)
             .Select(x => x.Owner).ToList();
 
         //for each matching entity found
         foreach (var ent in allEnts)
         {
-            if (!_solutionContainer.TryGetInjectableSolution(ent, out var injectable, out _))
+            if (!_solutionContainer.TryGetInjectableSolution(ent, out var injectable))
                 continue;
 
             if (_injectableQuery.TryGetComponent(ent, out var injEnt))
             {
-                _solutionContainer.TryTransferSolution(injectable.Value, sol, maxInject);
+                var buffer = sol;
+                _solutionContainer.TryTransferSolution(ent, injectable, buffer, maxInject);
                 //Spawn Effect
                 var uidXform = Transform(ent);
-                Spawn(entity.Comp.VisualEffectPrototype, uidXform.Coordinates);
+                Spawn(component.VisualEffectPrototype, uidXform.Coordinates);
             }
         }
     }
+
 }

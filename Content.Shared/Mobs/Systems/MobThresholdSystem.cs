@@ -1,13 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Content.Shared._RMC14.Xenonids.CriticalGrace;
 using Content.Shared.Alert;
 using Content.Shared.Damage;
 using Content.Shared.FixedPoint;
 using Content.Shared.Mobs.Components;
-using Content.Shared.Mobs.Events;
 using Robust.Shared.GameStates;
-using Robust.Shared.Prototypes;
 
 namespace Content.Shared.Mobs.Systems;
 
@@ -40,8 +37,7 @@ public sealed class MobThresholdSystem : EntitySystem
             component.CurrentThresholdState,
             component.StateAlertDict,
             component.ShowOverlays,
-            component.AllowRevives,
-            component.DisplayDamageInAlert);
+            component.AllowRevives);
     }
 
     private void OnHandleState(EntityUid uid, MobThresholdsComponent component, ref ComponentHandleState args)
@@ -216,7 +212,7 @@ public sealed class MobThresholdSystem : EntitySystem
         MobThresholdsComponent? thresholdComponent = null)
     {
         threshold = null;
-        if (!Resolve(target, ref thresholdComponent, false))
+        if (!Resolve(target, ref thresholdComponent))
             return false;
 
         return TryGetThresholdForState(target, MobState.Dead, out threshold, thresholdComponent);
@@ -380,15 +376,9 @@ public sealed class MobThresholdSystem : EntitySystem
         if (!threshold.TriggersAlerts)
             return;
 
-        var hasIncap = TryGetIncapThreshold(target, out var healthMax, threshold);
-        var state = currentMobState;
-
-        if (hasIncap && HasComp<InCriticalGraceComponent>(target) && damageable.TotalDamage > healthMax)
-            state = MobState.Critical;
-
-        if (!threshold.StateAlertDict.TryGetValue(state, out var currentAlert))
+        if (!threshold.StateAlertDict.TryGetValue(currentMobState, out var currentAlert))
         {
-            Log.Error($"No alert alert for mob state {state} for entity {ToPrettyString(target)}");
+            Log.Error($"No alert alert for mob state {currentMobState} for entity {ToPrettyString(target)}");
             return;
         }
 
@@ -398,27 +388,9 @@ public sealed class MobThresholdSystem : EntitySystem
             return;
         }
 
-        string? healthMessage = null;
-
-        if (threshold.DisplayDamageInAlert && hasIncap && healthMax != null)
-        {
-            int healthCurrent = (int)healthMax - (int)damageable.TotalDamage;
-            healthMessage = healthCurrent + " / " + healthMax;
-        }
-
         if (alertPrototype.SupportsSeverity)
         {
             var severity = _alerts.GetMinSeverity(currentAlert);
-
-            var ev = new BeforeAlertSeverityCheckEvent(currentAlert, severity);
-            RaiseLocalEvent(target, ev);
-
-            if (ev.CancelUpdate)
-            {
-                _alerts.ShowAlert(target, ev.CurrentAlert, ev.Severity);
-                return;
-            }
-
             if (TryGetNextState(target, currentMobState, out var nextState, threshold) &&
                 TryGetPercentageForState(target, nextState.Value, damageable.TotalDamage, out var percentage))
             {
@@ -430,11 +402,11 @@ public sealed class MobThresholdSystem : EntitySystem
                         _alerts.GetMaxSeverity(currentAlert),
                         percentage.Value.Float()));
             }
-            _alerts.ShowAlert(target, currentAlert, severity, dynamicMessage: healthMessage);
+            _alerts.ShowAlert(target, currentAlert, severity);
         }
         else
         {
-            _alerts.ShowAlert(target, currentAlert, dynamicMessage: healthMessage);
+            _alerts.ShowAlert(target, currentAlert);
         }
     }
 
@@ -459,7 +431,7 @@ public sealed class MobThresholdSystem : EntitySystem
     private void MobThresholdShutdown(EntityUid target, MobThresholdsComponent component, ComponentShutdown args)
     {
         if (component.TriggersAlerts)
-            _alerts.ClearAlertCategory(target, component.HealthAlertCategory);
+            _alerts.ClearAlertCategory(target, AlertCategory.Health);
     }
 
     private void OnUpdateMobState(EntityUid target, MobThresholdsComponent component, ref UpdateMobStateEvent args)

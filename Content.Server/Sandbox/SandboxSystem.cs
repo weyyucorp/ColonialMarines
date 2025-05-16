@@ -14,7 +14,6 @@ using Robust.Server.Placement;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Player;
-using Robust.Shared.Prototypes;
 
 namespace Content.Server.Sandbox
 {
@@ -95,7 +94,7 @@ namespace Content.Server.Sandbox
             if (e.NewStatus != SessionStatus.Connected || e.OldStatus != SessionStatus.Connecting)
                 return;
 
-            RaiseNetworkEvent(new MsgSandboxStatus { SandboxAllowed = IsSandboxEnabled }, e.Session.Channel);
+            RaiseNetworkEvent(new MsgSandboxStatus { SandboxAllowed = IsSandboxEnabled }, e.Session.ConnectedClient);
         }
 
         private void SandboxRespawnReceived(MsgSandboxRespawn message, EntitySessionEventArgs args)
@@ -103,7 +102,7 @@ namespace Content.Server.Sandbox
             if (!IsSandboxEnabled)
                 return;
 
-            var player = _playerManager.GetSessionByChannel(args.SenderSession.Channel);
+            var player = _playerManager.GetSessionByChannel(args.SenderSession.ConnectedClient);
             if (player.AttachedEntity == null) return;
 
             _ticker.Respawn(player);
@@ -114,7 +113,7 @@ namespace Content.Server.Sandbox
             if (!IsSandboxEnabled)
                 return;
 
-            var player = _playerManager.GetSessionByChannel(args.SenderSession.Channel);
+            var player = _playerManager.GetSessionByChannel(args.SenderSession.ConnectedClient);
             if (player.AttachedEntity is not { } attached)
             {
                 return;
@@ -122,7 +121,7 @@ namespace Content.Server.Sandbox
 
             var allAccess = PrototypeManager
                 .EnumeratePrototypes<AccessLevelPrototype>()
-                .Select(p => new ProtoId<AccessLevelPrototype>(p.ID)).ToList();
+                .Select(p => p.ID).ToArray();
 
             if (_inventory.TryGetSlotEntity(attached, "id", out var slotEntity))
             {
@@ -175,7 +174,7 @@ namespace Content.Server.Sandbox
             if (!IsSandboxEnabled)
                 return;
 
-            var player = _playerManager.GetSessionByChannel(args.SenderSession.Channel);
+            var player = _playerManager.GetSessionByChannel(args.SenderSession.ConnectedClient);
 
             _host.ExecuteCommand(player, _conGroupController.CanCommand(player, "aghost") ? "aghost" : "ghost");
         }
@@ -185,7 +184,7 @@ namespace Content.Server.Sandbox
             if (!IsSandboxEnabled)
                 return;
 
-            var player = _playerManager.GetSessionByChannel(args.SenderSession.Channel);
+            var player = _playerManager.GetSessionByChannel(args.SenderSession.ConnectedClient);
             _host.ExecuteCommand(player, "suicide");
         }
 

@@ -1,8 +1,0 @@
-- type: constructionGraph
-  id: RMCPlatformSandstoneDestructible
-  start: start
-  graph:
-  - node: start
-
-  - node: platformBroken
-    entity: RMCPlatformSandstoneBroken

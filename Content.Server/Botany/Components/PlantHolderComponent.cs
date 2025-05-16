@@ -1,141 +1,93 @@
-using Content.Shared.Chemistry.Components;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
-using Robust.Shared.Audio;
 
 namespace Content.Server.Botany.Components;
 
 [RegisterComponent]
 public sealed partial class PlantHolderComponent : Component
 {
-    /// <summary>
-    /// Game time for the next plant reagent update.
-    /// </summary>
-    [DataField(customTypeSerializer: typeof(TimeOffsetSerializer))]
+    [DataField("nextUpdate", customTypeSerializer: typeof(TimeOffsetSerializer))]
     public TimeSpan NextUpdate = TimeSpan.Zero;
-
-    /// <summary>
-    /// Time between plant reagent consumption updates.
-    /// </summary>
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("updateDelay")]
     public TimeSpan UpdateDelay = TimeSpan.FromSeconds(3);
 
-    [DataField]
+    [DataField("lastProduce")]
     public int LastProduce;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("missingGas")]
     public int MissingGas;
 
-    /// <summary>
-    /// Time between plant growth updates.
-    /// </summary>
-    [DataField]
+    [DataField("cycleDelay")]
     public TimeSpan CycleDelay = TimeSpan.FromSeconds(15f);
 
-    /// <summary>
-    /// Game time when the plant last did a growth update.
-    /// </summary>
-    [DataField(customTypeSerializer: typeof(TimeOffsetSerializer))]
+    [DataField("lastCycle", customTypeSerializer: typeof(TimeOffsetSerializer))]
     public TimeSpan LastCycle = TimeSpan.Zero;
 
-    /// <summary>
-    /// Sound played when any reagent is transferred into the plant holder.
-    /// </summary>
-    [DataField]
-    public SoundSpecifier? WateringSound;
-
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("updateSpriteAfterUpdate")]
     public bool UpdateSpriteAfterUpdate;
 
-    /// <summary>
-    /// Set to true if the plant holder displays plant warnings (e.g. water low) in the sprite and
-    /// examine text. Used to differentiate hydroponic trays from simple soil plots.
-    /// </summary>
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("drawWarnings")]
     public bool DrawWarnings = false;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("waterLevel")]
     public float WaterLevel = 100f;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("nutritionLevel")]
     public float NutritionLevel = 100f;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("pestLevel")]
     public float PestLevel;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("weedLevel")]
     public float WeedLevel;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("toxins")]
     public float Toxins;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("age")]
     public int Age;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("skipAging")]
     public int SkipAging;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("dead")]
     public bool Dead;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("harvest")]
     public bool Harvest;
 
-    /// <summary>
-    /// Set to true if this plant has been clipped by seed clippers. Used to prevent a single plant
-    /// from repeatedly being clipped.
-    /// </summary>
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("sampled")]
     public bool Sampled;
 
-    /// <summary>
-    /// Multiplier for the number of entities produced at harvest.
-    /// </summary>
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("yieldMod")]
     public int YieldMod = 1;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("mutationMod")]
     public float MutationMod = 1f;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("mutationLevel")]
     public float MutationLevel;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("health")]
     public float Health;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("weedCoefficient")]
     public float WeedCoefficient = 1f;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("seed")]
     public SeedData? Seed;
 
-    /// <summary>
-    /// True if the plant is losing health due to too high/low temperature.
-    /// </summary>
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("improperHeat")]
     public bool ImproperHeat;
 
-    /// <summary>
-    /// True if the plant is losing health due to too high/low pressure.
-    /// </summary>
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("improperPressure")]
     public bool ImproperPressure;
 
-    /// <summary>
-    /// Not currently used.
-    /// </summary>
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("improperLight")]
     public bool ImproperLight;
 
-    /// <summary>
-    /// Set to true to force a plant update (visuals, component, etc.) regardless of the current
-    /// update cycle time. Typically used when some interaction affects this plant.
-    /// </summary>
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("forceUpdate")]
     public bool ForceUpdate;
 
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("solution")]
     public string SoilSolutionName = "soil";
-
-    [ViewVariables]
-    public Entity<SolutionComponent>? SoilSolution = null;
 }

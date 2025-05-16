@@ -6,31 +6,20 @@ using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototy
 namespace Content.Shared.Storage;
 
 /// <summary>
-/// Prototype wrapper around <see cref="EntitySpawnEntry"/>
-/// </summary>
-[Prototype]
-public sealed partial class EntitySpawnEntryPrototype : IPrototype
-{
-    [IdDataField]
-    public string ID { get; private set; } = string.Empty;
-
-    [DataField]
-    public List<EntitySpawnEntry> Entries = new();
-}
-
-/// <summary>
 ///     Dictates a list of items that can be spawned.
 /// </summary>
 [Serializable]
 [DataDefinition]
 public partial struct EntitySpawnEntry
 {
-    [DataField("id")]
-    public EntProtoId? PrototypeId = null;
+    [ViewVariables(VVAccess.ReadWrite)]
+    [DataField("id", customTypeSerializer: typeof(PrototypeIdSerializer<EntityPrototype>))]
+    public string? PrototypeId = null;
 
     /// <summary>
     ///     The probability that an item will spawn. Takes decimal form so 0.05 is 5%, 0.50 is 50% etc.
     /// </summary>
+    [ViewVariables(VVAccess.ReadWrite)]
     [DataField("prob")] public float SpawnProbability = 1;
 
     /// <summary>
@@ -54,16 +43,19 @@ public partial struct EntitySpawnEntry
     /// </code>
     ///     </example>
     /// </summary>
+    [ViewVariables(VVAccess.ReadWrite)]
     [DataField("orGroup")] public string? GroupId = null;
 
-    [DataField] public int Amount = 1;
+    [ViewVariables(VVAccess.ReadWrite)]
+    [DataField("amount")] public int Amount = 1;
 
     /// <summary>
     ///     How many of this can be spawned, in total.
     ///     If this is lesser or equal to <see cref="Amount"/>, it will spawn <see cref="Amount"/> exactly.
     ///     Otherwise, it chooses a random value between <see cref="Amount"/> and <see cref="MaxAmount"/> on spawn.
     /// </summary>
-    [DataField] public int MaxAmount = 1;
+    [ViewVariables(VVAccess.ReadWrite)]
+    [DataField("maxAmount")] public int MaxAmount = 1;
 
     public EntitySpawnEntry() { }
 }

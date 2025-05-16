@@ -40,8 +40,15 @@ public sealed class InteractionOutlineSystem : EntitySystem
     {
         base.Initialize();
 
-        Subs.CVar(_configManager, CCVars.OutlineEnabled, SetCvarEnabled);
+        _configManager.OnValueChanged(CCVars.OutlineEnabled, SetCvarEnabled);
         UpdatesAfter.Add(typeof(SharedEyeSystem));
+    }
+
+    public override void Shutdown()
+    {
+        base.Shutdown();
+
+        _configManager.UnsubValueChanged(CCVars.OutlineEnabled, SetCvarEnabled);
     }
 
     public void SetCvarEnabled(bool cvarEnabled)
@@ -87,8 +94,8 @@ public sealed class InteractionOutlineSystem : EntitySystem
             return;
 
         // If there is no local player, there is no session, and therefore nothing to do here.
-        var localSession = _playerManager.LocalSession;
-        if (localSession == null)
+        var localPlayer = _playerManager.LocalPlayer;
+        if (localPlayer == null)
             return;
 
         // TODO InteractionOutlineComponent
@@ -110,15 +117,11 @@ public sealed class InteractionOutlineSystem : EntitySystem
             && _inputManager.MouseScreenPosition.IsValid)
         {
             var mousePosWorld = vp.PixelToMap(_inputManager.MouseScreenPosition.Position);
+            entityToClick = screen.GetClickedEntity(mousePosWorld);
 
             if (vp is ScalingViewport svp)
             {
                 renderScale = svp.CurrentRenderScale;
-                entityToClick = screen.GetClickedEntity(mousePosWorld, svp.Eye);
-            }
-            else
-            {
-                entityToClick = screen.GetClickedEntity(mousePosWorld);
             }
         }
         else if (_uiManager.CurrentlyHovered is EntityMenuElement element)
@@ -132,9 +135,9 @@ public sealed class InteractionOutlineSystem : EntitySystem
         }
 
         var inRange = false;
-        if (localSession.AttachedEntity != null && !Deleted(entityToClick))
+        if (localPlayer.ControlledEntity != null && !Deleted(entityToClick))
         {
-            inRange = _interactionSystem.InRangeUnobstructed(localSession.AttachedEntity.Value, entityToClick.Value);
+            inRange = _interactionSystem.InRangeUnobstructed(localPlayer.ControlledEntity.Value, entityToClick.Value);
         }
 
         InteractionOutlineComponent? outline;

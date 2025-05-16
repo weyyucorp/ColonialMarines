@@ -5,7 +5,7 @@
     state: cleaner
   product: CrateServiceJanitorialSupplies
   cost: 560
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -15,17 +15,7 @@
     state: normal
   product: CrateServiceReplacementLights
   cost: 600
-  category: cargoproduct-category-name-service
-  group: market
-
-- type: cargoProduct
-  id: ServiceLightsHoliday
-  icon:
-    sprite: Objects/Power/light_bulb.rsi
-    state: normal
-  product: CrateServiceHolidayLights
-  cost: 800
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -35,7 +25,7 @@
     state: mousetrap
   product: CrateMousetrapBoxes
   cost: 500
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -45,47 +35,37 @@
     state: icon
   product: CrateServiceTheatre
   cost: 1800
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
   id: ServiceSmokeables
   icon:
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/green.rsi
-    state: icon
+    state: closed
   product: CrateServiceSmokeables
   cost: 1500
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
   id: ServiceCustomSmokable
   icon:
     sprite: Objects/Consumable/Smokeables/Cigarettes/Cartons/green.rsi
-    state: icon
+    state: closed
   product: CrateServiceCustomSmokable
   cost: 1000
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
   id: ServiceBureaucracy
   icon:
-    sprite: Objects/Misc/pens.rsi
+    sprite: Objects/Misc/bureaucracy.rsi
     state: pen
   product: CrateServiceBureaucracy
   cost: 1000
-  category: cargoproduct-category-name-service
-  group: market
-
-- type: cargoProduct
-  id: ServiceFaxMachine
-  icon:
-    sprite: Structures/Machines/fax_machine.rsi
-    state: icon
-  product: CrateServiceFaxMachine
-  cost: 2000
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -95,47 +75,27 @@
     state: default
   product: CrateServicePersonnel
   cost: 1000
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
   id: ServiceBooks
   icon:
     sprite: Objects/Misc/books.rsi
-    state: book_icon
+    state: book0
   product: CrateServiceBooks
   cost: 1000
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
   id: ServiceGuidebooks
   icon:
     sprite: Objects/Misc/books.rsi
-    state: book_icon
+    state: book_engineering2
   product: CrateServiceGuidebooks
   cost: 1300
-  category: cargoproduct-category-name-service
-  group: market
-
-- type: cargoProduct
-  id: ServiceSodaDispenser
-  icon:
-    sprite: Objects/Consumable/Drinks/generic_jug.rsi
-    state: icon
-  product: CrateServiceSodaDispenser
-  cost: 850
-  category: cargoproduct-category-name-service
-  group: market
-
-- type: cargoProduct
-  id: ServiceBoozeDispenser
-  icon:
-    sprite: Objects/Consumable/Drinks/generic_jug.rsi
-    state: icon
-  product: CrateServiceBoozeDispenser
-  cost: 750
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -145,7 +105,7 @@
     state: box
   product: CrateServiceBox
   cost: 400
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -155,8 +115,8 @@
     state: icon
   product: CrateJanitorBiosuit
   cost: 800
-  category: cargoproduct-category-name-service
-  group: market
+  category: Service
+  group: market  
 
 - type: cargoProduct
   id: ServiceFoodCartHot
@@ -165,8 +125,8 @@
     state: icon-hot
   product: FoodCartHot
   cost: 2000
-  category: cargoproduct-category-name-service
-  group: market
+  category: Service
+  group: market  
 
 - type: cargoProduct
   id: ServiceFoodCartCold
@@ -175,47 +135,15 @@
     state: icon-cold
   product: FoodCartCold
   cost: 2000
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
   id: ServiceAnimalCarrier
-  icon:
+  icon: 
     sprite: Objects/Storage/petcarrier.rsi
     state: icon
   product: PetCarrier
   cost: 500
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
-
-- type: cargoProduct
-  id: JanitorExplosive
-  icon:
-    sprite: Clothing/Head/Helmets/janitor_bombsuit.rsi
-    state: icon
-  product: ClosetJanitorBombFilled
-  cost: 1000
-  category: cargoproduct-category-name-service
-  group: market
-
-- type: cargoProduct
-  id: ServiceJanitorTrolley
-  icon:
-    sprite: Objects/Specific/Janitorial/janitorial_cart.rsi
-    state: icon-cart
-  product: JanitorialTrolley
-  cost: 300
-  category: cargoproduct-category-name-service
-  group: market
-
-- type: cargoProduct
-  id: ServiceCandles
-  icon:
-    sprite: Objects/Misc/candles.rsi
-    state: candle-big
-  product: CrateCandles
-  cost: 500
-  category: cargoproduct-category-name-service
-  group: market
-
-

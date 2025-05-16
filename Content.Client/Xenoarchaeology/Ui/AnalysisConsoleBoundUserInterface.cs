@@ -1,7 +1,6 @@
 using Content.Shared.Xenoarchaeology.Equipment;
 using JetBrains.Annotations;
 using Robust.Client.GameObjects;
-using Robust.Client.UserInterface;
 
 namespace Content.Client.Xenoarchaeology.Ui;
 
@@ -19,7 +18,10 @@ public sealed class AnalysisConsoleBoundUserInterface : BoundUserInterface
     {
         base.Open();
 
-        _consoleMenu = this.CreateWindow<AnalysisConsoleMenu>();
+        _consoleMenu = new AnalysisConsoleMenu();
+
+        _consoleMenu.OnClose += Close;
+        _consoleMenu.OpenCentered();
 
         _consoleMenu.OnServerSelectionButtonPressed += () =>
         {
@@ -37,14 +39,6 @@ public sealed class AnalysisConsoleBoundUserInterface : BoundUserInterface
         {
             SendMessage(new AnalysisConsoleExtractButtonPressedMessage());
         };
-        _consoleMenu.OnUpBiasButtonPressed += () =>
-        {
-            SendMessage(new AnalysisConsoleBiasButtonPressedMessage(false));
-        };
-        _consoleMenu.OnDownBiasButtonPressed += () =>
-        {
-            SendMessage(new AnalysisConsoleBiasButtonPressedMessage(true));
-        };
     }
 
     protected override void UpdateState(BoundUserInterfaceState state)
@@ -53,7 +47,7 @@ public sealed class AnalysisConsoleBoundUserInterface : BoundUserInterface
 
         switch (state)
         {
-            case AnalysisConsoleUpdateState msg:
+            case AnalysisConsoleScanUpdateState msg:
                 _consoleMenu?.SetButtonsDisabled(msg);
                 _consoleMenu?.UpdateInformationDisplay(msg);
                 _consoleMenu?.UpdateProgressBar(msg);
@@ -67,7 +61,6 @@ public sealed class AnalysisConsoleBoundUserInterface : BoundUserInterface
 
         if (!disposing)
             return;
-
         _consoleMenu?.Dispose();
     }
 }

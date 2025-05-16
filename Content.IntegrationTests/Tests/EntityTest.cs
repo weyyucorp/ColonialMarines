@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
+using Content.Server.Humanoid.Components;
+using Content.Shared.Coordinates;
+using Content.Shared.Prototypes;
 using Robust.Shared;
-using Robust.Shared.Audio.Components;
 using Robust.Shared.Configuration;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Log;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 
@@ -14,11 +16,8 @@ namespace Content.IntegrationTests.Tests
 {
     [TestFixture]
     [TestOf(typeof(EntityUid))]
-    [NonParallelizable] // RMC14: We have some many entities that this causes a OOM.
     public sealed class EntityTest
     {
-        private static readonly ProtoId<EntityCategoryPrototype> SpawnerCategory = "Spawner";
-
         [Test]
         public async Task SpawnAndDeleteAllEntitiesOnDifferentMaps()
         {
@@ -31,65 +30,48 @@ namespace Content.IntegrationTests.Tests
             var entityMan = server.ResolveDependency<IEntityManager>();
             var mapManager = server.ResolveDependency<IMapManager>();
             var prototypeMan = server.ResolveDependency<IPrototypeManager>();
-            var mapSystem = entityMan.System<SharedMapSystem>();
 
-            List<string> protoIds = null;
             await server.WaitPost(() =>
             {
-                protoIds = prototypeMan
+                var protoIds = prototypeMan
                     .EnumeratePrototypes<EntityPrototype>()
                     .Where(p => !p.Abstract)
                     .Where(p => !pair.IsTestPrototype(p))
                     .Where(p => !p.Components.ContainsKey("MapGrid")) // This will smash stuff otherwise.
-                    .Where(p => !p.Components.ContainsKey("RoomFill")) // This comp can delete all entities, and spawn others
                     .Select(p => p.ID)
                     .ToList();
+                foreach (var protoId in protoIds)
+                {
+                    var mapId = mapManager.CreateMap();
+                    var grid = mapManager.CreateGrid(mapId);
+                    // TODO: Fix this better in engine.
+                    grid.SetTile(Vector2i.Zero, new Tile(1));
+                    var coord = new EntityCoordinates(grid.Owner, 0, 0);
+                    entityMan.SpawnEntity(protoId, coord);
+                }
             });
 
-            for (var i = 0; i < protoIds.Count; i += 100)
+            await server.WaitRunTicks(15);
+
+            await server.WaitPost(() =>
             {
-                var max = i + 100;
-                if (max >= protoIds.Count)
-                    max = protoIds.Count;
-
-                var chunk = protoIds[i..max];
-                await server.WaitPost(() =>
+                static IEnumerable<(EntityUid, TComp)> Query<TComp>(IEntityManager entityMan)
+                    where TComp : Component
                 {
-                    foreach (var spawn in chunk)
-                    {
-                        mapSystem.CreateMap(out var mapId);
-                        var grid = mapManager.CreateGridEntity(mapId);
-                        // TODO: Fix this better in engine.
-                        mapSystem.SetTile(grid.Owner, grid.Comp, Vector2i.Zero, new Tile(1));
-                        var coord = new EntityCoordinates(grid.Owner, 0, 0);
-                        entityMan.SpawnEntity(spawn, coord);
-                    }
-                });
+                    var query = entityMan.AllEntityQueryEnumerator<TComp>();
+                    while (query.MoveNext(out var uid, out var meta))
+                        yield return (uid, meta);
+                }
 
-                await server.WaitPost(() =>
+                var entityMetas = Query<MetaDataComponent>(entityMan).ToList();
+                foreach (var (uid, meta) in entityMetas)
                 {
-                    static IEnumerable<(EntityUid, TComp)> Query<TComp>(IEntityManager entityMan)
-                        where TComp : Component
-                    {
-                        var query = entityMan.AllEntityQueryEnumerator<TComp>();
-                        while (query.MoveNext(out var uid, out var meta))
-                        {
-                            yield return (uid, meta);
-                        }
-                    }
+                    if (!meta.EntityDeleted)
+                        entityMan.DeleteEntity(uid);
+                }
 
-                    var entityMetas = Query<MetaDataComponent>(entityMan).ToList();
-                    foreach (var (uid, meta) in entityMetas)
-                    {
-                        if (!meta.EntityDeleted)
-                            entityMan.DeleteEntity(uid);
-                    }
-
-                    Assert.That(entityMan.EntityCount, Is.Zero);
-                });
-
-                GC.Collect();
-            }
+                Assert.That(entityMan.EntityCount, Is.Zero);
+            });
 
             await pair.CleanReturnAsync();
         }
@@ -97,8 +79,6 @@ namespace Content.IntegrationTests.Tests
         [Test]
         public async Task SpawnAndDeleteAllEntitiesInTheSameSpot()
         {
-            // TODO RMC14 this breaks because a meteor breaks a drawer that drops a paper which traverses grids and trips a debug assert for container remove destination
-            return;
             // This test dirties the pair as it simply deletes ALL entities when done. Overhead of restarting the round
             // is minimal relative to the rest of the test.
             var settings = new PoolSettings { Dirty = true };
@@ -117,7 +97,6 @@ namespace Content.IntegrationTests.Tests
                     .Where(p => !p.Abstract)
                     .Where(p => !pair.IsTestPrototype(p))
                     .Where(p => !p.Components.ContainsKey("MapGrid")) // This will smash stuff otherwise.
-                    .Where(p => !p.Components.ContainsKey("RoomFill")) // This comp can delete all entities, and spawn others
                     .Select(p => p.ID)
                     .ToList();
                 foreach (var protoId in protoIds)
@@ -133,10 +112,8 @@ namespace Content.IntegrationTests.Tests
                 {
                     var query = entityMan.AllEntityQueryEnumerator<TComp>();
                     while (query.MoveNext(out var uid, out var meta))
-                    {
                         yield return (uid, meta);
-                    }
-                }
+                };
 
                 var entityMetas = Query<MetaDataComponent>(entityMan).ToList();
                 foreach (var (uid, meta) in entityMetas)
@@ -169,7 +146,6 @@ namespace Content.IntegrationTests.Tests
             var prototypeMan = server.ResolveDependency<IPrototypeManager>();
             var mapManager = server.ResolveDependency<IMapManager>();
             var sEntMan = server.ResolveDependency<IEntityManager>();
-            var mapSys = server.System<SharedMapSystem>();
 
             Assert.That(cfg.GetCVar(CVars.NetPVS), Is.False);
 
@@ -181,59 +157,45 @@ namespace Content.IntegrationTests.Tests
                 .Select(p => p.ID)
                 .ToList();
 
-            const int chunkSize = 100;
-            for (var i = 0; i < protoIds.Count; i += chunkSize)
+            await server.WaitPost(() =>
             {
-                var max = i + chunkSize;
-                if (max >= protoIds.Count)
-                    max = protoIds.Count;
-                var chunk = protoIds[i..max];
-
-                await server.WaitPost(() =>
+                foreach (var protoId in protoIds)
                 {
-                    foreach (var protoId in chunk)
+                    var mapId = mapManager.CreateMap();
+                    var grid = mapManager.CreateGrid(mapId);
+                    var ent = sEntMan.SpawnEntity(protoId, new EntityCoordinates(grid.Owner, 0.5f, 0.5f));
+                    foreach (var (_, component) in sEntMan.GetNetComponents(ent))
                     {
-                        mapSys.CreateMap(out var mapId);
-                        var grid = mapManager.CreateGridEntity(mapId);
-                        var ent = sEntMan.SpawnEntity(protoId, new EntityCoordinates(grid.Owner, 0.5f, 0.5f));
-                        foreach (var (_, component) in sEntMan.GetNetComponents(ent))
-                        {
-                            sEntMan.Dirty(ent, component);
-                        }
+                        sEntMan.Dirty(component);
                     }
-                });
+                }
+            });
 
-                await pair.RunTicksSync(15);
+            await pair.RunTicksSync(15);
 
-                // Make sure the client actually received the entities
-                // 500 is completely arbitrary. Note that the client & sever entity counts aren't expected to match.
-                if (chunk.Count >= chunkSize)
-                    Assert.That(client.ResolveDependency<IEntityManager>().EntityCount, Is.GreaterThan(50));
+            // Make sure the client actually received the entities
+            // 500 is completely arbitrary. Note that the client & sever entity counts aren't expected to match.
+            Assert.That(client.ResolveDependency<IEntityManager>().EntityCount, Is.GreaterThan(500));
 
-                await server.WaitPost(() =>
+            await server.WaitPost(() =>
+            {
+                static IEnumerable<(EntityUid, TComp)> Query<TComp>(IEntityManager entityMan)
+                    where TComp : Component
                 {
-                    static IEnumerable<(EntityUid, TComp)> Query<TComp>(IEntityManager entityMan)
-                        where TComp : Component
-                    {
-                        var query = entityMan.AllEntityQueryEnumerator<TComp>();
-                        while (query.MoveNext(out var uid, out var meta))
-                        {
-                            yield return (uid, meta);
-                        }
-                    }
+                    var query = entityMan.AllEntityQueryEnumerator<TComp>();
+                    while (query.MoveNext(out var uid, out var meta))
+                        yield return (uid, meta);
+                }
 
-                    var entityMetas = Query<MetaDataComponent>(sEntMan).ToList();
-                    foreach (var (uid, meta) in entityMetas)
-                    {
-                        if (!meta.EntityDeleted)
-                            sEntMan.DeleteEntity(uid);
-                    }
+                var entityMetas = Query<MetaDataComponent>(sEntMan).ToList();
+                foreach (var (uid, meta) in entityMetas)
+                {
+                    if (!meta.EntityDeleted)
+                        sEntMan.DeleteEntity(uid);
+                }
 
-                    Assert.That(sEntMan.EntityCount, Is.Zero);
-                });
-
-                GC.Collect();
-            }
+                Assert.That(sEntMan.EntityCount, Is.Zero);
+            });
 
             await pair.CleanReturnAsync();
         }
@@ -246,18 +208,13 @@ namespace Content.IntegrationTests.Tests
         /// generally not spawn unrelated / detached entities. Any entities that do get spawned should be parented to
         /// the spawned entity (e.g., in a container). If an entity needs to spawn an entity somewhere in null-space,
         /// it should delete that entity when it is no longer required. This test mainly exists to prevent "entity leak"
-        /// bugs, where spawning some entity starts spawning unrelated entities in null space that stick around after
-        /// the original entity is gone.
-        ///
-        /// Note that this isn't really a strict requirement, and there are probably quite a few edge cases. Its a pretty
-        /// crude test to try catch issues like this, and possibly should just be disabled.
+        /// bugs, where spawning some entity starts spawning unrelated entities in null space.
         /// </remarks>
         [Test]
         public async Task SpawnAndDeleteEntityCountTest()
         {
             var settings = new PoolSettings { Connected = true, Dirty = true };
             await using var pair = await PoolManager.GetServerClient(settings);
-            var mapSys = pair.Server.System<SharedMapSystem>();
             var server = pair.Server;
             var client = pair.Client;
 
@@ -267,21 +224,17 @@ namespace Content.IntegrationTests.Tests
                 "StationEvent",
                 "TimedDespawn",
 
-                // makes an announcement on mapInit.
-                "AnnounceOnSpawn",
+                // Spawner entities
+                "DragonRift",
+                "RandomHumanoidSpawner",
+                "RandomSpawner",
+                "ConditionalSpawner",
+                "GhostRoleMobSpawner",
+                "NukeOperativeSpawner",
+                "TimedSpawner",
 
                 // Spreads weeds
-                "HiveCore",
-
-                // Creates requisitions account
-                "RequisitionsComputer",
-
-                "EvenSmoke",
-                "SpawnOnTerminate",
-                "DropshipFabricator",
-                "GridSpawner",
-                "CorpseSpawner",
-                "ItemCamouflage",
+                "HiveCore"
             };
 
             Assert.That(server.CfgMan.GetCVar(CVars.NetPVS), Is.False);
@@ -291,25 +244,19 @@ namespace Content.IntegrationTests.Tests
                 .Where(p => !p.Abstract)
                 .Where(p => !pair.IsTestPrototype(p))
                 .Where(p => !excluded.Any(p.Components.ContainsKey))
-                .Where(p => p.Categories.All(x => x.ID != SpawnerCategory))
                 .Select(p => p.ID)
                 .ToList();
 
-            protoIds.Sort();
-            var mapId = MapId.Nullspace;
-
+            MapCoordinates coords = default;
             await server.WaitPost(() =>
             {
-                mapSys.CreateMap(out mapId);
+                var map = server.MapMan.CreateMap();
+                coords = new MapCoordinates(default, map);
             });
-
-            var coords = new MapCoordinates(Vector2.Zero, mapId);
 
             await pair.RunTicksSync(3);
 
-            // We consider only non-audio entities, as some entities will just play sounds when they spawn.
-            int Count(IEntityManager ent) =>  ent.EntityCount - ent.Count<AudioComponent>();
-
+            List<string> badPrototypes = new();
             foreach (var protoId in protoIds)
             {
                 // TODO fix ninja
@@ -317,8 +264,8 @@ namespace Content.IntegrationTests.Tests
                 if (protoId == "MobHumanSpaceNinja")
                     continue;
 
-                var count = Count(server.EntMan);
-                var clientCount = Count(client.EntMan);
+                var count = server.EntMan.EntityCount;
+                var clientCount = client.EntMan.EntityCount;
                 EntityUid uid = default;
                 await server.WaitPost(() => uid = server.EntMan.SpawnEntity(protoId, coords));
                 await pair.RunTicksSync(3);
@@ -326,50 +273,27 @@ namespace Content.IntegrationTests.Tests
                 // If the entity deleted itself, check that it didn't spawn other entities
                 if (!server.EntMan.EntityExists(uid))
                 {
-                    if (Count(server.EntMan) != count)
-                    {
-                        Assert.Fail($"Server prototype {protoId} failed on deleting itself");
-                    }
-
-                    if (Count(client.EntMan) != clientCount)
-                    {
-                        Assert.Fail($"Client prototype {protoId} failed on deleting itself\n" +
-                                    $"Expected {clientCount} and found {Count(client.EntMan)}.\n" +
-                                    $"Server was {count}.");
-                    }
+                    if (server.EntMan.EntityCount != count || client.EntMan.EntityCount != clientCount)
+                        badPrototypes.Add(protoId);
                     continue;
                 }
 
                 // Check that the number of entities has increased.
-                if (Count(server.EntMan) <= count)
+                if (server.EntMan.EntityCount <= count || client.EntMan.EntityCount <= clientCount)
                 {
-                    Assert.Fail($"Server prototype {protoId} failed on spawning as entity count didn't increase");
-                }
-
-                if (Count(client.EntMan) <= clientCount)
-                {
-                    Assert.Fail($"Client prototype {protoId} failed on spawning as entity count didn't increase" +
-                                $"Expected at least {clientCount} and found {Count(client.EntMan)}. " +
-                                $"Server was {count}");
+                    badPrototypes.Add(protoId);
+                    continue;
                 }
 
                 await server.WaitPost(() => server.EntMan.DeleteEntity(uid));
                 await pair.RunTicksSync(3);
 
                 // Check that the number of entities has gone back to the original value.
-                if (Count(server.EntMan) != count)
-                {
-                    Assert.Fail($"Server prototype {protoId} failed on deletion count didn't reset properly");
-                }
-
-                if (Count(client.EntMan) != clientCount)
-                {
-                    Assert.Fail($"Client prototype {protoId} failed on deletion count didn't reset properly:\n" +
-                                $"Expected {clientCount} and found {Count(client.EntMan)}.\n" +
-                                $"Server was {count}.");
-                }
+                if (server.EntMan.EntityCount != count || client.EntMan.EntityCount != clientCount)
+                    badPrototypes.Add(protoId);
             }
 
+            Assert.That(badPrototypes, Is.Empty);
             await pair.CleanReturnAsync();
         }
 
@@ -382,38 +306,54 @@ namespace Content.IntegrationTests.Tests
                 "DebugExceptionExposeData",
                 "DebugExceptionInitialize",
                 "DebugExceptionStartup",
-                "GridFill",
-                "RoomFill",
+                "GridFillComponent",
                 "Map", // We aren't testing a map entity in this test
                 "MapGrid",
                 "Broadphase",
                 "StationData", // errors when removed mid-round
-                "StationJobs",
                 "Actor", // We aren't testing actor components, those need their player session set.
                 "BlobFloorPlanBuilder", // Implodes if unconfigured.
                 "DebrisFeaturePlacerController", // Above.
                 "LoadedChunk", // Worldgen chunk loading malding.
                 "BiomeSelection", // Whaddya know, requires config.
-                "ActivatableUI", // Requires enum key
             };
-
-            // TODO TESTS
-            // auto ignore any components that have a "required" data field.
 
             await using var pair = await PoolManager.GetServerClient();
             var server = pair.Server;
+
+            var mapManager = server.ResolveDependency<IMapManager>();
             var entityManager = server.ResolveDependency<IEntityManager>();
             var componentFactory = server.ResolveDependency<IComponentFactory>();
+            var tileDefinitionManager = server.ResolveDependency<ITileDefinitionManager>();
             var logmill = server.ResolveDependency<ILogManager>().GetSawmill("EntityTest");
 
-            await pair.CreateTestMap();
+            MapGridComponent grid = default;
+
+            await server.WaitPost(() =>
+            {
+                // Create a one tile grid to stave off the grid 0 monsters
+                var mapId = mapManager.CreateMap();
+
+                mapManager.AddUninitializedMap(mapId);
+
+                grid = mapManager.CreateGrid(mapId);
+
+                var tileDefinition = tileDefinitionManager["Plating"];
+                var tile = new Tile(tileDefinition.TileId);
+                var coordinates = grid.ToCoordinates();
+
+                grid.SetTile(coordinates, tile);
+
+                mapManager.DoMapInitialize(mapId);
+            });
+
             await server.WaitRunTicks(5);
-            var testLocation = pair.TestMap.GridCoords;
 
             await server.WaitAssertion(() =>
             {
                 Assert.Multiple(() =>
                 {
+                    var testLocation = grid.ToCoordinates();
 
                     foreach (var type in componentFactory.AllRegisteredTypes)
                     {
@@ -438,6 +378,7 @@ namespace Content.IntegrationTests.Tests
                             continue;
                         }
 
+                        component.Owner = entity;
                         logmill.Debug($"Adding component: {name}");
 
                         Assert.DoesNotThrow(() =>

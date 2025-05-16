@@ -16,9 +16,6 @@
 - files: ["cluster.yml"]
   authors: Scribbles0
 
-- files: ["elkridge.yml"]
-  authors: Deerstop
-
 - files: ["fland.yml"]
   authors: Emisse
 
@@ -27,9 +24,6 @@
 
 - files: ["kettle.yml"]
   authors: Checkraze
-
-- files: ["gemini.yml"]
-  authors: Checkraze, TsjipTsjip, Luckyshotpictures
 
 - files: ["marathon.yml"]
   authors: Emisse
@@ -52,11 +46,3 @@
 - files: ["core.yml"]
   authors: Ubaser
 
-- files: ["oasis.yml"]
-  authors: CptJeanLuc
-
-- files: ["cog.yml"]
-  authors: Spacemann
-
-- files: ["convex.yml"]
-  authors: Spacemann

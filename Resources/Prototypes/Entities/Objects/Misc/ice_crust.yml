@@ -10,7 +10,8 @@
     - type: MeleeSound
       soundGroups:
         Brute:
-          collection: GlassBreak
+          path:
+            "/Audio/Weapons/slash.ogg"
     - type: Sprite
       sprite: Objects/Misc/ice_crust.rsi
       layers:
@@ -20,8 +21,6 @@
     - type: Clickable
     - type: Transform
       anchored: true
-    - type: Tag
-      tags: [ Ice ]
     - type: Physics
     - type: Fixtures
       fixtures:
@@ -48,5 +47,6 @@
         types:
           Heat: 5
       coldDamage: {}
-      coldDamageThreshold: 0
+      ColdDamageThreshold: 0
     - type: FrictionContacts
+      

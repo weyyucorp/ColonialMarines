@@ -1,4 +1,4 @@
-using Content.Shared.Nutrition.EntitySystems;
+using Content.Server.Nutrition.EntitySystems;
 
 namespace Content.Server.Destructible.Thresholds.Behaviors;
 
@@ -11,7 +11,7 @@ public sealed partial class OpenBehavior : IThresholdBehavior
 {
     public void Execute(EntityUid uid, DestructibleSystem system, EntityUid? cause = null)
     {
-        var openable = system.EntityManager.System<OpenableSystem>();
+        var openable = EntitySystem.Get<OpenableSystem>();
         openable.TryOpen(uid);
     }
 }

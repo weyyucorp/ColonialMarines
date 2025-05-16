@@ -1,9 +1,0 @@
-﻿- type: construction
-  abstract: true
-  id: RMC
-  isCM: true
-
-- type: constructionGraph
-  abstract: true
-  id: RMC
-  isCM: true

@@ -4,25 +4,24 @@ using Robust.Client.GameObjects;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Prototypes;
 using System.Numerics;
-using Content.Shared.Roles;
 
 namespace Content.Client.CrewManifest.UI;
 
 public sealed class CrewManifestSection : BoxContainer
 {
-    public CrewManifestSection(
-        IPrototypeManager prototypeManager,
-        SpriteSystem spriteSystem,
-        DepartmentPrototype section,
+    public CrewManifestSection(IPrototypeManager prototypeManager, SpriteSystem spriteSystem, string sectionTitle,
         List<CrewManifestEntry> entries)
     {
         Orientation = LayoutOrientation.Vertical;
         HorizontalExpand = true;
 
+        if (Loc.TryGetString($"department-{sectionTitle}", out var localizedDepart))
+            sectionTitle = localizedDepart;
+
         AddChild(new Label()
         {
             StyleClasses = { "LabelBig" },
-            Text = Loc.GetString(section.Name)
+            Text = Loc.GetString(sectionTitle)
         });
 
         var gridContainer = new GridContainer()
@@ -51,14 +50,13 @@ public sealed class CrewManifestSection : BoxContainer
             title.SetMessage(entry.JobTitle);
 
 
-            if (prototypeManager.TryIndex<JobIconPrototype>(entry.JobIcon, out var jobIcon))
+            if (prototypeManager.TryIndex<StatusIconPrototype>(entry.JobIcon, out var jobIcon))
             {
                 var icon = new TextureRect()
                 {
                     TextureScale = new Vector2(2, 2),
-                    VerticalAlignment = VAlignment.Center,
+                    Stretch = TextureRect.StretchMode.KeepCentered,
                     Texture = spriteSystem.Frame0(jobIcon.Icon),
-                    Margin = new Thickness(0, 0, 4, 0)
                 };
 
                 titleContainer.AddChild(icon);

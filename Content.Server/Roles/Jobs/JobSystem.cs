@@ -1,7 +1,6 @@
 ﻿using System.Globalization;
 using Content.Server.Chat.Managers;
 using Content.Server.Mind;
-using Content.Shared.Chat;
 using Content.Shared.Mind;
 using Content.Shared.Roles;
 using Content.Shared.Roles.Jobs;
@@ -20,25 +19,10 @@ public sealed class JobSystem : SharedJobSystem
     public override void Initialize()
     {
         base.Initialize();
-        SubscribeLocalEvent<RoleAddedEvent>(OnRoleAddedEvent);
-        SubscribeLocalEvent<RoleRemovedEvent>(OnRoleRemovedEvent);
+        SubscribeLocalEvent<MindComponent, MindRoleAddedEvent>(MindOnDoGreeting);
     }
 
-    private void OnRoleAddedEvent(RoleAddedEvent args)
-    {
-        MindOnDoGreeting(args.MindId, args.Mind, args);
-
-        if (args.RoleTypeUpdate)
-            _roles.RoleUpdateMessage(args.Mind);
-    }
-
-    private void OnRoleRemovedEvent(RoleRemovedEvent args)
-    {
-        if (args.RoleTypeUpdate)
-            _roles.RoleUpdateMessage(args.Mind);
-    }
-
-    private void MindOnDoGreeting(EntityUid mindId, MindComponent component, RoleAddedEvent args)
+    private void MindOnDoGreeting(EntityUid mindId, MindComponent component, ref MindRoleAddedEvent args)
     {
         if (args.Silent)
             return;
@@ -46,7 +30,7 @@ public sealed class JobSystem : SharedJobSystem
         if (!_mind.TryGetSession(mindId, out var session))
             return;
 
-        if (!MindTryGetJob(mindId, out var prototype))
+        if (!MindTryGetJob(mindId, out _, out var prototype))
             return;
 
         _chat.DispatchServerMessage(session, Loc.GetString("job-greet-introduce-job-name",
@@ -54,13 +38,6 @@ public sealed class JobSystem : SharedJobSystem
 
         if (prototype.RequireAdminNotify)
             _chat.DispatchServerMessage(session, Loc.GetString("job-greet-important-disconnect-admin-notify"));
-
-        if (prototype.Greeting is { } greeting)
-        {
-            var msg = Loc.GetString(greeting, ("jobName", prototype.LocalizedName));
-            _chat.ChatMessageToOne(ChatChannel.Server, msg, msg, default, false, session.Channel);
-            return;
-        }
 
         _chat.DispatchServerMessage(session, Loc.GetString("job-greet-supervisors-warning", ("jobName", prototype.LocalizedName), ("supervisors", Loc.GetString(prototype.Supervisors))));
     }
@@ -70,6 +47,6 @@ public sealed class JobSystem : SharedJobSystem
         if (MindHasJobWithId(mindId, jobPrototypeId))
             return;
 
-        _roles.MindAddJobRole(mindId, null, false, jobPrototypeId);
+        _roles.MindAddRole(mindId, new JobComponent { Prototype = jobPrototypeId });
     }
 }

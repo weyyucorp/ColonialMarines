@@ -1,7 +1,6 @@
 using Content.Server.Explosion.EntitySystems;
-using Content.Shared.IgnitionSource;
 using Content.Shared.Timing;
-using Robust.Shared.Audio.Systems;
+using Robust.Shared.Audio;
 using Robust.Shared.Timing;
 
 namespace Content.Server.IgnitionSource;
@@ -12,7 +11,7 @@ namespace Content.Server.IgnitionSource;
 public sealed class IgniteOnTriggerSystem : EntitySystem
 {
     [Dependency] private readonly IGameTiming _timing = default!;
-    [Dependency] private readonly SharedIgnitionSourceSystem _source = default!;
+    [Dependency] private readonly IgnitionSourceSystem _source = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly UseDelaySystem _useDelay = default!;
 
@@ -43,13 +42,14 @@ public sealed class IgniteOnTriggerSystem : EntitySystem
     private void OnTrigger(Entity<IgniteOnTriggerComponent> ent, ref TriggerEvent args)
     {
         // prevent spamming sound and ignition
-        if (!TryComp(ent.Owner, out UseDelayComponent? useDelay) || _useDelay.IsDelayed((ent.Owner, useDelay)))
+        TryComp<UseDelayComponent>(ent, out var delay);
+        if (_useDelay.ActiveDelay(ent, delay))
             return;
 
         _source.SetIgnited(ent.Owner);
         _audio.PlayPvs(ent.Comp.IgniteSound, ent);
 
-        _useDelay.TryResetDelay((ent.Owner, useDelay));
+        _useDelay.BeginDelay(ent, delay);
         ent.Comp.IgnitedUntil = _timing.CurTime + ent.Comp.IgnitedTime;
     }
 }

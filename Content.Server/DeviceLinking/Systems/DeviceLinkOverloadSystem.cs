@@ -1,7 +1,8 @@
-﻿using Content.Server.DeviceLinking.Components.Overload;
-using Robust.Server.Audio;
+﻿using Content.Server.DeviceLinking.Components;
+using Content.Server.DeviceLinking.Components.Overload;
+using Content.Server.DeviceLinking.Events;
+using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
-using Content.Shared.DeviceLinking.Events;
 
 namespace Content.Server.DeviceLinking.Systems;
 

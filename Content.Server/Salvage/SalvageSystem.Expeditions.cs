@@ -4,13 +4,10 @@ using Content.Server.Salvage.Expeditions;
 using Content.Server.Salvage.Expeditions.Structure;
 using Content.Shared.CCVar;
 using Content.Shared.Examine;
-using Content.Shared.Random.Helpers;
 using Content.Shared.Salvage.Expeditions;
-using Robust.Shared.Audio;
 using Robust.Shared.CPUJob.JobQueues;
 using Robust.Shared.CPUJob.JobQueues.Queues;
 using Robust.Shared.GameStates;
-using Robust.Shared.Map;
 
 namespace Content.Server.Salvage;
 
@@ -34,14 +31,16 @@ public sealed partial class SalvageSystem
         SubscribeLocalEvent<SalvageExpeditionConsoleComponent, EntParentChangedMessage>(OnSalvageConsoleParent);
         SubscribeLocalEvent<SalvageExpeditionConsoleComponent, ClaimSalvageMessage>(OnSalvageClaimMessage);
 
-        SubscribeLocalEvent<SalvageExpeditionComponent, MapInitEvent>(OnExpeditionMapInit);
+        SubscribeLocalEvent<SalvageExpeditionDataComponent, EntityUnpausedEvent>(OnDataUnpaused);
+
         SubscribeLocalEvent<SalvageExpeditionComponent, ComponentShutdown>(OnExpeditionShutdown);
+        SubscribeLocalEvent<SalvageExpeditionComponent, EntityUnpausedEvent>(OnExpeditionUnpaused);
         SubscribeLocalEvent<SalvageExpeditionComponent, ComponentGetState>(OnExpeditionGetState);
 
         SubscribeLocalEvent<SalvageStructureComponent, ExaminedEvent>(OnStructureExamine);
 
         _cooldown = _configurationManager.GetCVar(CCVars.SalvageExpeditionCooldown);
-        Subs.CVar(_configurationManager, CCVars.SalvageExpeditionCooldown, SetCooldownChange);
+        _configurationManager.OnValueChanged(CCVars.SalvageExpeditionCooldown, SetCooldownChange);
     }
 
     private void OnExpeditionGetState(EntityUid uid, SalvageExpeditionComponent component, ref ComponentGetState args)
@@ -50,6 +49,11 @@ public sealed partial class SalvageSystem
         {
             Stage = component.Stage
         };
+    }
+
+    private void ShutdownExpeditions()
+    {
+        _configurationManager.UnsubValueChanged(CCVars.SalvageExpeditionCooldown, SetCooldownChange);
     }
 
     private void SetCooldownChange(float obj)
@@ -67,14 +71,9 @@ public sealed partial class SalvageSystem
         _cooldown = obj;
     }
 
-    private void OnExpeditionMapInit(EntityUid uid, SalvageExpeditionComponent component, MapInitEvent args)
-    {
-        component.SelectedSong = _audio.ResolveSound(component.Sound);
-    }
-
     private void OnExpeditionShutdown(EntityUid uid, SalvageExpeditionComponent component, ComponentShutdown args)
     {
-        component.Stream = _audio.Stop(component.Stream);
+        component.Stream?.Stop();
 
         foreach (var (job, cancelToken) in _salvageJobs.ToArray())
         {
@@ -93,6 +92,16 @@ public sealed partial class SalvageSystem
         {
             FinishExpedition((component.Station, data), uid);
         }
+    }
+
+    private void OnDataUnpaused(EntityUid uid, SalvageExpeditionDataComponent component, ref EntityUnpausedEvent args)
+    {
+        component.NextOffer += args.PausedTime;
+    }
+
+    private void OnExpeditionUnpaused(EntityUid uid, SalvageExpeditionComponent component, ref EntityUnpausedEvent args)
+    {
+        component.EndTime += args.PausedTime;
     }
 
     private void UpdateExpeditions()
@@ -157,7 +166,7 @@ public sealed partial class SalvageSystem
         return new SalvageExpeditionConsoleState(component.NextOffer, component.Claimed, component.Cooldown, component.ActiveMission, missions);
     }
 
-    private void SpawnMission(SalvageMissionParams missionParams, EntityUid station, EntityUid? coordinatesDisk)
+    private void SpawnMission(SalvageMissionParams missionParams, EntityUid station)
     {
         var cancelToken = new CancellationTokenSource();
         var job = new SpawnSalvageMissionJob(
@@ -171,10 +180,7 @@ public sealed partial class SalvageSystem
             _biome,
             _dungeon,
             _metaData,
-            _transform,
-            _mapSystem,
             station,
-            coordinatesDisk,
             missionParams,
             cancelToken.Token);
 

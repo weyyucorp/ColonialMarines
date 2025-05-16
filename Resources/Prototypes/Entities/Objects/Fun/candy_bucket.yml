@@ -23,8 +23,7 @@
           False: {state: empty_icon}
   - type: Storage
     maxItemSize: Small
-    grid:
-    - 0,0,3,2
+    maxTotalWeight: 10
     whitelist:
       components:
         - Pill
@@ -36,8 +35,8 @@
         ents: []
   - type: UserInterface
     interfaces:
-      enum.StorageUiKey.Key:
-        type: StorageBoundUserInterface
+    - key: enum.StorageUiKey.Key
+      type: StorageBoundUserInterface
   # to prevent bag open/honk spam
   - type: UseDelay
     delay: 0.5

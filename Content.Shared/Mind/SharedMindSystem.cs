@@ -11,7 +11,6 @@ using Content.Shared.Mobs.Components;
 using Content.Shared.Mobs.Systems;
 using Content.Shared.Objectives.Systems;
 using Content.Shared.Players;
-using Content.Shared.Whitelist;
 using Robust.Shared.Map;
 using Robust.Shared.Network;
 using Robust.Shared.Player;
@@ -19,15 +18,13 @@ using Robust.Shared.Utility;
 
 namespace Content.Shared.Mind;
 
-public abstract partial class SharedMindSystem : EntitySystem
+public abstract class SharedMindSystem : EntitySystem
 {
     [Dependency] private readonly ISharedAdminLogManager _adminLogger = default!;
-    [Dependency] private readonly INetManager _net = default!;
     [Dependency] private readonly MobStateSystem _mobState = default!;
     [Dependency] private readonly SharedObjectivesSystem _objectives = default!;
     [Dependency] private readonly SharedPlayerSystem _player = default!;
     [Dependency] private readonly MetaDataSystem _metadata = default!;
-    [Dependency] private readonly EntityWhitelistSystem _whitelist = default!;
 
     [ViewVariables]
     protected readonly Dictionary<NetUserId, EntityUid> UserMinds = new();
@@ -41,9 +38,6 @@ public abstract partial class SharedMindSystem : EntitySystem
         SubscribeLocalEvent<VisitingMindComponent, EntityTerminatingEvent>(OnVisitingTerminating);
         SubscribeLocalEvent<RoundRestartCleanupEvent>(OnReset);
         SubscribeLocalEvent<MindComponent, ComponentStartup>(OnMindStartup);
-        SubscribeLocalEvent<MindComponent, EntityRenamedEvent>(OnRenamed);
-
-        InitializeRelay();
     }
 
     public override void Shutdown()
@@ -112,7 +106,6 @@ public abstract partial class SharedMindSystem : EntitySystem
             TryComp(mindIdValue, out mind))
         {
             DebugTools.Assert(mind.UserId == user);
-
             mindId = mindIdValue;
             return true;
         }
@@ -153,10 +146,6 @@ public abstract partial class SharedMindSystem : EntitySystem
         if (!mindContainer.ShowExamineInfo || !args.IsInDetailsRange)
             return;
 
-        // TODO predict we can't right now because session stuff isnt networked
-        if (_net.IsClient)
-            return;
-
         var dead = _mobState.IsDead(uid);
         var hasUserId = CompOrNull<MindComponent>(mindContainer.Mind)?.UserId;
         var hasSession = CompOrNull<MindComponent>(mindContainer.Mind)?.Session;
@@ -173,23 +162,15 @@ public abstract partial class SharedMindSystem : EntitySystem
             args.PushMarkup($"[color=yellow]{Loc.GetString("comp-mind-examined-ssd", ("ent", uid))}[/color]");
     }
 
-    /// <summary>
-    /// Checks to see if the user's mind prevents them from suicide
-    /// Handles the suicide event without killing the user if true
-    /// </summary>
     private void OnSuicide(EntityUid uid, MindContainerComponent component, SuicideEvent args)
     {
         if (args.Handled)
             return;
 
         if (TryComp(component.Mind, out MindComponent? mind) && mind.PreventSuicide)
-            args.Handled = true;
-    }
-
-    private void OnRenamed(Entity<MindComponent> ent, ref EntityRenamedEvent args)
-    {
-        ent.Comp.CharacterName = args.NewName;
-        Dirty(ent);
+        {
+            args.BlockSuicideAttempt(true);
+        }
     }
 
     public EntityUid? GetMind(EntityUid uid, MindContainerComponent? mind = null)
@@ -326,10 +307,6 @@ public abstract partial class SharedMindSystem : EntitySystem
     {
     }
 
-    public virtual void ControlMob(EntityUid user, EntityUid target) {}
-
-    public virtual void ControlMob(NetUserId user, EntityUid target) {}
-
     /// <summary>
     /// Tries to create and add an objective from its prototype id.
     /// </summary>
@@ -368,16 +345,6 @@ public abstract partial class SharedMindSystem : EntitySystem
         var title = Name(objective);
         _adminLogger.Add(LogType.Mind, LogImpact.Low, $"Objective {objective} ({title}) removed from the mind of {MindOwnerLoggingString(mind)}");
         mind.Objectives.Remove(objective);
-
-        // garbage collection - only delete the objective entity if no mind uses it anymore
-        // This comes up for stuff like paradox clones where the objectives share the same entity
-        var mindQuery = AllEntityQuery<MindComponent>();
-        while (mindQuery.MoveNext(out _, out var queryComp))
-        {
-            if (queryComp.Objectives.Contains(objective))
-                return true;
-        }
-
         Del(objective);
         return true;
     }
@@ -397,7 +364,7 @@ public abstract partial class SharedMindSystem : EntitySystem
         if (Resolve(mindId, ref mind))
         {
             var query = GetEntityQuery<T>();
-            foreach (var uid in mind.Objectives)
+            foreach (var uid in mind.AllObjectives)
             {
                 if (query.TryGetComponent(uid, out objective))
                 {
@@ -406,57 +373,6 @@ public abstract partial class SharedMindSystem : EntitySystem
             }
         }
         objective = default;
-        return false;
-    }
-
-    /// <summary>
-    /// Copies objectives from one mind to another, so that they are shared between two players.
-    /// </summary>
-    /// <remarks>
-    /// Only copies the reference to the objective entity, not the entity itself.
-    /// This relies on the fact that objectives are never changed after spawning them.
-    /// If someone ever changes that, they will have to address this.
-    /// </remarks>
-    /// <param name="source"> mind entity of the player to copy from </param>
-    /// <param name="target"> mind entity of the player to copy to </param>
-    /// <param name="except"> whitelist for objectives that should be copied </param>
-    /// <param name="except"> blacklist for objectives that should not be copied </param>
-    public void CopyObjectives(Entity<MindComponent?> source, Entity<MindComponent?> target, EntityWhitelist? whitelist = null, EntityWhitelist? blacklist = null)
-    {
-        if (!Resolve(source, ref source.Comp) || !Resolve(target, ref target.Comp))
-            return;
-
-        foreach (var objective in source.Comp.Objectives)
-        {
-            if (target.Comp.Objectives.Contains(objective))
-                continue; // target already has this objective
-
-            if (_whitelist.CheckBoth(objective, blacklist, whitelist))
-                AddObjective(target, target.Comp, objective);
-        }
-    }
-
-    /// <summary>
-    /// Tries to find an objective that has the same prototype as the argument.
-    /// </summary>
-    /// <remarks>
-    /// Will not work for objectives that have no prototype, or duplicate objectives with the same prototype.
-    /// <//remarks>
-    public bool TryFindObjective(Entity<MindComponent?> mind, string prototype, [NotNullWhen(true)] out EntityUid? objective)
-    {
-        objective = null;
-        if (!Resolve(mind, ref mind.Comp))
-            return false;
-
-        foreach (var uid in mind.Comp.Objectives)
-        {
-            if (MetaData(uid).EntityPrototype?.ID == prototype)
-            {
-                objective = uid;
-                return true;
-            }
-        }
-
         return false;
     }
 
@@ -478,8 +394,7 @@ public abstract partial class SharedMindSystem : EntitySystem
         EntityUid uid,
         out EntityUid mindId,
         [NotNullWhen(true)] out MindComponent? mind,
-        MindContainerComponent? container = null,
-        VisitingMindComponent? visitingmind = null)
+        MindContainerComponent? container = null)
     {
         mindId = default;
         mind = null;
@@ -488,40 +403,49 @@ public abstract partial class SharedMindSystem : EntitySystem
             return false;
 
         if (!container.HasMind)
-        {
-            // The container has no mind. Check for a visiting mind...
-            if (!Resolve(uid, ref visitingmind, false))
-                return false;
-
-            mindId = visitingmind.MindId ?? default;
-            return TryComp(mindId, out mind);
-        }
+            return false;
 
         mindId = container.Mind ?? default;
         return TryComp(mindId, out mind);
     }
 
-    // TODO MIND make this return a nullable EntityUid or Entity<MindComponent>
+    public bool TryGetMind(
+        ContentPlayerData contentPlayer,
+        out EntityUid mindId,
+        [NotNullWhen(true)] out MindComponent? mind)
+    {
+        mindId = contentPlayer.Mind ?? default;
+        return TryComp(mindId, out mind);
+    }
+
     public bool TryGetMind(
         ICommonSession? player,
         out EntityUid mindId,
         [NotNullWhen(true)] out MindComponent? mind)
     {
-        if (player == null)
-        {
-            mindId = default;
-            mind = null;
-            return false;
-        }
-
-        if (TryGetMind(player.UserId, out var mindUid, out mind))
-        {
-            mindId = mindUid.Value;
-            return true;
-        }
-
         mindId = default;
+        mind = null;
+        if (_player.ContentData(player) is not { } data)
+            return false;
+
+        if (TryGetMind(data, out mindId, out mind))
+            return true;
+
+        DebugTools.AssertNull(data.Mind);
         return false;
+    }
+
+    /// <summary>
+    /// Gets a role component from a player's mind.
+    /// </summary>
+    /// <returns>Whether a role was found</returns>
+    public bool TryGetRole<T>(EntityUid user, [NotNullWhen(true)] out T? role) where T : IComponent
+    {
+        role = default;
+        if (!TryComp<MindContainerComponent>(user, out var mindContainer) || mindContainer.Mind == null)
+            return false;
+
+        return TryComp(mindContainer.Mind, out role);
     }
 
     /// <summary>
@@ -573,19 +497,22 @@ public abstract partial class SharedMindSystem : EntitySystem
     /// <summary>
     /// Returns a list of every living humanoid player's minds, except for a single one which is exluded.
     /// </summary>
-    public HashSet<Entity<MindComponent>> GetAliveHumans(EntityUid? exclude = null)
+    public List<EntityUid> GetAliveHumansExcept(EntityUid exclude)
     {
-        var allHumans = new HashSet<Entity<MindComponent>>();
+        var mindQuery = EntityQuery<MindComponent>();
+
+        var allHumans = new List<EntityUid>();
         // HumanoidAppearanceComponent is used to prevent mice, pAIs, etc from being chosen
-        var query = EntityQueryEnumerator<MobStateComponent, HumanoidAppearanceComponent>();
-        while (query.MoveNext(out var uid, out var mobState, out _))
+        var query = EntityQueryEnumerator<MindContainerComponent, MobStateComponent, HumanoidAppearanceComponent>();
+        while (query.MoveNext(out var uid, out var mc, out var mobState, out _))
         {
-            // the player needs to have a mind and not be the excluded one +
-            // the player has to be alive
-            if (!TryGetMind(uid, out var mind, out var mindComp) || mind == exclude || !_mobState.IsAlive(uid, mobState))
+            // the player needs to have a mind and not be the excluded one
+            if (mc.Mind == null || mc.Mind == exclude)
                 continue;
 
-            allHumans.Add(new Entity<MindComponent>(mind, mindComp));
+            // the player has to be alive
+            if (_mobState.IsAlive(uid, mobState))
+                allHumans.Add(mc.Mind.Value);
         }
 
         return allHumans;

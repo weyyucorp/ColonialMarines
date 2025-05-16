@@ -1,4 +1,3 @@
-# When adding new food also add to random spawner located in Resources\Prototypes\Entities\Markers\Spawners\Random\Food_Drinks\food_baked_whole.yml & food_baked_single.yml
 # Base
 
 - type: entity
@@ -23,9 +22,6 @@
           Quantity: 5
   - type: Item
     size: Normal
-  - type: Tag
-    tags:
-    - Cake
 
 - type: entity
   parent: FoodCakeBase
@@ -48,10 +44,6 @@
           Quantity: 1
   - type: Item
     size: Tiny
-  - type: Tag
-    tags:
-    - Cake
-    - Slice
 
 # Custom Cake Example
 
@@ -68,10 +60,6 @@
       color: blue
   - type: SliceableFood
     slice: FoodCakeBlueberrySlice
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
 
 - type: entity
   name: blueberry slice
@@ -84,11 +72,6 @@
     - state: plain-slice
     - state: alpha-slice-filling
       color: blue
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
-    - Slice
 
 # Cake
 
@@ -135,10 +118,6 @@
           Quantity: 5
         - ReagentId: Vitamin
           Quantity: 5
-  - type: Tag
-    tags:
-    - Cake
-    - Vegetable
 
 - type: entity
   name: slice of carrot cake
@@ -159,11 +138,6 @@
           Quantity: 1
         - ReagentId: Vitamin
           Quantity: 1
-  - type: Tag
-    tags:
-    - Cake
-    - Vegetable
-    - Slice
 
 # Tastes like sweetness, cake, carrot.
 
@@ -177,10 +151,7 @@
     state: brain
   - type: SliceableFood
     slice: FoodCakeBrainSlice
-  - type: Tag
-    tags:
-    - Cake
-    - Meat
+
 
 - type: entity
   name: slice of brain cake
@@ -190,11 +161,6 @@
   components:
   - type: Sprite
     state: brain-slice
-  - type: Tag
-    tags:
-    - Cake
-    - Meat
-    - Slice
 # Tastes like sweetness, cake, brains.
 
 - type: entity
@@ -228,10 +194,6 @@
     state: orange
   - type: SliceableFood
     slice: FoodCakeOrangeSlice
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
 
 - type: entity
   name: slice of orange cake
@@ -240,11 +202,6 @@
   components:
   - type: Sprite
     state: orange-slice
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
-    - Slice
 # Tastes like sweetness, cake, oranges.
 
 - type: entity
@@ -257,10 +214,6 @@
     state: lime
   - type: SliceableFood
     slice: FoodCakeLimeSlice
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
 
 - type: entity
   name: slice of lime cake
@@ -269,11 +222,6 @@
   components:
   - type: Sprite
     state: lime-slice
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
-    - Slice
 # Tastes like sweetness, cake, limes.
 
 - type: entity
@@ -286,10 +234,6 @@
     state: lemon
   - type: SliceableFood
     slice: FoodCakeLemonSlice
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
 
 - type: entity
   name: slice of lemon cake
@@ -298,71 +242,7 @@
   components:
   - type: Sprite
     state: lemon-slice
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
-    - Slice
 # Tastes like sweetness, cake, lemons.
-
-- type: entity
-  name: lemoon cake
-  parent: FoodCakeBase
-  id: FoodCakeLemoon
-  description: A cake that represents the moon of earth.
-  components:
-  - type: Sprite
-    state: lemoon
-  - type: FlavorProfile
-    flavors:
-      - lemoon
-      - berry
-  - type: SliceableFood
-    slice: FoodCakeLemoonSlice
-  - type: SolutionContainerManager
-    solutions:
-      food:
-        maxVol: 30
-        reagents:
-        - ReagentId: Nutriment
-          Quantity: 15
-        - ReagentId: Vitamin
-          Quantity: 5
-        - ReagentId: Milk
-          Quantity: 5
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
-
-- type: entity
-  name: shard of lemoon cake
-  parent: FoodCakeSliceBase
-  id: FoodCakeLemoonSlice
-  description: A shard of moon, has the smell of milk.
-  components:
-  - type: Sprite
-    state: lemoon-slice
-  - type: FlavorProfile
-    flavors:
-      - lemoon
-      - berry
-  - type: SolutionContainerManager
-    solutions:
-      food:
-        maxVol: 15
-        reagents:
-        - ReagentId: Nutriment
-          Quantity: 3
-        - ReagentId: Vitamin
-          Quantity: 1
-        - ReagentId: Milk
-          Quantity: 1
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
-    - Slice
 
 - type: entity
   name: chocolate cake
@@ -418,7 +298,6 @@
     slice: FoodCakeAppleSlice
   - type: Tag
     tags:
-    - Cake
     - Fruit
 
 - type: entity
@@ -431,9 +310,7 @@
     state: apple-slice
   - type: Tag
     tags:
-    - Cake
     - Fruit
-    - Slice
 # Tastes like sweetness, cake, slime.
 
 - type: entity
@@ -446,10 +323,6 @@
     state: slime
   - type: SliceableFood
     slice: FoodCakeSlimeSlice
-  - type: Tag
-    tags:
-    - Cake
-    - Meat
 
 - type: entity
   name: slice of slime cake
@@ -459,11 +332,6 @@
   components:
   - type: Sprite
     state: slime-slice
-  - type: Tag
-    tags:
-    - Cake
-    - Meat
-    - Slice
 # Tastes like sweetness, cake, slime.
 
 - type: entity
@@ -487,7 +355,6 @@
           Quantity: 11
   - type: Tag
     tags:
-    - Cake
     - Fruit
 
 - type: entity
@@ -509,9 +376,7 @@
           Quantity: 2.2
   - type: Tag
     tags:
-    - Cake
     - Fruit
-    - Slice
 # Tastes like sweetness, cake, pumpkin.
 
 - type: entity
@@ -524,10 +389,6 @@
     state: christmas
   - type: SliceableFood
     slice: FoodCakeChristmasSlice
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
 
 - type: entity
   name: slice of christmas cake
@@ -536,11 +397,6 @@
   components:
   - type: Sprite
     state: christmas-slice
-  - type: Tag
-    tags:
-    - Cake
-    - Fruit
-    - Slice
 # Tastes like sweetness, cake, christmas.
 
 - type: entity
@@ -669,7 +525,7 @@
           Quantity: 20
         - ReagentId: Vitamin
           Quantity: 5
-        - ReagentId: PolypyryliumOligomers
+        - ReagentId: Omnizine #This is a really rare cake with healing stuff and we don't have any of its chems yet
           Quantity: 15
 
 - type: entity
@@ -689,32 +545,16 @@
           Quantity: 4
         - ReagentId: Vitamin
           Quantity: 1
-        - ReagentId: PolypyryliumOligomers
+        - ReagentId: Omnizine
           Quantity: 3
 # Tastes like sweetness, cake, jam.
 
 - type: entity
   name: cak
   id: MobCatCake
-  parent: EdibleBase
+  parent: FoodCakeBase
   description: It's a cake. It's a cat. It's a cak.
   components:
-  - type: FlavorProfile
-    flavors:
-    - sweet
-  - type: InjectableSolution
-    solution: food
-  - type: RefillableSolution
-    solution: food
-  - type: SolutionContainerManager
-    solutions:
-      food:
-        maxVol: 30
-        reagents:
-        - ReagentId: Nutriment
-          Quantity: 20
-        - ReagentId: Vitamin
-          Quantity: 5
   - type: Sprite
     noRot: true
     drawdepth: Mobs
@@ -750,9 +590,7 @@
     name: ghost-role-information-Cak-name
     allowMovement: true
     description: ghost-role-information-Cak-description
-    rules: ghost-role-information-nonantagonist-rules
-    raffle:
-      settings: short
+    rules: ghost-role-information-Cak-rules
   - type: GhostTakeoverAvailable
   - type: OwOAccent
   - type: Speech
@@ -765,13 +603,11 @@
     tags:
     - VimPilot
     - DoorBumpOpener
-    - Cake
   - type: CanEscapeInventory
     baseResistTime: 2
   - type: Puller
     needsHands: false
   - type: Examiner
-  - type: DoAfter
   - type: CombatMode
   - type: MeleeWeapon
     soundHit:
@@ -794,7 +630,7 @@
     state: suppermatter
   - type: SliceableFood
     slice: FoodCakeSuppermatterSlice
-    count: 8
+    TotalCount: 8
   - type: SolutionContainerManager
     solutions:
       food:
@@ -832,10 +668,3 @@
     color: "#FFFF00"
     radius: 1.4
     energy: 1.4
-  - type: Tag
-    tags:
-    - Slice
-  - type: FoodSequenceElement
-    entries:
-      Taco: Suppermatter
-      Burger: SuppermatterBurger

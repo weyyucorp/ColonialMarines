@@ -84,7 +84,6 @@
         multiplier: 0.1
       - !type:AdjustTemperature
         amount: 6000
-      - !type:Ignite
   reactiveEffects:
     Flammable:
       methods: [ Touch ]
@@ -152,12 +151,10 @@
   slippery: true
   flavor: bitter
   flavorMinimum: 0.01
-  color: "#660000"
+  color: "#a76b1c"
   recognizable: true
   boilingPoint: -84.7 # Acetylene. Close enough.
   meltingPoint: -80.7
-  intensity: 10
-  duration: 10
   tileReactions:
   - !type:FlammableTileReaction {}
   metabolisms:

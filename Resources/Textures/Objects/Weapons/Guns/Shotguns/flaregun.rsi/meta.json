@@ -8,7 +8,7 @@
   },
     "states": [
         {
-            "name": "base"
+            "name": "icon"
         },
         {
             "name": "bolt-open"
@@ -23,10 +23,6 @@
         },
         {
             "name": "equipped-BELT",
-            "directions": 4
-        },
-		{
-            "name": "equipped-SUITSTORAGE",
             "directions": 4
         }
     ]

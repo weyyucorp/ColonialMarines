@@ -7,7 +7,6 @@
   - type: Sprite
     layers:
     - state: closed
-      map: ["closeLayer"]
     - state: open
       map: ["openLayer"]
       visible: false
@@ -43,17 +42,14 @@
     materialComposition:
       Steel: 50
   - type: SpaceGarbage
-  - type: Item
-    size: Tiny
-    shape: # Yes, this is cursed, but it breaks otherwise, dont question it.
-    - 0,0,0,1
   - type: Storage
-    grid:
-    - 0,0,4,1
+    maxSlots: 5
+  - type: Item
+    size: Small
   - type: StorageFill
     contents:
     - id: Cigarette
-      amount: 10
+      amount: 5
   - type: ItemCounter
     count:
       tags: [Cigarette]
@@ -76,7 +72,6 @@
   - type: Sprite
     layers:
     - state: closed
-      map: ["closeLayer"]
     - state: open
       map: ["openLayer"]
       visible: false
@@ -112,13 +107,11 @@
     materialComposition:
       Steel: 50
   - type: SpaceGarbage
-  - type: Item
-    size: Tiny
-    shape: # Yes, this is cursed, but it breaks otherwise, dont question it.
-    - 0,0,0,1
   - type: Storage
-    grid:
-    - 0,0,4,1
+    maxSlots: 10
+    maxTotalWeight: 20
+  - type: Item
+    size: Small
   - type: StorageFill
     contents:
     - id: CigaretteRandom
@@ -182,7 +175,7 @@
 
 - type: entity
   id: CigPackSyndicate
-  parent: [CigPackBase, BaseSyndicateContraband]
+  parent: CigPackBase
   name: Interdyne herbals packet
   description: Elite cigarettes for elite syndicate agents. Infused with medicine for when you need to do more than calm your nerves.
   components:
@@ -193,13 +186,12 @@
   - type: StorageFill
     contents:
     - id: CigaretteSyndicate
-      amount: 10
+      amount: 5
 
 - type: entity
   id: CigPackMixedMedical
   parent: CigPackMixedBase
   name: Dan's soaked smokes
-  suffix: Medical
   description: Dan worked with NT chemistry to dispose of excess chemicals, ENJOY.
   components:
   - type: Sprite
@@ -227,7 +219,6 @@
   id: CigPackMixed
   parent: CigPackMixedBase
   name: Dan's soaked smokes
-  suffix: Mixed
   description: Dan worked with NT chemistry to dispose of excess chemicals, ENJOY.
   components:
   - type: Sprite
@@ -261,7 +252,6 @@
   id: CigPackMixedNasty
   parent: CigPackMixedBase
   name: Dan's soaked smokes
-  suffix: Nasty
   description: Dan worked with NT chemistry to dispose of excess chemicals, ENJOY.
   components:
   - type: Sprite

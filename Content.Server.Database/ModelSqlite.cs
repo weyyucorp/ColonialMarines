@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using NpgsqlTypes;
 
 namespace Content.Server.Database
 {
@@ -49,8 +48,8 @@ namespace Content.Server.Database
                 .Property(p => p.LastSeenAddress)
                 .HasConversion(ipConverter);
 
-            var ipMaskConverter = new ValueConverter<NpgsqlInet, string>(
-                v => InetToString(v.Address, v.Netmask),
+            var ipMaskConverter = new ValueConverter<(IPAddress address, int mask), string>(
+                v => InetToString(v.address, v.mask),
                 v => StringToInet(v)
             );
 
@@ -81,11 +80,6 @@ namespace Content.Server.Database
             modelBuilder.Entity<Profile>()
                 .Property(log => log.Markings)
                 .HasConversion(jsonByteArrayConverter);
-
-            // EF core can make this automatically unique on sqlite but not psql.
-            modelBuilder.Entity<IPIntelCache>()
-                .HasIndex(p => p.Address)
-                .IsUnique();
         }
 
         public override int CountAdminLogs()
@@ -104,11 +98,11 @@ namespace Content.Server.Database
             return $"{address}/{mask}";
         }
 
-        private static NpgsqlInet StringToInet(string inet) {
+        private static (IPAddress, int) StringToInet(string inet) {
             var idx = inet.IndexOf('/', StringComparison.Ordinal);
-            return new NpgsqlInet(
+            return (
                 IPAddress.Parse(inet.AsSpan(0, idx)),
-                byte.Parse(inet.AsSpan(idx + 1), provider: CultureInfo.InvariantCulture)
+                int.Parse(inet.AsSpan(idx + 1), provider: CultureInfo.InvariantCulture)
             );
         }
 

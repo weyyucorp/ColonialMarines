@@ -1,4 +1,4 @@
-using Content.Shared.Construction.Conditions;
+﻿using Content.Shared.Construction.Conditions;
 using Content.Shared.Whitelist;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
@@ -6,7 +6,7 @@ using Robust.Shared.Utility;
 
 namespace Content.Shared.Construction.Prototypes;
 
-[Prototype]
+[Prototype("construction")]
 public sealed partial class ConstructionPrototype : IPrototype
 {
     [DataField("conditions")] private List<IConstructionCondition> _conditions = new();

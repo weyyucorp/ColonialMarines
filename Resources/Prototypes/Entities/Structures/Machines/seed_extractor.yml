@@ -35,5 +35,6 @@
   - type: SeedExtractor
   - type: Machine
     board: SeedExtractorMachineCircuitboard
-  - type: ApcPowerReceiver
-    needsPower: false
+  - type: UpgradePowerDraw
+    powerDrawMultiplier: 0.75
+    scaling: Exponential

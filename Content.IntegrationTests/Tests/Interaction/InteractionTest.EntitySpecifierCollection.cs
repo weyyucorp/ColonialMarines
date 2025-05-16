@@ -5,7 +5,6 @@ using Content.Shared.Stacks;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
-using static Robust.UnitTesting.RobustIntegrationTest;
 
 namespace Content.IntegrationTests.Tests.Interaction;
 
@@ -112,7 +111,7 @@ public abstract partial class InteractionTest
         /// <summary>
         /// Convert applicable entity prototypes into stack prototypes.
         /// </summary>
-        public async Task ConvertToStacks(IPrototypeManager protoMan, IComponentFactory factory, ServerIntegrationInstance server)
+        public void ConvertToStacks(IPrototypeManager protoMan, IComponentFactory factory)
         {
             if (Converted)
                 return;
@@ -131,17 +130,14 @@ public abstract partial class InteractionTest
                     continue;
                 }
 
-                StackComponent? stack = null;
-                await server.WaitPost(() =>
+                if (!entProto.TryGetComponent<StackComponent>(factory.GetComponentName(typeof(StackComponent)),
+                        out var stackComp))
                 {
-                    entProto.TryGetComponent(factory.GetComponentName(typeof(StackComponent)), out stack);
-                });
-
-                if (stack == null)
                     continue;
+                }
 
                 toRemove.Add(id);
-                toAdd.Add((stack.StackTypeId, quantity));
+                toAdd.Add((stackComp.StackTypeId, quantity));
             }
 
             foreach (var id in toRemove)
@@ -160,9 +156,7 @@ public abstract partial class InteractionTest
 
     protected EntitySpecifierCollection ToEntityCollection(IEnumerable<EntityUid> entities)
     {
-        var collection = new EntitySpecifierCollection(entities
-            .Select(ToEntitySpecifier)
-            .OfType<EntitySpecifier>());
+        var collection = new EntitySpecifierCollection(entities.Select(uid => ToEntitySpecifier(uid)));
         Assert.That(collection.Converted);
         return collection;
     }

@@ -1,4 +1,4 @@
-using Content.Shared._RMC14.Admin;
+using Content.Shared._CM14.Admin;
 using Content.Shared.Database;
 using Content.Shared.Interaction.Events;
 using Content.Shared.Inventory;
@@ -225,7 +225,7 @@ namespace Content.Shared.Verbs
             typeof(ActivationVerb),
             typeof(ExamineVerb),
             typeof(EquipmentVerb),
-            typeof(RMCAdminVerb)
+            typeof(CMAdminVerb)
         };
     }
 
@@ -283,11 +283,12 @@ namespace Content.Shared.Verbs
     }
 
     /// <summary>
-    ///     This is for verbs facilitated by components on the user or their clothing.
+    ///     This is for verbs facilitated by components on the user.
     ///     Verbs from clothing, species, etc. rather than a held item.
     /// </summary>
     /// <remarks>
-    ///     This will get relayed to all clothing (Not pockets) through an inventory relay event.
+    ///     Add a component to the user's entity and sub to the get verbs event
+    ///     and it'll appear in the verbs menu on any target.
     /// </remarks>
     [Serializable, NetSerializable]
     public sealed class InnateVerb : Verb
@@ -348,7 +349,6 @@ namespace Content.Shared.Verbs
         public override bool CloseMenuDefault => false; // for examine verbs, this will close the examine tooltip.
 
         public bool ShowOnExamineTooltip = true;
-        public bool HoverVerb = false; // aligned to the left, gives text on hover
     }
 
     /// <summary>

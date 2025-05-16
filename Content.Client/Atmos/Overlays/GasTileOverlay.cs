@@ -8,6 +8,7 @@ using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Shared.Enums;
+using Robust.Shared.Graphics;
 using Robust.Shared.Graphics.RSI;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -21,9 +22,8 @@ namespace Content.Client.Atmos.Overlays
     {
         private readonly IEntityManager _entManager;
         private readonly IMapManager _mapManager;
-        private readonly SharedTransformSystem _xformSys;
 
-        public override OverlaySpace Space => OverlaySpace.WorldSpaceEntities | OverlaySpace.WorldSpaceBelowWorld;
+        public override OverlaySpace Space => OverlaySpace.WorldSpaceEntities;
         private readonly ShaderInstance _shader;
 
         // Gas overlays
@@ -47,11 +47,10 @@ namespace Content.Client.Atmos.Overlays
 
         public const int GasOverlayZIndex = (int) Shared.DrawDepth.DrawDepth.Effects; // Under ghosts, above mostly everything else
 
-        public GasTileOverlay(GasTileOverlaySystem system, IEntityManager entManager, IResourceCache resourceCache, IPrototypeManager protoMan, SpriteSystem spriteSys, SharedTransformSystem xformSys)
+        public GasTileOverlay(GasTileOverlaySystem system, IEntityManager entManager, IResourceCache resourceCache, IPrototypeManager protoMan, SpriteSystem spriteSys)
         {
             _entManager = entManager;
             _mapManager = IoCManager.Resolve<IMapManager>();
-            _xformSys = xformSys;
             _shader = protoMan.Index<ShaderPrototype>("unshaded").Instance();
             ZIndex = GasOverlayZIndex;
 
@@ -80,8 +79,7 @@ namespace Content.Client.Atmos.Overlays
                         var rsi = resourceCache.GetResource<RSIResource>(animated.RsiPath).RSI;
                         var stateId = animated.RsiState;
 
-                        if (!rsi.TryGetState(stateId, out var state))
-                            continue;
+                        if (!rsi.TryGetState(stateId, out var state)) continue;
 
                         _frames[i] = state.GetFrames(RsiDirection.South);
                         _frameDelays[i] = state.GetDelays();
@@ -113,8 +111,7 @@ namespace Content.Client.Atmos.Overlays
             for (var i = 0; i < _gasCount; i++)
             {
                 var delays = _frameDelays[i];
-                if (delays.Length == 0)
-                    continue;
+                if (delays.Length == 0) continue;
 
                 var frameCount = _frameCounter[i];
                 _timer[i] += args.DeltaSeconds;
@@ -130,8 +127,7 @@ namespace Content.Client.Atmos.Overlays
             for (var i = 0; i < FireStates; i++)
             {
                 var delays = _fireFrameDelays[i];
-                if (delays.Length == 0)
-                    continue;
+                if (delays.Length == 0) continue;
 
                 var frameCount = _fireFrameCounter[i];
                 _fireTimer[i] += args.DeltaSeconds;
@@ -160,16 +156,31 @@ namespace Content.Client.Atmos.Overlays
                 _fireFrameCounter,
                 _shader,
                 overlayQuery,
-                xformQuery,
-                _xformSys);
+                xformQuery);
 
             var mapUid = _mapManager.GetMapEntityId(args.MapId);
 
             if (_entManager.TryGetComponent<MapAtmosphereComponent>(mapUid, out var atmos))
-                DrawMapOverlay(drawHandle, args, mapUid, atmos);
+            {
+                var bottomLeft = args.WorldAABB.BottomLeft.Floored();
+                var topRight = args.WorldAABB.TopRight.Ceiled();
 
-            if (args.Space != OverlaySpace.WorldSpaceEntities)
-                return;
+                for (var x = bottomLeft.X; x <= topRight.X; x++)
+                {
+                    for (var y = bottomLeft.Y; y <= topRight.Y; y++)
+                    {
+                        var tilePosition = new Vector2(x, y);
+
+                        for (var i = 0; i < atmos.OverlayData.Opacity.Length; i++)
+                        {
+                            var opacity = atmos.OverlayData.Opacity[i];
+
+                            if (opacity > 0)
+                                args.WorldHandle.DrawTexture(_frames[i][_frameCounter[i]], tilePosition, Color.White.WithAlpha(opacity));
+                        }
+                    }
+                }
+            }
 
             // TODO: WorldBounds callback.
             _mapManager.FindGridsIntersecting(args.MapId, args.WorldAABB, ref gridState,
@@ -183,8 +194,7 @@ namespace Content.Client.Atmos.Overlays
                         int[] fireFrameCounter,
                         ShaderInstance shader,
                         EntityQuery<GasTileOverlayComponent> overlayQuery,
-                        EntityQuery<TransformComponent> xformQuery,
-                        SharedTransformSystem xformSys) state) =>
+                        EntityQuery<TransformComponent> xformQuery) state) =>
                 {
                     if (!state.overlayQuery.TryGetComponent(uid, out var comp) ||
                         !state.xformQuery.TryGetComponent(uid, out var gridXform))
@@ -192,9 +202,9 @@ namespace Content.Client.Atmos.Overlays
                             return true;
                         }
 
-                    var (_, _, worldMatrix, invMatrix) = state.xformSys.GetWorldPositionRotationMatrixWithInv(gridXform);
+                    var (_, _, worldMatrix, invMatrix) = gridXform.GetWorldPositionRotationMatrixWithInv();
                     state.drawHandle.SetTransform(worldMatrix);
-                    var floatBounds = invMatrix.TransformBox(state.WorldBounds).Enlarged(grid.TileSize);
+                    var floatBounds = invMatrix.TransformBox(in state.WorldBounds).Enlarged(grid.TileSize);
                     var localBounds = new Box2i(
                         (int) MathF.Floor(floatBounds.Left),
                         (int) MathF.Floor(floatBounds.Bottom),
@@ -253,43 +263,7 @@ namespace Content.Client.Atmos.Overlays
                 });
 
             drawHandle.UseShader(null);
-            drawHandle.SetTransform(Matrix3x2.Identity);
-        }
-
-        private void DrawMapOverlay(
-            DrawingHandleWorld handle,
-            OverlayDrawArgs args,
-            EntityUid map,
-            MapAtmosphereComponent atmos)
-        {
-            var mapGrid = _entManager.HasComponent<MapGridComponent>(map);
-
-            // map-grid atmospheres get drawn above grids
-            if (mapGrid && args.Space != OverlaySpace.WorldSpaceEntities)
-                return;
-
-            // Normal map atmospheres get drawn below grids
-            if (!mapGrid && args.Space != OverlaySpace.WorldSpaceBelowWorld)
-                return;
-
-            var bottomLeft = args.WorldAABB.BottomLeft.Floored();
-            var topRight = args.WorldAABB.TopRight.Ceiled();
-
-            for (var x = bottomLeft.X; x <= topRight.X; x++)
-            {
-                for (var y = bottomLeft.Y; y <= topRight.Y; y++)
-                {
-                    var tilePosition = new Vector2(x, y);
-
-                    for (var i = 0; i < atmos.OverlayData.Opacity.Length; i++)
-                    {
-                        var opacity = atmos.OverlayData.Opacity[i];
-
-                        if (opacity > 0)
-                            handle.DrawTexture(_frames[i][_frameCounter[i]], tilePosition, Color.White.WithAlpha(opacity));
-                    }
-                }
-            }
+            drawHandle.SetTransform(Matrix3.Identity);
         }
     }
 }

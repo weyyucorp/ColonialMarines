@@ -54,7 +54,7 @@ public sealed class BanListEui : BaseEui
 
     private async Task LoadBans(NetUserId userId)
     {
-        foreach (var ban in await _db.GetServerBansAsync(null, userId, null, null))
+        foreach (var ban in await _db.GetServerBansAsync(null, userId, null))
         {
             SharedServerUnban? unban = null;
             if (ban.Unban is { } unbanDef)
@@ -65,23 +65,13 @@ public sealed class BanListEui : BaseEui
                 unban = new SharedServerUnban(unbanningAdmin, ban.Unban.UnbanTime.UtcDateTime);
             }
 
-            (string, int cidrMask)? ip = ("*Hidden*", 0);
-            var hwid = "*Hidden*";
-
-            if (_admins.HasAdminFlag(Player, AdminFlags.Pii))
-            {
-                ip = ban.Address is { } address
-                    ? (address.address.ToString(), address.cidrMask)
-                    : null;
-
-                hwid = ban.HWId?.ToString();
-            }
-
             Bans.Add(new SharedServerBan(
                 ban.Id,
                 ban.UserId,
-                ip,
-                hwid,
+                ban.Address is { } address
+                    ? (address.address.ToString(), address.cidrMask)
+                    : null,
+                ban.HWId == null ? null : Convert.ToBase64String(ban.HWId.Value.AsSpan()),
                 ban.BanTime.UtcDateTime,
                 ban.ExpirationTime?.UtcDateTime,
                 ban.Reason,
@@ -95,7 +85,7 @@ public sealed class BanListEui : BaseEui
 
     private async Task LoadRoleBans(NetUserId userId)
     {
-        foreach (var ban in await _db.GetServerRoleBansAsync(null, userId, null, null))
+        foreach (var ban in await _db.GetServerRoleBansAsync(null, userId, null))
         {
             SharedServerUnban? unban = null;
             if (ban.Unban is { } unbanDef)
@@ -106,22 +96,13 @@ public sealed class BanListEui : BaseEui
                 unban = new SharedServerUnban(unbanningAdmin, ban.Unban.UnbanTime.UtcDateTime);
             }
 
-            (string, int cidrMask)? ip = ("*Hidden*", 0);
-            var hwid = "*Hidden*";
-
-            if (_admins.HasAdminFlag(Player, AdminFlags.Pii))
-            {
-                ip = ban.Address is { } address
-                    ? (address.address.ToString(), address.cidrMask)
-                    : null;
-
-                hwid = ban.HWId?.ToString();
-            }
             RoleBans.Add(new SharedServerRoleBan(
                 ban.Id,
                 ban.UserId,
-                ip,
-                hwid,
+                ban.Address is { } address
+                    ? (address.address.ToString(), address.cidrMask)
+                    : null,
+                ban.HWId == null ? null : Convert.ToBase64String(ban.HWId.Value.AsSpan()),
                 ban.BanTime.UtcDateTime,
                 ban.ExpirationTime?.UtcDateTime,
                 ban.Reason,

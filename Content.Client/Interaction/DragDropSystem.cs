@@ -42,7 +42,6 @@ public sealed class DragDropSystem : SharedDragDropSystem
     [Dependency] private readonly ActionBlockerSystem _actionBlockerSystem = default!;
     [Dependency] private readonly EntityLookupSystem _lookup = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
-    [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
 
     // how often to recheck possible targets (prevents calling expensive
     // check logic each update)
@@ -90,7 +89,7 @@ public sealed class DragDropSystem : SharedDragDropSystem
     /// </summary>
     private bool _isReplaying;
 
-    public float Deadzone;
+    private float _deadzone;
 
     private DragState _state = DragState.NotDragging;
 
@@ -110,7 +109,7 @@ public sealed class DragDropSystem : SharedDragDropSystem
         UpdatesOutsidePrediction = true;
         UpdatesAfter.Add(typeof(SharedEyeSystem));
 
-        Subs.CVar(_cfgMan, CCVars.DragDropDeadZone, SetDeadZone, true);
+        _cfgMan.OnValueChanged(CCVars.DragDropDeadZone, SetDeadZone, true);
 
         _dropTargetInRangeShader = _prototypeManager.Index<ShaderPrototype>(ShaderDropTargetInRange).Instance();
         _dropTargetOutOfRangeShader = _prototypeManager.Index<ShaderPrototype>(ShaderDropTargetOutOfRange).Instance();
@@ -122,11 +121,12 @@ public sealed class DragDropSystem : SharedDragDropSystem
 
     private void SetDeadZone(float deadZone)
     {
-        Deadzone = deadZone;
+        _deadzone = deadZone;
     }
 
     public override void Shutdown()
     {
+        _cfgMan.UnsubValueChanged(CCVars.DragDropDeadZone, SetDeadZone);
         CommandBinds.Unregister<DragDropSystem>();
         base.Shutdown();
     }
@@ -212,7 +212,7 @@ public sealed class DragDropSystem : SharedDragDropSystem
 
         _draggedEntity = entity;
         _state = DragState.MouseDown;
-        _mouseDownScreenPos = args.ScreenCoordinates;
+        _mouseDownScreenPos = _inputManager.MouseScreenPosition;
         _mouseDownTime = 0;
 
         // don't want anything else to process the click,
@@ -240,13 +240,8 @@ public sealed class DragDropSystem : SharedDragDropSystem
 
         if (TryComp<SpriteComponent>(_draggedEntity, out var draggedSprite))
         {
-            var screenPos = _inputManager.MouseScreenPosition;
-            // No _draggedEntity in null window (Happens in tests)
-            if (!screenPos.IsValid)
-                return;
-
             // pop up drag shadow under mouse
-            var mousePos = _eyeManager.PixelToMap(screenPos);
+            var mousePos = _eyeManager.PixelToMap(_inputManager.MouseScreenPosition);
             _dragShadow = EntityManager.SpawnEntity("dragshadow", mousePos);
             var dragSprite = Comp<SpriteComponent>(_dragShadow.Value);
             dragSprite.CopyFrom(draggedSprite);
@@ -256,7 +251,7 @@ public sealed class DragDropSystem : SharedDragDropSystem
             dragSprite.DrawDepth = (int) DrawDepth.Overlays;
             if (!dragSprite.NoRotation)
             {
-                _transformSystem.SetWorldRotationNoLerp(_dragShadow.Value, _transformSystem.GetWorldRotation(_draggedEntity.Value));
+                Transform(_dragShadow.Value).WorldRotation = Transform(_draggedEntity.Value).WorldRotation;
             }
 
             // drag initiated
@@ -274,7 +269,7 @@ public sealed class DragDropSystem : SharedDragDropSystem
             return false;
         }
 
-        var player = _playerManager.LocalEntity;
+        var player = _playerManager.LocalPlayer?.ControlledEntity;
 
         // still in range of the thing we are dragging?
         if (player == null || !_interactionSystem.InRangeUnobstructed(player.Value, _draggedEntity.Value))
@@ -351,7 +346,7 @@ public sealed class DragDropSystem : SharedDragDropSystem
             return false;
         }
 
-        var localPlayer = _playerManager.LocalEntity;
+        var localPlayer = _playerManager.LocalPlayer?.ControlledEntity;
 
         if (localPlayer == null || !Exists(_draggedEntity))
         {
@@ -415,7 +410,7 @@ public sealed class DragDropSystem : SharedDragDropSystem
             return;
         }
 
-        var user = _playerManager.LocalEntity;
+        var user = _playerManager.LocalPlayer?.ControlledEntity;
 
         if (user == null)
             return;
@@ -501,7 +496,7 @@ public sealed class DragDropSystem : SharedDragDropSystem
         // CanInteract() doesn't support checking a second "target" entity.
         // Doing so manually:
         var ev = new GettingInteractedWithAttemptEvent(user, dragged);
-        RaiseLocalEvent(dragged, ref ev);
+        RaiseLocalEvent(dragged, ev, true);
 
         if (ev.Cancelled)
             return false;
@@ -523,9 +518,6 @@ public sealed class DragDropSystem : SharedDragDropSystem
         if (dropEv2.Handled)
             return dropEv2.CanDrop;
 
-        if (dropEv.Handled && dropEv.CanDrop)
-            return true;
-
         return null;
     }
 
@@ -539,7 +531,7 @@ public sealed class DragDropSystem : SharedDragDropSystem
             case DragState.MouseDown:
             {
                 var screenPos = _inputManager.MouseScreenPosition;
-                if ((_mouseDownScreenPos!.Value.Position - screenPos.Position).Length() > Deadzone)
+                if ((_mouseDownScreenPos!.Value.Position - screenPos.Position).Length() > _deadzone)
                 {
                     StartDrag();
                 }
@@ -560,7 +552,7 @@ public sealed class DragDropSystem : SharedDragDropSystem
         if (Exists(_dragShadow))
         {
             var mousePos = _eyeManager.PixelToMap(_inputManager.MouseScreenPosition);
-            _transformSystem.SetWorldPosition(_dragShadow.Value, mousePos.Position);
+            Transform(_dragShadow.Value).WorldPosition = mousePos.Position;
         }
     }
 }

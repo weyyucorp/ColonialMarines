@@ -54,8 +54,6 @@ public sealed partial class GunSystem
             }
 
             var step = ContentHelpers.RoundToLevels((int) current, (int) capacity, component.MagSteps);
-            if (component.ZeroOnlyOnEmpty && step == 0 && (int) current > 0)
-                step = 1;
 
             if (step == 0 && !component.ZeroVisible)
             {

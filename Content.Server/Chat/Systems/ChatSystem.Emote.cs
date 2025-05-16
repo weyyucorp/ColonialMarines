@@ -1,8 +1,4 @@
-using System.Collections.Frozen;
-using Content.Shared._RMC14.Voicelines;
 using Content.Shared.Chat.Prototypes;
-using Content.Shared.Speech;
-using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 
@@ -11,38 +7,44 @@ namespace Content.Server.Chat.Systems;
 // emotes using emote prototype
 public partial class ChatSystem
 {
-    private FrozenDictionary<string, EmotePrototype> _wordEmoteDict = FrozenDictionary<string, EmotePrototype>.Empty;
+    private readonly Dictionary<string, EmotePrototype> _wordEmoteDict = new();
 
-    [Dependency] private readonly HumanoidVoicelinesSystem _humanoidVoicelines = default!;
-
-    protected override void OnPrototypeReload(PrototypesReloadedEventArgs obj)
+    private void InitializeEmotes()
     {
-        base.OnPrototypeReload(obj);
-        if (obj.WasModified<EmotePrototype>())
-            CacheEmotes();
+        _prototypeManager.PrototypesReloaded += OnPrototypeReloadEmotes;
+        CacheEmotes();
+    }
+
+    private void ShutdownEmotes()
+    {
+        _prototypeManager.PrototypesReloaded -= OnPrototypeReloadEmotes;
+    }
+
+    private void OnPrototypeReloadEmotes(PrototypesReloadedEventArgs obj)
+    {
+        CacheEmotes();
     }
 
     private void CacheEmotes()
     {
-        var dict = new Dictionary<string, EmotePrototype>();
+        _wordEmoteDict.Clear();
         var emotes = _prototypeManager.EnumeratePrototypes<EmotePrototype>();
         foreach (var emote in emotes)
         {
             foreach (var word in emote.ChatTriggers)
             {
                 var lowerWord = word.ToLower();
-                if (dict.TryGetValue(lowerWord, out var value))
+                if (_wordEmoteDict.ContainsKey(lowerWord))
                 {
-                    var errMsg = $"Duplicate of emote word {lowerWord} in emotes {emote.ID} and {value.ID}";
-                    Log.Error(errMsg);
+                    var existingId = _wordEmoteDict[lowerWord].ID;
+                    var errMsg = $"Duplicate of emote word {lowerWord} in emotes {emote.ID} and {existingId}";
+                    Logger.Error(errMsg);
                     continue;
                 }
 
-                dict.Add(lowerWord, emote);
+                _wordEmoteDict.Add(lowerWord, emote);
             }
         }
-
-        _wordEmoteDict = dict.ToFrozenDictionary();
     }
 
     /// <summary>
@@ -53,20 +55,18 @@ public partial class ChatSystem
     /// <param name="hideLog">Whether or not this message should appear in the adminlog window</param>
     /// <param name="range">Conceptual range of transmission, if it shows in the chat window, if it shows to far-away ghosts or ghosts at all...</param>
     /// <param name="nameOverride">The name to use for the speaking entity. Usually this should just be modified via <see cref="TransformSpeakerNameEvent"/>. If this is set, the event will not get raised.</param>
-    /// <param name="forceEmote">Bypasses whitelist/blacklist/availibility checks for if the entity can use this emote</param>
     public void TryEmoteWithChat(
         EntityUid source,
         string emoteId,
         ChatTransmitRange range = ChatTransmitRange.Normal,
         bool hideLog = false,
         string? nameOverride = null,
-        bool ignoreActionBlocker = false,
-        bool forceEmote = false
+        bool ignoreActionBlocker = false
         )
     {
         if (!_prototypeManager.TryIndex<EmotePrototype>(emoteId, out var proto))
             return;
-        TryEmoteWithChat(source, proto, range, hideLog: hideLog, nameOverride, ignoreActionBlocker: ignoreActionBlocker, forceEmote: forceEmote);
+        TryEmoteWithChat(source, proto, range, hideLog: hideLog, nameOverride, ignoreActionBlocker: ignoreActionBlocker);
     }
 
     /// <summary>
@@ -78,20 +78,15 @@ public partial class ChatSystem
     /// <param name="hideChat">Whether or not this message should appear in the chat window</param>
     /// <param name="range">Conceptual range of transmission, if it shows in the chat window, if it shows to far-away ghosts or ghosts at all...</param>
     /// <param name="nameOverride">The name to use for the speaking entity. Usually this should just be modified via <see cref="TransformSpeakerNameEvent"/>. If this is set, the event will not get raised.</param>
-    /// <param name="forceEmote">Bypasses whitelist/blacklist/availibility checks for if the entity can use this emote</param>
     public void TryEmoteWithChat(
         EntityUid source,
         EmotePrototype emote,
         ChatTransmitRange range = ChatTransmitRange.Normal,
         bool hideLog = false,
         string? nameOverride = null,
-        bool ignoreActionBlocker = false,
-        bool forceEmote = false
+        bool ignoreActionBlocker = false
         )
     {
-        if (!forceEmote && !AllowedToUseEmote(source, emote))
-            return;
-
         // check if proto has valid message for chat
         if (emote.ChatMessages.Count != 0)
         {
@@ -155,82 +150,18 @@ public partial class ChatSystem
 
         // if general params for all sounds set - use them
         var param = proto.GeneralParams ?? sound.Params;
-
-        var filter = Filter.Pvs(uid).RemoveWhere(s => !_humanoidVoicelines.ShouldPlayEmote(uid, s));
-        if (filter.Count == 0)
-            return false;
-
-        _audio.PlayEntity(sound, filter, uid, true, param);
+        _audio.PlayPvs(sound, uid, param);
         return true;
     }
-    /// <summary>
-    /// Checks if a valid emote was typed, to play sounds and etc and invokes an event.
-    /// </summary>
-    /// <param name="uid"></param>
-    /// <param name="textInput"></param>
+
     private void TryEmoteChatInput(EntityUid uid, string textInput)
     {
-        var actionTrimmedLower = TrimPunctuation(textInput.ToLower());
-        if (!_wordEmoteDict.TryGetValue(actionTrimmedLower, out var emote))
-            return;
-
-        if (!AllowedToUseEmote(uid, emote))
-            return;
-
-        if (!_rmcEmote.TryEmote(uid))
+        var actionLower = textInput.ToLower();
+        if (!_wordEmoteDict.TryGetValue(actionLower, out var emote))
             return;
 
         InvokeEmoteEvent(uid, emote);
-        return;
-
-        static string TrimPunctuation(string textInput)
-        {
-            var trimEnd = textInput.Length;
-            while (trimEnd > 0 && char.IsPunctuation(textInput[trimEnd - 1]))
-            {
-                trimEnd--;
-            }
-
-            var trimStart = 0;
-            while (trimStart < trimEnd && char.IsPunctuation(textInput[trimStart]))
-            {
-                trimStart++;
-            }
-
-            return textInput[trimStart..trimEnd];
-        }
     }
-    /// <summary>
-    /// Checks if we can use this emote based on the emotes whitelist, blacklist, and availibility to the entity.
-    /// </summary>
-    /// <param name="source">The entity that is speaking</param>
-    /// <param name="emote">The emote being used</param>
-    /// <returns></returns>
-    private bool AllowedToUseEmote(EntityUid source, EmotePrototype emote)
-    {
-        // If emote is in AllowedEmotes, it will bypass whitelist and blacklist
-        if (TryComp<SpeechComponent>(source, out var speech) &&
-            speech.AllowedEmotes.Contains(emote.ID))
-        {
-            return true;
-        }
-
-        // Check the whitelist and blacklist
-        if (_whitelistSystem.IsWhitelistFail(emote.Whitelist, source) ||
-            _whitelistSystem.IsBlacklistPass(emote.Blacklist, source))
-        {
-            return false;
-        }
-
-        // Check if the emote is available for all
-        if (!emote.Available)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
 
     private void InvokeEmoteEvent(EntityUid uid, EmotePrototype proto)
     {

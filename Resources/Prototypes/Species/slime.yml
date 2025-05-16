@@ -2,7 +2,7 @@
   id: SlimePerson
   name: species-name-slime
   roundStart: true
-  prototype: CMMobSlimePerson
+  prototype: MobSlimePerson
   sprites: MobSlimeSprites
   defaultSkinTone: "#b8b8b8"
   markingLimits: MobSlimeMarkingLimits
@@ -15,11 +15,7 @@
     Head: MobSlimeHead
     Hair: MobSlimeMarkingFollowSkin
     FacialHair: MobSlimeMarkingFollowSkin
-    UndergarmentTop: MobHumanoidAnyMarking
-    UndergarmentBottom: MobHumanoidAnyMarking
     Chest: MobSlimeTorso
-    Underwear: MobHumanoidAnyMarking
-    Undershirt: MobHumanoidAnyMarking
     Eyes: MobHumanoidEyes
     LArm: MobSlimeLArm
     RArm: MobSlimeRArm
@@ -39,19 +35,8 @@
     FacialHair:
       points: 1
       required: false
-    Chest:
-      points: 1
-      required: false
-    Underwear:
-      points: 1
-      required: true
-      defaultMarkings: [ RMCUnderwearBoxersBlue ]
-    Undershirt:
-      points: 1
-      required: true
-      defaultMarkings: [ RMCUndershirtStandard ]
     Legs:
-      points: 4
+      points: 2
       required: false
     Arms:
       points: 4
@@ -60,7 +45,7 @@
 - type: humanoidBaseSprite
   id: MobSlimeMarkingFollowSkin
   markingsMatchSkin: true
-  layerAlpha: 0.72
+  layerAlpha: 0.5
 
 - type: humanoidBaseSprite
   id: MobSlimeHead

@@ -27,7 +27,6 @@ namespace Content.Client.Tabletop
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly AppearanceSystem _appearance = default!;
-        [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
 
         // Time in seconds to wait until sending the location of a dragged entity to the server again
         private const float Delay = 1f / 10; // 10 Hz
@@ -65,8 +64,7 @@ namespace Content.Client.Tabletop
                 return;
 
             // If there is no player entity, return
-            if (_playerManager.LocalEntity is not { } playerEntity)
-                return;
+            if (_playerManager.LocalPlayer is not { ControlledEntity: { } playerEntity }) return;
 
             if (!CanSeeTable(playerEntity, _table))
             {
@@ -87,7 +85,7 @@ namespace Content.Client.Tabletop
             // If the dragged entity has another dragging player, drop the item
             // This should happen if the local player is dragging an item, and another player grabs it out of their hand
             if (draggableComponent.DraggingPlayer != null &&
-                draggableComponent.DraggingPlayer != _playerManager.LocalSession!.UserId)
+                draggableComponent.DraggingPlayer != _playerManager.LocalPlayer?.Session.UserId)
             {
                 StopDragging(false);
                 return;
@@ -101,7 +99,7 @@ namespace Content.Client.Tabletop
             if (clampedCoords.Equals(MapCoordinates.Nullspace)) return;
 
             // Move the entity locally every update
-            _transformSystem.SetWorldPosition(_draggedEntity.Value, clampedCoords.Position);
+            EntityManager.GetComponent<TransformComponent>(_draggedEntity.Value).WorldPosition = clampedCoords.Position;
 
             // Increment total time passed
             _timePassed += frameTime;
@@ -188,7 +186,7 @@ namespace Content.Client.Tabletop
         private bool OnMouseDown(in PointerInputCmdArgs args)
         {
             // Return if no player entity
-            if (_playerManager.LocalEntity is not { } playerEntity)
+            if (_playerManager.LocalPlayer is not {ControlledEntity: { } playerEntity})
                 return false;
 
             var entity = args.EntityUid;
@@ -259,7 +257,7 @@ namespace Content.Client.Tabletop
             // Set the dragging player on the component to noone
             if (broadcast && _draggedEntity != null && EntityManager.HasComponent<TabletopDraggableComponent>(_draggedEntity.Value))
             {
-                RaisePredictiveEvent(new TabletopMoveEvent(GetNetEntity(_draggedEntity.Value), Transforms.GetMapCoordinates(_draggedEntity.Value), GetNetEntity(_table!.Value)));
+                RaisePredictiveEvent(new TabletopMoveEvent(GetNetEntity(_draggedEntity.Value), Transform(_draggedEntity.Value).MapPosition, GetNetEntity(_table!.Value)));
                 RaisePredictiveEvent(new TabletopDraggingPlayerChangedEvent(GetNetEntity(_draggedEntity.Value), false));
             }
 
@@ -278,8 +276,7 @@ namespace Content.Client.Tabletop
             if (coordinates == MapCoordinates.Nullspace) return MapCoordinates.Nullspace;
 
             var eye = viewport.Eye;
-            if (eye == null)
-                return MapCoordinates.Nullspace;
+            if (eye == null) return MapCoordinates.Nullspace;
 
             var size = (Vector2) viewport.ViewportSize / EyeManager.PixelsPerMeter; // Convert to tiles instead of pixels
             var eyePosition = eye.Position.Position;

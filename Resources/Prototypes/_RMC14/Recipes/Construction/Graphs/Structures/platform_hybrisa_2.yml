@@ -1,8 +1,0 @@
-- type: constructionGraph
-  id: RMCPlatformHybrisa2Destructible
-  start: start
-  graph:
-  - node: start
-
-  - node: platformBroken
-    entity: RMCPlatformHybrisaBroken

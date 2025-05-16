@@ -8,7 +8,6 @@ namespace Content.Shared.StepTrigger.Components;
 [Access(typeof(StepTriggerSystem))]
 public sealed partial class StepTriggerComponent : Component
 {
-    public const float DefaultRequiredTriggeredSpeed = 3.5f;
     /// <summary>
     ///     List of entities that are currently colliding with the entity.
     /// </summary>
@@ -38,7 +37,7 @@ public sealed partial class StepTriggerComponent : Component
     ///     Entities will only be triggered if their speed exceeds this limit.
     /// </summary>
     [DataField, AutoNetworkedField]
-    public float RequiredTriggeredSpeed = DefaultRequiredTriggeredSpeed;
+    public float RequiredTriggeredSpeed = 3.5f;
 
     /// <summary>
     ///     If any entities occupy the blacklist on the same tile then steptrigger won't work.
@@ -50,14 +49,8 @@ public sealed partial class StepTriggerComponent : Component
     ///     If this is true, steptrigger will still occur on entities that are in air / weightless. They do not
     ///     by default.
     /// </summary>
-    [DataField, AutoNetworkedField]
+    [DataField]
     public bool IgnoreWeightless;
-
-    /// <summary>
-    /// Does this have separate "StepOn" and "StepOff" triggers.
-    /// </summary>
-    [DataField, AutoNetworkedField]
-    public bool StepOn = false;
 }
 
 [RegisterComponent]

@@ -3,9 +3,14 @@ using Content.Shared.Roles;
 namespace Content.Server.Roles;
 
 /// <summary>
-///     Added to mind role entities to tag that they are a space ninja.
+/// Stores the ninja's objectives on the mind so if they die the rest of the greentext persists.
 /// </summary>
 [RegisterComponent]
-public sealed partial class NinjaRoleComponent : BaseMindRoleComponent
+public sealed partial class NinjaRoleComponent : AntagonistRoleComponent
 {
+    /// <summary>
+    /// Warp point that the spider charge has to target
+    /// </summary>
+    [DataField("spiderChargeTarget")]
+    public EntityUid? SpiderChargeTarget;
 }

@@ -19,15 +19,21 @@ namespace Content.Server.GameTicking
         public bool DisallowLateJoin { get; private set; } = false;
 
         [ViewVariables]
+        public bool StationOffset { get; private set; } = false;
+
+        [ViewVariables]
+        public bool StationRotation { get; private set; } = false;
+
+        [ViewVariables]
+        public float MaxStationOffset { get; private set; } = 0f;
+
+        [ViewVariables]
         public string? ServerName { get; private set; }
 
         [ViewVariables]
         private string? DiscordRoundEndRole { get; set; }
 
         private WebhookIdentifier? _webhookIdentifier;
-
-        [ViewVariables]
-        private string? RoundEndSoundCollection { get; set; }
 
 #if EXCEPTION_TOLERANCE
         [ViewVariables]
@@ -36,7 +42,7 @@ namespace Content.Server.GameTicking
 
         private void InitializeCVars()
         {
-            Subs.CVar(_cfg, CCVars.GameLobbyEnabled, value =>
+            _configurationManager.OnValueChanged(CCVars.GameLobbyEnabled, value =>
             {
                 LobbyEnabled = value;
                 foreach (var (userId, status) in _playerGameStatuses)
@@ -47,23 +53,26 @@ namespace Content.Server.GameTicking
                         LobbyEnabled ? PlayerGameStatus.NotReadyToPlay : PlayerGameStatus.ReadyToPlay;
                 }
             }, true);
-            Subs.CVar(_cfg, CCVars.GameDummyTicker, value => DummyTicker = value, true);
-            Subs.CVar(_cfg, CCVars.GameLobbyDuration, value => LobbyDuration = TimeSpan.FromSeconds(value), true);
-            Subs.CVar(_cfg, CCVars.GameDisallowLateJoins,
+            _configurationManager.OnValueChanged(CCVars.GameDummyTicker, value => DummyTicker = value, true);
+            _configurationManager.OnValueChanged(CCVars.GameLobbyDuration, value => LobbyDuration = TimeSpan.FromSeconds(value), true);
+            _configurationManager.OnValueChanged(CCVars.GameDisallowLateJoins,
                 value => { DisallowLateJoin = value; UpdateLateJoinStatus(); }, true);
-            Subs.CVar(_cfg, CCVars.AdminLogsServerName, value =>
+            _configurationManager.OnValueChanged(CCVars.StationOffset, value => StationOffset = value, true);
+            _configurationManager.OnValueChanged(CCVars.StationRotation, value => StationRotation = value, true);
+            _configurationManager.OnValueChanged(CCVars.MaxStationOffset, value => MaxStationOffset = value, true);
+            _configurationManager.OnValueChanged(CCVars.AdminLogsServerName, value =>
             {
                 // TODO why tf is the server name on admin logs
                 ServerName = value;
             }, true);
-            Subs.CVar(_cfg, CCVars.DiscordRoundUpdateWebhook, value =>
+            _configurationManager.OnValueChanged(CCVars.DiscordRoundUpdateWebhook, value =>
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
                     _discord.GetWebhook(value, data => _webhookIdentifier = data.ToIdentifier());
                 }
             }, true);
-            Subs.CVar(_cfg, CCVars.DiscordRoundEndRoleWebhook, value =>
+            _configurationManager.OnValueChanged(CCVars.DiscordRoundEndRoleWebhook, value =>
             {
                 DiscordRoundEndRole = value;
 
@@ -72,9 +81,8 @@ namespace Content.Server.GameTicking
                     DiscordRoundEndRole = null;
                 }
             }, true);
-            Subs.CVar(_cfg, CCVars.RoundEndSoundCollection, value => RoundEndSoundCollection = value, true);
 #if EXCEPTION_TOLERANCE
-            Subs.CVar(_cfg, CCVars.RoundStartFailShutdownCount, value => RoundStartFailShutdownCount = value, true);
+            _configurationManager.OnValueChanged(CCVars.RoundStartFailShutdownCount, value => RoundStartFailShutdownCount = value, true);
 #endif
         }
     }

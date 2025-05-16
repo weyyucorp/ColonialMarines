@@ -1,4 +1,4 @@
-- type: vendingMachineInventory
+﻿- type: vendingMachineInventory
   id: DinnerwareInventory
   startingInventory:
     ButchCleaver: 1
@@ -6,17 +6,14 @@
     RollingPin: 4
     Spoon: 4
     Fork: 4
-    PairedChopsticks: 4
     FoodBowlBig: 10
     FoodPlate: 10
     FoodPlateSmall: 10
     FoodPlateTin: 5
-    FoodPlateMuffinTin: 5
     FoodKebabSkewer: 5
     DrinkGlass: 5
     Beaker: 5
     LargeBeaker: 5
-    Pitcher: 2
     DrinkMug: 5
     DrinkMugBlack: 2
     DrinkMugBlue: 2
@@ -27,7 +24,3 @@
     DrinkMugOne: 1
     DrinkMugRainbow: 2
     DrinkMugRed: 2
-  contrabandInventory:
-    CandyBowl: 1
-    BarSpoon: 2
-    DrinkShaker: 2

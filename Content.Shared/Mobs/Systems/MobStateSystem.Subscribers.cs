@@ -1,7 +1,4 @@
 ﻿using Content.Shared.Bed.Sleep;
-using Content.Shared.Buckle.Components;
-using Content.Shared.CombatMode.Pacification;
-using Content.Shared.Damage;
 using Content.Shared.Damage.ForceSay;
 using Content.Shared.Emoting;
 using Content.Shared.Hands;
@@ -11,7 +8,6 @@ using Content.Shared.Inventory.Events;
 using Content.Shared.Item;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Movement.Events;
-using Content.Shared.Pointing;
 using Content.Shared.Pulling.Events;
 using Content.Shared.Speech;
 using Content.Shared.Standing;
@@ -30,7 +26,7 @@ public partial class MobStateSystem
         SubscribeLocalEvent<MobStateComponent, ChangeDirectionAttemptEvent>(CheckAct);
         SubscribeLocalEvent<MobStateComponent, UseAttemptEvent>(CheckAct);
         SubscribeLocalEvent<MobStateComponent, AttackAttemptEvent>(CheckAct);
-        SubscribeLocalEvent<MobStateComponent, ConsciousAttemptEvent>(CheckConcious);
+        SubscribeLocalEvent<MobStateComponent, InteractionAttemptEvent>(CheckAct);
         SubscribeLocalEvent<MobStateComponent, ThrowAttemptEvent>(CheckAct);
         SubscribeLocalEvent<MobStateComponent, SpeakAttemptEvent>(OnSpeakAttempt);
         SubscribeLocalEvent<MobStateComponent, IsEquippingAttemptEvent>(OnEquipAttempt);
@@ -41,32 +37,8 @@ public partial class MobStateSystem
         SubscribeLocalEvent<MobStateComponent, StartPullAttemptEvent>(CheckAct);
         SubscribeLocalEvent<MobStateComponent, UpdateCanMoveEvent>(CheckAct);
         SubscribeLocalEvent<MobStateComponent, StandAttemptEvent>(CheckAct);
-        SubscribeLocalEvent<MobStateComponent, PointAttemptEvent>(CheckAct);
         SubscribeLocalEvent<MobStateComponent, TryingToSleepEvent>(OnSleepAttempt);
         SubscribeLocalEvent<MobStateComponent, CombatModeShouldHandInteractEvent>(OnCombatModeShouldHandInteract);
-        SubscribeLocalEvent<MobStateComponent, AttemptPacifiedAttackEvent>(OnAttemptPacifiedAttack);
-        SubscribeLocalEvent<MobStateComponent, DamageModifyEvent>(OnDamageModify);
-
-        SubscribeLocalEvent<MobStateComponent, UnbuckleAttemptEvent>(OnUnbuckleAttempt);
-    }
-
-    private void OnUnbuckleAttempt(Entity<MobStateComponent> ent, ref UnbuckleAttemptEvent args)
-    {
-        // TODO is this necessary?
-        // Shouldn't the interaction have already been blocked by a general interaction check?
-        if (args.User == ent.Owner && IsIncapacitated(ent))
-            args.Cancelled = true;
-    }
-
-    private void CheckConcious(Entity<MobStateComponent> ent, ref ConsciousAttemptEvent args)
-    {
-        switch (ent.Comp.CurrentState)
-        {
-            case MobState.Dead:
-            case MobState.Critical:
-                args.Cancelled = true;
-                break;
-        }
     }
 
     private void OnStateExitSubscribers(EntityUid target, MobStateComponent component, MobState state)
@@ -82,6 +54,11 @@ public partial class MobStateSystem
             case MobState.Dead:
                 RemComp<CollisionWakeComponent>(target);
                 _standing.Stand(target);
+                if (!_standing.IsDown(target) && TryComp<PhysicsComponent>(target, out var physics))
+                {
+                    _physics.SetCanCollide(target, true, body: physics);
+                }
+
                 break;
             case MobState.Invalid:
                 //unused
@@ -112,6 +89,12 @@ public partial class MobStateSystem
             case MobState.Dead:
                 EnsureComp<CollisionWakeComponent>(target);
                 _standing.Down(target);
+
+                if (_standing.IsDown(target) && TryComp<PhysicsComponent>(target, out var physics))
+                {
+                    _physics.SetCanCollide(target, false, body: physics);
+                }
+
                 _appearance.SetData(target, MobStateVisuals.State, MobState.Dead);
                 break;
             case MobState.Invalid:
@@ -181,16 +164,6 @@ public partial class MobStateSystem
         // for non-dead mobs
         if (!IsDead(uid, component))
             args.Cancelled = true;
-    }
-
-    private void OnAttemptPacifiedAttack(Entity<MobStateComponent> ent, ref AttemptPacifiedAttackEvent args)
-    {
-        args.Cancelled = true;
-    }
-
-    private void OnDamageModify(Entity<MobStateComponent> ent, ref DamageModifyEvent args)
-    {
-        args.Damage *= _damageable.UniversalMobDamageModifier;
     }
 
     #endregion

@@ -5,7 +5,7 @@
     state: icon
   product: CrateArmorySMG
   cost: 9000
-  category: cargoproduct-category-name-armory
+  category: Armory
   group: market
 
 - type: cargoProduct
@@ -15,17 +15,7 @@
     state: icon
   product: CrateArmoryShotgun
   cost: 7000
-  category: cargoproduct-category-name-armory
-  group: market
-
-- type: cargoProduct
-  id: SecurityRiot
-  icon:
-    sprite: Clothing/OuterClothing/Armor/riot.rsi
-    state: icon
-  product: CrateSecurityRiot
-  cost: 7500
-  category: cargoproduct-category-name-armory
+  category: Armory
   group: market
 
 - type: cargoProduct
@@ -35,7 +25,7 @@
     state: implanter0
   product: CrateTrackingImplants
   cost: 1000
-  category: cargoproduct-category-name-armory
+  category: Armory
   group: market
 
 - type: cargoProduct
@@ -45,17 +35,17 @@
     state: training-bomb
   product: CrateTrainingBombs
   cost: 3000
-  category: cargoproduct-category-name-armory
+  category: Armory
   group: market
 
 - type: cargoProduct
   id: ArmoryLaser
   icon:
-    sprite: Objects/Weapons/Guns/Battery/laser_gun.rsi
+    sprite: Objects/Weapons/Guns/Battery/laser_retro.rsi
     state: icon
   product: CrateArmoryLaser
   cost: 4800
-  category: cargoproduct-category-name-armory
+  category: Armory
   group: market
 
 - type: cargoProduct
@@ -65,5 +55,5 @@
     state: icon
   product: CrateArmoryPistols
   cost: 5200
-  category: cargoproduct-category-name-armory
+  category: Armory
   group: market

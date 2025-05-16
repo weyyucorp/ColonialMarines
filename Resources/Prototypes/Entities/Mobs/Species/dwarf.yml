@@ -6,9 +6,13 @@
   abstract: true
   components:
   - type: Hunger
+    starvationDamage:
+      types:
+        Cold: 0.5
+        Bloodloss: 0.5
   - type: Thirst
   - type: Icon
-    sprite: Mobs/Species/Human/parts.rsi
+    sprite: Mobs/Species/Slime/parts.rsi # It was like this beforehand, no idea why.
     state: full
   - type: Respirator
     damage:
@@ -24,6 +28,7 @@
   - type: Body
     prototype: Dwarf
     requiredLegs: 2
+  - type: Perishable
   - type: Butcherable
     butcheringType: Spike
     spawned:
@@ -51,30 +56,11 @@
     accent: dwarf
   - type: Speech
     speechSounds: Bass
-  - type: HumanoidAppearance
-    species: Dwarf
-    hideLayersOnEquip:
-    - Hair
-    - Snout
-  - type: Inventory
-    femaleDisplacements:
-      jumpsuit:
-        sizeMaps:
-          32:
-            sprite: Mobs/Species/Human/displacement.rsi
-            state: jumpsuit-female
 
 - type: entity
   parent: BaseSpeciesDummy
   id: MobDwarfDummy
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: Sprite
     scale: 1, 0.8
-  - type: Inventory
-    femaleDisplacements:
-      jumpsuit:
-        sizeMaps:
-          32:
-            sprite: Mobs/Species/Human/displacement.rsi
-            state: jumpsuit-female

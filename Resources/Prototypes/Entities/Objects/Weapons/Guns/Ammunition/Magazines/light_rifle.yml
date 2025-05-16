@@ -2,7 +2,7 @@
 - type: entity
   id: BaseMagazineLightRifle
   name: "magazine (.30 rifle)"
-  parent: [ BaseItem, BaseSecurityContraband ]
+  parent: BaseItem
   abstract: true
   components:
   - type: Tag
@@ -69,21 +69,6 @@
       map: ["enum.GunVisualLayers.Mag"]
 
 - type: entity
-  id: MagazineLightRifleEmpty
-  name: "magazine (.30 rifle any)"
-  suffix: empty
-  parent: MagazineLightRifle
-  components:
-  - type: BallisticAmmoProvider
-    proto: null
-  - type: Sprite
-    layers:
-    - state: base
-      map: ["enum.GunVisualLayers.Base"]
-    - state: mag-1
-      map: ["enum.GunVisualLayers.Mag"]
-
-- type: entity
   id: MagazineLightRiflePractice
   name: "magazine (.30 rifle practice)"
   parent: BaseMagazineLightRifle
@@ -98,26 +83,18 @@
       map: ["enum.GunVisualLayers.Mag"]
 
 - type: entity
-  id: MagazineLightRifleUranium
-  name: "magazine (.30 rifle uranium)"
+  id: MagazineLightRifleRubber
+  name: "magazine (.30 rifle rubber)"
   parent: BaseMagazineLightRifle
   components:
   - type: BallisticAmmoProvider
-    proto: CartridgeLightRifleUranium
+    proto: CartridgeLightRifleRubber
   - type: Sprite
     layers:
-    - state: uranium
+    - state: rubber
       map: ["enum.GunVisualLayers.Base"]
     - state: mag-1
       map: ["enum.GunVisualLayers.Mag"]
-
-- type: entity
-  id: MagazineLightRifleIncendiary
-  name: "magazine (.30 rifle incendiary)"
-  parent: MagazineLightRifle
-  components:
-  - type: BallisticAmmoProvider
-    proto: CartridgeLightRifleIncendiary
 
 - type: entity
   id: MagazineLightRifleMaxim
@@ -148,6 +125,6 @@
     sprite: Objects/Weapons/Guns/Ammunition/Magazine/LightRifle/pk_box.rsi
   - type: MagazineVisuals
     magState: mag
-    steps: 8
+    steps: 7
     zeroVisible: false
   - type: Appearance

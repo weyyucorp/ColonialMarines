@@ -1,4 +1,4 @@
-using Content.Shared.Eui;
+﻿using Content.Shared.Eui;
 using Robust.Shared.Network;
 using Robust.Shared.Player;
 
@@ -86,7 +86,7 @@ namespace Content.Server.EUI
             msg.Id = Id;
             msg.Message = message;
 
-            netMgr.ServerSendMessage(msg, Player.Channel);
+            netMgr.ServerSendMessage(msg, Player.ConnectedClient);
         }
 
         /// <summary>
@@ -107,21 +107,14 @@ namespace Content.Server.EUI
         {
             _isStateDirty = false;
 
-            try
-            {
-                var state = GetNewState();
+            var state = GetNewState();
 
-                var netMgr = IoCManager.Resolve<IServerNetManager>();
-                var msg = new MsgEuiState();
-                msg.Id = Id;
-                msg.State = state;
+            var netMgr = IoCManager.Resolve<IServerNetManager>();
+            var msg = new MsgEuiState();
+            msg.Id = Id;
+            msg.State = state;
 
-                netMgr.ServerSendMessage(msg, Player.Channel);
-            }
-            catch (Exception e)
-            {
-                Logger.Error($"Error updating EUI {GetType()}:\n{e}");
-            }
+            netMgr.ServerSendMessage(msg, Player.ConnectedClient);
         }
 
         internal void Initialize(EuiManager manager, ICommonSession player, uint id)

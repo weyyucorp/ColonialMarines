@@ -1,13 +1,11 @@
 ﻿using System.Linq;
 using Content.Shared.Ghost;
-using Content.Shared.Movement.Pulling.Components;
-using Content.Shared.Movement.Pulling.Systems;
 using Content.Shared.Popups;
 using Content.Shared.Projectiles;
+using Content.Shared.Pulling;
+using Content.Shared.Pulling.Components;
 using Content.Shared.Teleportation.Components;
 using Content.Shared.Verbs;
-using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Map;
 using Robust.Shared.Network;
 using Robust.Shared.Physics.Dynamics;
@@ -28,7 +26,7 @@ public abstract class SharedPortalSystem : EntitySystem
     [Dependency] private readonly EntityLookupSystem _lookup = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
-    [Dependency] private readonly PullingSystem _pulling = default!;
+    [Dependency] private readonly SharedPullingSystem _pulling = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
 
     private const string PortalFixture = "portalFixture";
@@ -93,15 +91,15 @@ public abstract class SharedPortalSystem : EntitySystem
             return;
 
         // break pulls before portal enter so we dont break shit
-        if (TryComp<PullableComponent>(subject, out var pullable) && pullable.BeingPulled)
+        if (TryComp<SharedPullableComponent>(subject, out var pullable) && pullable.BeingPulled)
         {
-            _pulling.TryStopPull(subject, pullable);
+            _pulling.TryStopPull(pullable);
         }
 
-        if (TryComp<PullerComponent>(subject, out var pullerComp)
-            && TryComp<PullableComponent>(pullerComp.Pulling, out var subjectPulling))
+        if (TryComp<SharedPullerComponent>(subject, out var pulling)
+            && pulling.Pulling != null && TryComp<SharedPullableComponent>(pulling.Pulling.Value, out var subjectPulling))
         {
-            _pulling.TryStopPull(pullerComp.Pulling.Value, subjectPulling);
+            _pulling.TryStopPull(subjectPulling);
         }
 
         // if they came from another portal, just return and wait for them to exit the portal

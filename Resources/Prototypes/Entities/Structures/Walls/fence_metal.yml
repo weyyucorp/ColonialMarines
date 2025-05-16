@@ -10,6 +10,9 @@
       Brute:
         path:
           "/Audio/Weapons/grille_hit.ogg"
+  - type: Tag
+    tags:
+    - RCDDeconstructWhitelist
   - type: Sprite
     sprite: Structures/Walls/fence.rsi
     drawdepth: WallTops
@@ -18,7 +21,7 @@
   - type: Transform
     anchored: true
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: FlimsyMetallic
   - type: Destructible
     thresholds:
@@ -34,7 +37,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           PartRodMetal1:
@@ -70,15 +73,11 @@
   - type: Appearance
   - type: GenericVisualizer
     visuals:
-      enum.ElectrifiedVisuals.ShowSparks:
-        enum.ElectrifiedLayers.Sparks:
+      enum.ElectrifiedVisuals.IsPowered:
+        enum.ElectrifiedLayers.Powered:
           True: { visible: True }
           False: { visible: False }
   - type: AnimationPlayer
-  - type: RCDDeconstructable
-    cost: 2
-    delay: 2
-    fx: EffectRCDDeconstruct2
 
 - type: entity
   parent: BaseFenceMetal
@@ -91,7 +90,7 @@
     - state: straight_broken
     - state: electrified
       sprite: Effects/electricity.rsi
-      map: ["enum.ElectrifiedLayers.Sparks"]
+      map: ["enum.ElectrifiedLayers.Powered"]
       shader: unshaded
       visible: false
   - type: Physics
@@ -126,7 +125,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           PartRodMetal1:
@@ -151,7 +150,7 @@
     - state: straight
     - state: electrified
       sprite: Effects/electricity.rsi
-      map: ["enum.ElectrifiedLayers.Sparks"]
+      map: ["enum.ElectrifiedLayers.Powered"]
       shader: unshaded
       visible: false
   - type: Fixtures
@@ -164,8 +163,7 @@
         mask:
         - FullTileMask
         layer:
-        - MidImpassable
-        - LowImpassable
+        - TableLayer
   - type: InteractionPopup
     interactSuccessString: fence-rattle-success
     messagePerceivedByOthers: fence-rattle-success
@@ -209,7 +207,7 @@
     - state: corner
     - state: electrified
       sprite: Effects/electricity.rsi
-      map: ["enum.ElectrifiedLayers.Sparks"]
+      map: ["enum.ElectrifiedLayers.Powered"]
       shader: unshaded
       visible: false
   - type: Fixtures
@@ -232,8 +230,7 @@
         mask:
         - TableMask
         layer:
-        - MidImpassable
-        - LowImpassable
+        - TableLayer
   - type: InteractionPopup
     interactSuccessString: fence-rattle-success
     messagePerceivedByOthers: fence-rattle-success
@@ -256,7 +253,7 @@
     - state: end
     - state: electrified
       sprite: Effects/electricity.rsi
-      map: ["enum.ElectrifiedLayers.Sparks"]
+      map: ["enum.ElectrifiedLayers.Powered"]
       shader: unshaded
       visible: false
   - type: Fixtures
@@ -269,8 +266,7 @@
         mask:
         - TableMask
         layer:
-        - MidImpassable
-        - LowImpassable
+        - TableLayer
   - type: InteractionPopup
     interactSuccessString: fence-rattle-success
     messagePerceivedByOthers: fence-rattle-success
@@ -292,7 +288,7 @@
       map: ["enum.DoorVisualLayers.Base"]
     - state: electrified
       sprite: Effects/electricity.rsi
-      map: [ "enum.ElectrifiedLayers.Sparks" ]
+      map: [ "enum.ElectrifiedLayers.Powered" ]
       shader: unshaded
       visible: false
   - type: Fixtures
@@ -305,8 +301,7 @@
         mask:
         - TableMask
         layer:
-        - MidImpassable
-        - LowImpassable
+        - TableLayer
   - type: InteractionOutline
   - type: Door
     openSpriteState: door_opened

@@ -1,10 +1,11 @@
 using Content.Server.Gravity;
 using Content.Server.Power.Components;
+using Content.Shared.Coordinates;
 using Content.Shared.Gravity;
 using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
-using Robust.Shared.Maths;
 
 namespace Content.IntegrationTests.Tests
 {
@@ -21,9 +22,6 @@ namespace Content.IntegrationTests.Tests
   id: GridGravityGeneratorDummy
   components:
   - type: GravityGenerator
-  - type: PowerCharge
-    windowTitle: gravity-generator-window-title
-    idlePower: 50
     chargeRate: 1000000000 # Set this really high so it discharges in a single tick.
     activePower: 500
   - type: ApcPowerReceiver
@@ -37,25 +35,25 @@ namespace Content.IntegrationTests.Tests
 
             var testMap = await pair.CreateTestMap();
 
-            var entityMan = server.EntMan;
-            var mapMan = server.MapMan;
-            var mapSys = entityMan.System<SharedMapSystem>();
-
             EntityUid generator = default;
-            Entity<MapGridComponent> grid1 = default;
-            Entity<MapGridComponent> grid2 = default;
+            var entityMan = server.ResolveDependency<IEntityManager>();
+            var mapMan = server.ResolveDependency<IMapManager>();
+
+            MapGridComponent grid1 = null;
+            MapGridComponent grid2 = null;
+            EntityUid grid1Entity = default!;
+            EntityUid grid2Entity = default!;
 
             // Create grids
             await server.WaitAssertion(() =>
             {
                 var mapId = testMap.MapId;
-                grid1 = mapMan.CreateGridEntity(mapId);
-                grid2 = mapMan.CreateGridEntity(mapId);
+                grid1 = mapMan.CreateGrid(mapId);
+                grid2 = mapMan.CreateGrid(mapId);
+                grid1Entity = grid1.Owner;
+                grid2Entity = grid2.Owner;
 
-                mapSys.SetTile(grid1, grid1, Vector2i.Zero, new Tile(1));
-                mapSys.SetTile(grid2, grid2, Vector2i.Zero, new Tile(1));
-
-                generator = entityMan.SpawnEntity("GridGravityGeneratorDummy", new EntityCoordinates(grid1, 0.5f, 0.5f));
+                generator = entityMan.SpawnEntity("GridGravityGeneratorDummy", grid2.ToCoordinates());
                 Assert.Multiple(() =>
                 {
                     Assert.That(entityMan.HasComponent<GravityGeneratorComponent>(generator));
@@ -76,8 +74,8 @@ namespace Content.IntegrationTests.Tests
                 Assert.Multiple(() =>
                 {
                     Assert.That(generatorComponent.GravityActive, Is.True);
-                    Assert.That(!entityMan.GetComponent<GravityComponent>(grid1).EnabledVV);
-                    Assert.That(entityMan.GetComponent<GravityComponent>(grid2).EnabledVV);
+                    Assert.That(!entityMan.GetComponent<GravityComponent>(grid1Entity).EnabledVV);
+                    Assert.That(entityMan.GetComponent<GravityComponent>(grid2Entity).EnabledVV);
                 });
 
                 // Re-enable needs power so it turns off again.
@@ -94,7 +92,7 @@ namespace Content.IntegrationTests.Tests
                 Assert.Multiple(() =>
                 {
                     Assert.That(generatorComponent.GravityActive, Is.False);
-                    Assert.That(entityMan.GetComponent<GravityComponent>(grid2).EnabledVV, Is.False);
+                    Assert.That(entityMan.GetComponent<GravityComponent>(grid2Entity).EnabledVV, Is.False);
                 });
             });
 

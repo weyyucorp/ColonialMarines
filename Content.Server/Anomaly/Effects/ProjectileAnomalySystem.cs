@@ -31,12 +31,12 @@ public sealed class ProjectileAnomalySystem : EntitySystem
 
     private void OnPulse(EntityUid uid, ProjectileAnomalyComponent component, ref AnomalyPulseEvent args)
     {
-        ShootProjectilesAtEntities(uid, component, args.Severity * args.PowerModifier);
+        ShootProjectilesAtEntities(uid, component, args.Severity);
     }
 
     private void OnSupercritical(EntityUid uid, ProjectileAnomalyComponent component, ref AnomalySupercriticalEvent args)
     {
-        ShootProjectilesAtEntities(uid, component, args.PowerModifier);
+        ShootProjectilesAtEntities(uid, component, 1.0f);
     }
 
     private void ShootProjectilesAtEntities(EntityUid uid, ProjectileAnomalyComponent component, float severity)
@@ -81,14 +81,14 @@ public sealed class ProjectileAnomalySystem : EntitySystem
         EntityCoordinates targetCoords,
         float severity)
     {
-        var mapPos = _xform.ToMapCoordinates(coords);
+        var mapPos = coords.ToMap(EntityManager, _xform);
 
         var spawnCoords = _mapManager.TryFindGridAt(mapPos, out var gridUid, out _)
-                ? _xform.WithEntityId(coords, gridUid)
+                ? coords.WithEntityId(gridUid, EntityManager)
                 : new(_mapManager.GetMapEntityId(mapPos.MapId), mapPos.Position);
 
         var ent = Spawn(component.ProjectilePrototype, spawnCoords);
-        var direction = _xform.ToMapCoordinates(targetCoords).Position - mapPos.Position;
+        var direction = targetCoords.ToMapPos(EntityManager, _xform) - mapPos.Position;
 
         if (!TryComp<ProjectileComponent>(ent, out var comp))
             return;

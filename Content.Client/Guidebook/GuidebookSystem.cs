@@ -2,7 +2,6 @@ using System.Linq;
 using Content.Client.Guidebook.Components;
 using Content.Client.Light;
 using Content.Client.Verbs;
-using Content.Shared.Guidebook;
 using Content.Shared.Interaction;
 using Content.Shared.Light.Components;
 using Content.Shared.Speech;
@@ -11,7 +10,7 @@ using Content.Shared.Verbs;
 using Robust.Client.GameObjects;
 using Robust.Client.Player;
 using Robust.Shared.Map;
-using Robust.Shared.Prototypes;
+using Robust.Shared.Player;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
@@ -24,17 +23,13 @@ public sealed class GuidebookSystem : EntitySystem
 {
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
+    [Dependency] private readonly SharedAudioSystem _audioSystem = default!;
     [Dependency] private readonly VerbSystem _verbSystem = default!;
     [Dependency] private readonly RgbLightControllerSystem _rgbLightControllerSystem = default!;
     [Dependency] private readonly SharedPointLightSystem _pointLightSystem = default!;
     [Dependency] private readonly TagSystem _tags = default!;
 
-    public event Action<List<ProtoId<GuideEntryPrototype>>,
-        List<ProtoId<GuideEntryPrototype>>?,
-        ProtoId<GuideEntryPrototype>?,
-        bool,
-        ProtoId<GuideEntryPrototype>?>? OnGuidebookOpen;
-
+    public event Action<List<string>, List<string>?, string?, bool, string?>? OnGuidebookOpen;
     public const string GuideEmbedTag = "GuideEmbeded";
 
     private EntityUid _defaultUser;
@@ -58,7 +53,7 @@ public sealed class GuidebookSystem : EntitySystem
     /// </summary>
     public EntityUid GetGuidebookUser()
     {
-        var user = _playerManager.LocalEntity;
+        var user = _playerManager.LocalPlayer!.ControlledEntity;
         if (user != null)
             return user.Value;
 
@@ -81,11 +76,6 @@ public sealed class GuidebookSystem : EntitySystem
             ClientExclusive = true,
             CloseMenu = true
         });
-    }
-
-    public void OpenHelp(List<ProtoId<GuideEntryPrototype>> guides)
-    {
-        OnGuidebookOpen?.Invoke(guides, null, null, true, guides[0]);
     }
 
     private void OnInteract(EntityUid uid, GuideHelpComponent component, ActivateInWorldEvent args)
@@ -146,14 +136,12 @@ public sealed class GuidebookSystem : EntitySystem
         if (!TryComp<SpeechComponent>(uid, out var speech) || speech.SpeechSounds is null)
             return;
 
-        // This code is broken because SpeechSounds isn't a file name or sound specifier directly.
-        // Commenting out to avoid compile failure with https://github.com/space-wizards/RobustToolbox/pull/5540
-        // _audioSystem.PlayGlobal(speech.SpeechSounds, Filter.Local(), false, speech.AudioParams);
+        _audioSystem.PlayGlobal(speech.SpeechSounds, Filter.Local(), false, speech.AudioParams);
     }
 
     public void FakeClientActivateInWorld(EntityUid activated)
     {
-        var activateMsg = new ActivateInWorldEvent(GetGuidebookUser(), activated, true);
+        var activateMsg = new ActivateInWorldEvent(GetGuidebookUser(), activated);
         RaiseLocalEvent(activated, activateMsg);
     }
 

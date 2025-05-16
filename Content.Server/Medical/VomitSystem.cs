@@ -4,14 +4,13 @@ using Content.Server.Fluids.EntitySystems;
 using Content.Server.Forensics;
 using Content.Server.Popups;
 using Content.Server.Stunnable;
-using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.Chemistry.Components;
-using Content.Shared.Chemistry.Reagent;
+using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.IdentityManagement;
 using Content.Shared.Nutrition.Components;
 using Content.Shared.Nutrition.EntitySystems;
 using Content.Shared.StatusEffect;
-using Robust.Server.Audio;
+using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
 using Robust.Shared.Prototypes;
 
@@ -25,17 +24,9 @@ namespace Content.Server.Medical
         [Dependency] private readonly HungerSystem _hunger = default!;
         [Dependency] private readonly PopupSystem _popup = default!;
         [Dependency] private readonly PuddleSystem _puddle = default!;
-        [Dependency] private readonly SharedSolutionContainerSystem _solutionContainer = default!;
+        [Dependency] private readonly SolutionContainerSystem _solutionContainer = default!;
         [Dependency] private readonly StunSystem _stun = default!;
         [Dependency] private readonly ThirstSystem _thirst = default!;
-        [Dependency] private readonly ForensicsSystem _forensics = default!;
-        [Dependency] private readonly BloodstreamSystem _bloodstream = default!;
-
-        [ValidatePrototypeId<SoundCollectionPrototype>]
-        private const string VomitCollection = "Vomit";
-
-        private readonly SoundSpecifier _vomitSound = new SoundCollectionSpecifier(VomitCollection,
-            AudioParams.Default.WithVariation(0.2f).WithVolume(-4f));
 
         /// <summary>
         /// Make an entity vomit, if they have a stomach.
@@ -43,7 +34,7 @@ namespace Content.Server.Medical
         public void Vomit(EntityUid uid, float thirstAdded = -40f, float hungerAdded = -40f)
         {
             // Main requirement: You have a stomach
-            var stomachList = _body.GetBodyOrganEntityComps<StomachComponent>(uid);
+            var stomachList = _body.GetBodyOrganComponents<StomachComponent>(uid);
             if (stomachList.Count == 0)
                 return;
 
@@ -66,41 +57,40 @@ namespace Content.Server.Medical
             // Empty the stomach out into it
             foreach (var stomach in stomachList)
             {
-                if (_solutionContainer.ResolveSolution(stomach.Owner, StomachSystem.DefaultSolutionName, ref stomach.Comp1.Solution, out var sol))
+                if (_solutionContainer.TryGetSolution(stomach.Comp.Owner, StomachSystem.DefaultSolutionName,
+                        out var sol))
                 {
                     solution.AddSolution(sol, _proto);
                     sol.RemoveAllSolution();
-                    _solutionContainer.UpdateChemicals(stomach.Comp1.Solution.Value);
+                    _solutionContainer.UpdateChemicals(stomach.Comp.Owner, sol);
                 }
             }
             // Adds a tiny amount of the chem stream from earlier along with vomit
             if (TryComp<BloodstreamComponent>(uid, out var bloodStream))
             {
-                const float chemMultiplier = 0.1f;
-
-                var vomitAmount = solutionSize;
-
-                // Takes 10% of the chemicals removed from the chem stream
-                if (_solutionContainer.ResolveSolution(uid, bloodStream.ChemicalSolutionName, ref bloodStream.ChemicalSolution))
-                {
-                    var vomitChemstreamAmount = _solutionContainer.SplitSolution(bloodStream.ChemicalSolution.Value, vomitAmount);
-                    vomitChemstreamAmount.ScaleSolution(chemMultiplier);
-                    solution.AddSolution(vomitChemstreamAmount, _proto);
-
-                    vomitAmount -= (float)vomitChemstreamAmount.Volume;
-                }
+                var chemMultiplier = 0.1;
+                var vomitMultiplier = 0.9;
 
                 // Makes a vomit solution the size of 90% of the chemicals removed from the chemstream
-                solution.AddReagent(new ReagentId("Vomit", _bloodstream.GetEntityBloodData(uid)), vomitAmount); // TODO: Dehardcode vomit prototype
+                var vomitAmount = new Solution("Vomit", solutionSize * vomitMultiplier);
+
+                // Takes 10% of the chemicals removed from the chem stream
+                var vomitChemstreamAmount = _solutionContainer.SplitSolution(uid, bloodStream.ChemicalSolution, solutionSize * chemMultiplier);
+
+                _solutionContainer.SplitSolution(uid, bloodStream.ChemicalSolution, solutionSize * vomitMultiplier);
+                solution.AddSolution(vomitAmount, _proto);
+                solution.AddSolution(vomitChemstreamAmount, _proto);
             }
 
             if (_puddle.TrySpillAt(uid, solution, out var puddle, false))
             {
-                _forensics.TransferDna(puddle, uid, false);
+                var forensics = EnsureComp<ForensicsComponent>(puddle);
+                if (TryComp<DnaComponent>(uid, out var dna))
+                    forensics.DNAs.Add(dna.DNA);
             }
 
             // Force sound to play as spill doesn't work if solution is empty.
-            _audio.PlayPvs(_vomitSound, uid);
+            _audio.PlayPvs("/Audio/Effects/Fluids/splat.ogg", uid, AudioParams.Default.WithVariation(0.2f).WithVolume(-4f));
             _popup.PopupEntity(Loc.GetString("disease-vomit", ("person", Identity.Entity(uid, EntityManager))), uid);
         }
     }

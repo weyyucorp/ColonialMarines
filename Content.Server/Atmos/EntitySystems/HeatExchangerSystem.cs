@@ -20,7 +20,6 @@ public sealed class HeatExchangerSystem : EntitySystem
     [Dependency] private readonly AtmosphereSystem _atmosphereSystem = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
     [Dependency] private readonly NodeContainerSystem _nodeContainer = default!;
-    [Dependency] private readonly SharedTransformSystem _transform = default!;
 
     float tileLoss;
 
@@ -30,7 +29,13 @@ public sealed class HeatExchangerSystem : EntitySystem
         SubscribeLocalEvent<HeatExchangerComponent, AtmosDeviceUpdateEvent>(OnAtmosUpdate);
 
         // Getting CVars is expensive, don't do it every tick
-        Subs.CVar(_cfg, CCVars.SuperconductionTileLoss, CacheTileLoss, true);
+        _cfg.OnValueChanged(CCVars.SuperconductionTileLoss, CacheTileLoss, true);
+    }
+
+    public override void Shutdown()
+    {
+        base.Shutdown();
+        _cfg.UnsubValueChanged(CCVars.SuperconductionTileLoss, CacheTileLoss);
     }
 
     private void CacheTileLoss(float val)
@@ -38,18 +43,15 @@ public sealed class HeatExchangerSystem : EntitySystem
         tileLoss = val;
     }
 
-    private void OnAtmosUpdate(EntityUid uid, HeatExchangerComponent comp, ref AtmosDeviceUpdateEvent args)
+    private void OnAtmosUpdate(EntityUid uid, HeatExchangerComponent comp, AtmosDeviceUpdateEvent args)
     {
-        // make sure that the tile the device is on isn't blocked by a wall or something similar.
-        if (args.Grid is {} grid
-            && _transform.TryGetGridTilePosition(uid, out var tile)
-            && _atmosphereSystem.IsTileAirBlocked(grid, tile))
+        if (!TryComp(uid, out NodeContainerComponent? nodeContainer)
+                || !TryComp(uid, out AtmosDeviceComponent? device)
+                || !_nodeContainer.TryGetNode(nodeContainer, comp.InletName, out PipeNode? inlet)
+                || !_nodeContainer.TryGetNode(nodeContainer, comp.OutletName, out PipeNode? outlet))
         {
             return;
         }
-
-        if (!_nodeContainer.TryGetNodes(uid, comp.InletName, comp.OutletName, out PipeNode? inlet, out PipeNode? outlet))
-            return;
 
         var dt = args.dt;
 
@@ -81,7 +83,7 @@ public sealed class HeatExchangerSystem : EntitySystem
         else
             xfer = outlet.Air.Remove(-n);
 
-        float CXfer = _atmosphereSystem.GetHeatCapacity(xfer, true);
+        float CXfer = _atmosphereSystem.GetHeatCapacity(xfer);
         if (CXfer < Atmospherics.MinimumHeatCapacity)
             return;
 
@@ -92,7 +94,7 @@ public sealed class HeatExchangerSystem : EntitySystem
         float CEnv = 0f;
         if (environment != null)
         {
-            CEnv = _atmosphereSystem.GetHeatCapacity(environment, true);
+            CEnv = _atmosphereSystem.GetHeatCapacity(environment);
             hasEnv = CEnv >= Atmospherics.MinimumHeatCapacity && environment.TotalMoles > 0f;
             if (hasEnv)
                 radTemp = environment.Temperature;

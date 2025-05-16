@@ -6,15 +6,10 @@ namespace Content.Shared.Humanoid
     [Serializable, NetSerializable]
     public enum HumanoidVisualLayers : byte
     {
-        Special, // for the cat ears
         Tail,
         Hair,
         FacialHair,
-        UndergarmentTop,
-        UndergarmentBottom,
         Chest,
-        Underwear,
-        Undershirt,
         Head,
         Snout,
         HeadSide, // side parts (i.e., frills)
@@ -32,6 +27,5 @@ namespace Content.Shared.Humanoid
         StencilMask,
         Ensnare,
         Fire,
-
     }
 }

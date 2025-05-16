@@ -2,6 +2,7 @@ using Content.Server.Construction.Components;
 using Content.Server.Stack;
 using Content.Shared.Construction;
 using Content.Shared.DoAfter;
+using Content.Shared.Tools;
 using JetBrains.Annotations;
 using Robust.Server.Containers;
 using Robust.Shared.Prototypes;
@@ -16,15 +17,22 @@ namespace Content.Server.Construction
     [UsedImplicitly]
     public sealed partial class ConstructionSystem : SharedConstructionSystem
     {
+        [Dependency] private readonly ILogManager _logManager = default!;
+        [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
         [Dependency] private readonly IRobustRandom _robustRandom = default!;
         [Dependency] private readonly SharedDoAfterSystem _doAfterSystem = default!;
         [Dependency] private readonly ContainerSystem _container = default!;
         [Dependency] private readonly StackSystem _stackSystem = default!;
         [Dependency] private readonly SharedToolSystem _toolSystem = default!;
 
+        private const string SawmillName = "Construction";
+        private ISawmill _sawmill = default!;
+
         public override void Initialize()
         {
             base.Initialize();
+
+            _sawmill = _logManager.GetSawmill(SawmillName);
 
             InitializeComputer();
             InitializeGraphs();
@@ -42,13 +50,13 @@ namespace Content.Server.Construction
             var construction = ent.Comp;
             if (GetCurrentGraph(ent, construction) is not {} graph)
             {
-                Log.Warning($"Prototype {EntityManager.GetComponent<MetaDataComponent>(ent).EntityPrototype?.ID}'s construction component has an invalid graph specified.");
+                _sawmill.Warning($"Prototype {EntityManager.GetComponent<MetaDataComponent>(ent).EntityPrototype?.ID}'s construction component has an invalid graph specified.");
                 return;
             }
 
             if (GetNodeFromGraph(graph, construction.Node) is not {} node)
             {
-                Log.Warning($"Prototype {EntityManager.GetComponent<MetaDataComponent>(ent).EntityPrototype?.ID}'s construction component has an invalid node specified.");
+                _sawmill.Warning($"Prototype {EntityManager.GetComponent<MetaDataComponent>(ent).EntityPrototype?.ID}'s construction component has an invalid node specified.");
                 return;
             }
 
@@ -57,7 +65,7 @@ namespace Content.Server.Construction
             {
                 if (GetEdgeFromNode(node, edgeIndex) is not {} currentEdge)
                 {
-                    Log.Warning($"Prototype {EntityManager.GetComponent<MetaDataComponent>(ent).EntityPrototype?.ID}'s construction component has an invalid edge index specified.");
+                    _sawmill.Warning($"Prototype {EntityManager.GetComponent<MetaDataComponent>(ent).EntityPrototype?.ID}'s construction component has an invalid edge index specified.");
                     return;
                 }
 
@@ -68,7 +76,7 @@ namespace Content.Server.Construction
             {
                 if (GetNodeFromGraph(graph, targetNodeId) is not { } targetNode)
                 {
-                    Log.Warning($"Prototype {EntityManager.GetComponent<MetaDataComponent>(ent).EntityPrototype?.ID}'s construction component has an invalid target node specified.");
+                    _sawmill.Warning($"Prototype {EntityManager.GetComponent<MetaDataComponent>(ent).EntityPrototype?.ID}'s construction component has an invalid target node specified.");
                     return;
                 }
 

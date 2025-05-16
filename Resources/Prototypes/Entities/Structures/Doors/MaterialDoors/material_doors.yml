@@ -40,13 +40,10 @@
       path: /Audio/Effects/stonedoor_openclose.ogg
   - type: Appearance
   - type: Airtight
+    fixVacuum: true
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
-  - type: RCDDeconstructable
-    cost: 6
-    delay: 6
-    fx: EffectRCDDeconstruct6
   - type: Destructible
     thresholds:
     - trigger:
@@ -59,19 +56,11 @@
     key: walls
     mode: NoSprite
   - type: Occluder
-  - type: BlockWeather
-
-- type: entity
-  parent: BaseMaterialDoor
-  id: BaseMaterialDoorNavMap
-  abstract: true
-  components:
-  - type: NavMapDoor
 
 - type: entity
   id: MetalDoor
   name: metal door
-  parent: BaseMaterialDoorNavMap
+  parent: BaseMaterialDoor
   components:
   - type: Construction
     graph: DoorGraph
@@ -80,7 +69,7 @@
 - type: entity
   id: WoodDoor
   name: wooden door
-  parent: BaseMaterialDoorNavMap
+  parent: BaseMaterialDoor
   description: A door, where will it lead?
   components:
   - type: Sprite
@@ -100,7 +89,7 @@
     closeSound:
       path: /Audio/Effects/door_close.ogg
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Wood
   - type: Destructible
     thresholds:
@@ -117,7 +106,7 @@
 - type: entity
   id: PaperDoor
   name: paper door
-  parent: BaseMaterialDoorNavMap
+  parent: WoodDoor
   description: A door, where will it lead?
   components:
   - type: Sprite
@@ -136,16 +125,11 @@
   - type: Construction
     graph: DoorGraph
     node: paperDoor
-  - type: Door
-    openSound:
-      path: /Audio/Effects/paperdoor_openclose.ogg
-    closeSound:
-      path: /Audio/Effects/paperdoor_openclose.ogg
 
 - type: entity
   id: PlasmaDoor
   name: plasma door
-  parent: BaseMaterialDoorNavMap
+  parent: BaseMaterialDoor
   description: A door, where will it lead?
   components:
   - type: Sprite
@@ -154,8 +138,8 @@
     - state: closed
       map: ["enum.DoorVisualLayers.Base"]
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallicStrong
+    damageContainer: Inorganic
+    damageModifierSet: StrongMetallic
   - type: Destructible
     thresholds:
     - trigger:
@@ -171,7 +155,7 @@
 - type: entity
   id: GoldDoor
   name: gold door
-  parent: BaseMaterialDoorNavMap
+  parent: BaseMaterialDoor
   description: A door, where will it lead?
   components:
   - type: Sprite
@@ -186,7 +170,7 @@
 - type: entity
   id: SilverDoor
   name: silver door
-  parent: BaseMaterialDoorNavMap
+  parent: BaseMaterialDoor
   description: A door, where will it lead?
   components:
   - type: Sprite
@@ -201,7 +185,7 @@
 - type: entity
   id: BananiumDoor
   name: bananium door
-  parent: BaseMaterialDoorNavMap
+  parent: BaseMaterialDoor
   description: A door, where will it lead?
   components:
   - type: Sprite
@@ -221,7 +205,7 @@
 - type: entity
   id: WebDoor
   name: web door
-  parent: BaseMaterialDoorNavMap
+  parent: BaseMaterialDoor
   description: A door, leading to the lands of the spiders... or a spaced room.
   components:
   - type: Sprite
@@ -242,7 +226,7 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWebSilk:

@@ -1,5 +1,4 @@
 using System.Numerics;
-using Content.Shared.Light.Components;
 using Content.Shared.Weather;
 using Robust.Client.Graphics;
 using Robust.Shared.Map.Components;
@@ -9,9 +8,7 @@ namespace Content.Client.Overlays;
 
 public sealed partial class StencilOverlay
 {
-    private List<Entity<MapGridComponent>> _grids = new();
-
-    private void DrawWeather(in OverlayDrawArgs args, WeatherPrototype weatherProto, float alpha, Matrix3x2 invMatrix)
+    private void DrawWeather(in OverlayDrawArgs args, WeatherPrototype weatherProto, float alpha, Matrix3 invMatrix)
     {
         var worldHandle = args.WorldHandle;
         var mapId = args.MapId;
@@ -24,23 +21,24 @@ public sealed partial class StencilOverlay
         // particularly for planet maps or stations.
         worldHandle.RenderInRenderTarget(_blep!, () =>
         {
+            var bodyQuery = _entManager.GetEntityQuery<PhysicsComponent>();
             var xformQuery = _entManager.GetEntityQuery<TransformComponent>();
-            _grids.Clear();
+            var weatherIgnoreQuery = _entManager.GetEntityQuery<IgnoreWeatherComponent>();
 
             // idk if this is safe to cache in a field and clear sloth help
-            _mapManager.FindGridsIntersecting(mapId, worldAABB, ref _grids);
+            var grids = new List<Entity<MapGridComponent>>();
+            _mapManager.FindGridsIntersecting(mapId, worldAABB, ref grids);
 
-            foreach (var grid in _grids)
+            foreach (var grid in grids)
             {
                 var matrix = _transform.GetWorldMatrix(grid, xformQuery);
-                var matty =  Matrix3x2.Multiply(matrix, invMatrix);
+                Matrix3.Multiply(in matrix, in invMatrix, out var matty);
                 worldHandle.SetTransform(matty);
-                _entManager.TryGetComponent(grid.Owner, out RoofComponent? roofComp);
 
-                foreach (var tile in _map.GetTilesIntersecting(grid.Owner, grid, worldAABB))
+                foreach (var tile in grid.Comp.GetTilesIntersecting(worldAABB))
                 {
                     // Ignored tiles for stencil
-                    if (_weather.CanWeatherAffect(grid.Owner, grid, tile, roofComp))
+                    if (_weather.CanWeatherAffect(grid, tile, weatherIgnoreQuery, bodyQuery))
                     {
                         continue;
                     }
@@ -54,7 +52,7 @@ public sealed partial class StencilOverlay
 
         }, Color.Transparent);
 
-        worldHandle.SetTransform(Matrix3x2.Identity);
+        worldHandle.SetTransform(Matrix3.Identity);
         worldHandle.UseShader(_protoManager.Index<ShaderPrototype>("StencilMask").Instance());
         worldHandle.DrawTextureRect(_blep!.Texture, worldBounds);
         var curTime = _timing.RealTime;
@@ -64,7 +62,7 @@ public sealed partial class StencilOverlay
         worldHandle.UseShader(_protoManager.Index<ShaderPrototype>("StencilDraw").Instance());
         _parallax.DrawParallax(worldHandle, worldAABB, sprite, curTime, position, Vector2.Zero, modulate: (weatherProto.Color ?? Color.White).WithAlpha(alpha));
 
-        worldHandle.SetTransform(Matrix3x2.Identity);
+        worldHandle.SetTransform(Matrix3.Identity);
         worldHandle.UseShader(null);
     }
 }

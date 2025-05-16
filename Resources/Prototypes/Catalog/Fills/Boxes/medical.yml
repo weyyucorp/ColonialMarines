@@ -22,7 +22,7 @@
   - type: StorageFill
     contents:
       - id: PillCanister
-        amount: 9
+        amount: 4
   - type: Sprite
     layers:
       - state: box
@@ -89,6 +89,26 @@
       - state: nitrile
 
 - type: entity
+  name: sterile swab box
+  parent: BoxCardboard
+  id: BoxMouthSwab
+  components:
+  - type: Storage
+    maxTotalWeight: 20
+  - type: StorageFill
+    contents:
+      - id: DiseaseSwab
+        amount: 10
+  - type: Sprite
+    layers:
+      - state: box
+      - state: swab
+  - type: GuideHelp
+    guides:
+  # - Virology (when it's back)
+    - Botany
+
+- type: entity
   name: body bag box
   parent: BoxCardboard
   id: BoxBodyBag
@@ -96,7 +116,7 @@
   components:
   - type: StorageFill
     contents:
-      - id: BodyBagFolded
+      - id: BodyBag_Folded
         amount: 4
   - type: Sprite
     layers:
@@ -105,21 +125,3 @@
     whitelist:
       tags:
         - BodyBag
-
-- type: entity
-  name: vial box
-  parent: BoxCardboard
-  id: BoxVial
-  description: A box full of vials.
-  components:
-  - type: Storage
-    grid:
-    - 0,0,2,1
-  - type: StorageFill
-    contents:
-      - id: BaseChemistryEmptyVial
-        amount: 6
-  - type: Sprite
-    layers:
-      - state: box
-      - state: vials

@@ -31,7 +31,7 @@
     containers:
       - clonepod-bodyContainer
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: StrongMetallic
   - type: Destructible
     thresholds:
@@ -39,9 +39,6 @@
         !type:DamageTrigger
         damage: 100
       behaviors:
-      - !type:PlaySoundBehavior
-        sound:
-          collection: MetalGlassBreak
       - !type:ChangeConstructionNodeBehavior
         node: machineFrame
       - !type:DoActsBehavior
@@ -52,6 +49,9 @@
     materialWhiteList:
     - Biomass
   - type: WiresPanel
+  - type: Wires
+    boardName: wires-board-name-cloningpod
+    layoutId: CloningPod
   - type: ApcPowerReceiver
     powerLoad: 200 #Receives most of its power from the console
   - type: Appearance

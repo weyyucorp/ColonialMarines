@@ -1,0 +1,14 @@
+﻿- type: department
+  id: MarineCommand
+  parent: DepartmentBaseCM
+  description: department-MarineCommand-description
+  color: "#334E6D"
+  roles:
+  - CommandingOfficer
+  - ExecutiveOfficer
+  - SeniorEnlistedAdvisor
+  - StaffOfficer
+  - ChiefMP
+  - MarineCMO
+  - CMQuartermaster
+  - AuxiliarySupportOfficer

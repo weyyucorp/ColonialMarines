@@ -2,14 +2,14 @@ using Content.Server.Emp;
 using Content.Server.Popups;
 using Content.Server.Power.Components;
 using Content.Server.Power.Pow3r;
+using Content.Shared.Access.Components;
 using Content.Shared.Access.Systems;
 using Content.Shared.APC;
+using Content.Shared.Emag.Components;
 using Content.Shared.Emag.Systems;
 using Content.Shared.Popups;
-using Content.Shared.Rounding;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Timing;
 
 namespace Content.Server.Power.EntitySystems;
@@ -18,7 +18,6 @@ public sealed class ApcSystem : EntitySystem
 {
     [Dependency] private readonly AccessReaderSystem _accessReader = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly EmagSystem _emag = default!;
     [Dependency] private readonly PopupSystem _popup = default!;
     [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
@@ -31,7 +30,7 @@ public sealed class ApcSystem : EntitySystem
         UpdatesAfter.Add(typeof(PowerNetSystem));
 
         SubscribeLocalEvent<ApcComponent, BoundUIOpenedEvent>(OnBoundUiOpen);
-        SubscribeLocalEvent<ApcComponent, ComponentStartup>(OnApcStartup);
+        SubscribeLocalEvent<ApcComponent, MapInitEvent>(OnApcInit);
         SubscribeLocalEvent<ApcComponent, ChargeChangedEvent>(OnBatteryChargeChanged);
         SubscribeLocalEvent<ApcComponent, ApcToggleMainBreakerMessage>(OnToggleMainBreaker);
         SubscribeLocalEvent<ApcComponent, GotEmaggedEvent>(OnEmagged);
@@ -44,15 +43,10 @@ public sealed class ApcSystem : EntitySystem
         var query = EntityQueryEnumerator<ApcComponent, PowerNetworkBatteryComponent, UserInterfaceComponent>();
         while (query.MoveNext(out var uid, out var apc, out var battery, out var ui))
         {
-            if (apc.LastUiUpdate + ApcComponent.VisualsChangeDelay < _gameTiming.CurTime && _ui.IsUiOpen((uid, ui), ApcUiKey.Key))
+            if (apc.LastUiUpdate + ApcComponent.VisualsChangeDelay < _gameTiming.CurTime)
             {
                 apc.LastUiUpdate = _gameTiming.CurTime;
                 UpdateUIState(uid, apc, battery);
-            }
-
-            if (apc.NeedStateUpdate)
-            {
-                UpdateApcState(uid, apc, battery);
             }
         }
     }
@@ -63,15 +57,19 @@ public sealed class ApcSystem : EntitySystem
         UpdateApcState(uid, component);
     }
 
-    private static void OnApcStartup(EntityUid uid, ApcComponent component, ComponentStartup args)
+    private void OnApcInit(EntityUid uid, ApcComponent component, MapInitEvent args)
     {
-        // We cannot update immediately, as various network/battery state is not valid yet.
-        // Defer until the next tick.
-        component.NeedStateUpdate = true;
+        UpdateApcState(uid, component);
     }
 
+    //Update the HasAccess var for UI to read
     private void OnBoundUiOpen(EntityUid uid, ApcComponent component, BoundUIOpenedEvent args)
     {
+        if (args.Session.AttachedEntity == null)
+            return;
+
+        // TODO: this should be per-player not stored on the apc
+        component.HasAccess = _accessReader.IsAllowed(args.Session.AttachedEntity.Value, uid);
         UpdateApcState(uid, component);
     }
 
@@ -82,18 +80,21 @@ public sealed class ApcSystem : EntitySystem
         if (attemptEv.Cancelled)
         {
             _popup.PopupCursor(Loc.GetString("apc-component-on-toggle-cancel"),
-                args.Actor, PopupType.Medium);
+                args.Session, PopupType.Medium);
             return;
         }
 
-        if (_accessReader.IsAllowed(args.Actor, uid))
+        if (args.Session.AttachedEntity == null)
+            return;
+
+        if (_accessReader.IsAllowed(args.Session.AttachedEntity.Value, uid))
         {
             ApcToggleBreaker(uid, component);
         }
         else
         {
             _popup.PopupCursor(Loc.GetString("apc-component-insufficient-access"),
-                args.Actor, PopupType.Medium);
+                args.Session, PopupType.Medium);
         }
     }
 
@@ -111,12 +112,7 @@ public sealed class ApcSystem : EntitySystem
 
     private void OnEmagged(EntityUid uid, ApcComponent comp, ref GotEmaggedEvent args)
     {
-        if (!_emag.CompareFlag(args.Type, EmagType.Interaction))
-            return;
-
-        if (_emag.CheckFlag(uid, EmagType.Interaction))
-            return;
-
+        // no fancy conditions
         args.Handled = true;
     }
 
@@ -127,18 +123,15 @@ public sealed class ApcSystem : EntitySystem
         if (!Resolve(uid, ref apc, ref battery, false))
             return;
 
-        if (apc.LastChargeStateTime == null || apc.LastChargeStateTime + ApcComponent.VisualsChangeDelay < _gameTiming.CurTime)
+        var newState = CalcChargeState(uid, battery.NetworkBattery);
+        if (newState != apc.LastChargeState && apc.LastChargeStateTime + ApcComponent.VisualsChangeDelay < _gameTiming.CurTime)
         {
-            var newState = CalcChargeState(uid, battery.NetworkBattery);
-            if (newState != apc.LastChargeState)
-            {
-                apc.LastChargeState = newState;
-                apc.LastChargeStateTime = _gameTiming.CurTime;
+            apc.LastChargeState = newState;
+            apc.LastChargeStateTime = _gameTiming.CurTime;
 
-                if (TryComp(uid, out AppearanceComponent? appearance))
-                {
-                    _appearance.SetData(uid, ApcVisuals.ChargeState, newState, appearance);
-                }
+            if (TryComp(uid, out AppearanceComponent? appearance))
+            {
+                _appearance.SetData(uid, ApcVisuals.ChargeState, newState, appearance);
             }
         }
 
@@ -148,8 +141,6 @@ public sealed class ApcSystem : EntitySystem
             apc.LastExternalState = extPowerState;
             UpdateUIState(uid, apc, battery);
         }
-
-        apc.NeedStateUpdate = false;
     }
 
     public void UpdateUIState(EntityUid uid,
@@ -161,21 +152,17 @@ public sealed class ApcSystem : EntitySystem
             return;
 
         var battery = netBat.NetworkBattery;
-        const int ChargeAccuracy = 5;
 
-        // TODO: Fix ContentHelpers or make a new one coz this is cooked.
-        var charge = ContentHelpers.RoundToNearestLevels(battery.CurrentStorage / battery.Capacity, 1.0, 100 / ChargeAccuracy) / 100f * ChargeAccuracy;
-
-        var state = new ApcBoundInterfaceState(apc.MainBreakerEnabled,
+        var state = new ApcBoundInterfaceState(apc.MainBreakerEnabled, apc.HasAccess,
             (int) MathF.Ceiling(battery.CurrentSupply), apc.LastExternalState,
-            charge);
+            battery.CurrentStorage / battery.Capacity);
 
-        _ui.SetUiState((uid, ui), ApcUiKey.Key, state);
+        _ui.TrySetUiState(uid, ApcUiKey.Key, state, ui: ui);
     }
 
     private ApcChargeState CalcChargeState(EntityUid uid, PowerState.Battery battery)
     {
-        if (_emag.CheckFlag(uid, EmagType.Interaction))
+        if (HasComp<EmaggedComponent>(uid))
             return ApcChargeState.Emag;
 
         if (battery.CurrentStorage / battery.Capacity > ApcComponent.HighPowerThreshold)

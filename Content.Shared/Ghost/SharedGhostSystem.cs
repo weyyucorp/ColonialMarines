@@ -2,7 +2,6 @@ using Content.Shared.Emoting;
 using Content.Shared.Hands;
 using Content.Shared.Interaction.Events;
 using Content.Shared.Item;
-using Content.Shared.Mind;
 using Content.Shared.Popups;
 using Robust.Shared.Serialization;
 
@@ -20,16 +19,10 @@ namespace Content.Shared.Ghost
         {
             base.Initialize();
             SubscribeLocalEvent<GhostComponent, UseAttemptEvent>(OnAttempt);
-            SubscribeLocalEvent<GhostComponent, InteractionAttemptEvent>(OnAttemptInteract);
+            SubscribeLocalEvent<GhostComponent, InteractionAttemptEvent>(OnAttempt);
             SubscribeLocalEvent<GhostComponent, EmoteAttemptEvent>(OnAttempt);
             SubscribeLocalEvent<GhostComponent, DropAttemptEvent>(OnAttempt);
             SubscribeLocalEvent<GhostComponent, PickupAttemptEvent>(OnAttempt);
-        }
-
-        private void OnAttemptInteract(Entity<GhostComponent> ent, ref InteractionAttemptEvent args)
-        {
-            if (!ent.Comp.CanGhostInteract)
-                args.Cancelled = true;
         }
 
         private void OnAttempt(EntityUid uid, GhostComponent component, CancellableEntityEventArgs args)
@@ -133,12 +126,6 @@ namespace Content.Shared.Ghost
     }
 
     /// <summary>
-    /// A client to server request for their ghost to be warped to the most followed entity.
-    /// </summary>
-    [Serializable, NetSerializable]
-    public sealed class GhostnadoRequestEvent : EntityEventArgs;
-
-    /// <summary>
     /// A client to server request for their ghost to return to body
     /// </summary>
     [Serializable, NetSerializable]
@@ -158,12 +145,5 @@ namespace Content.Shared.Ghost
         {
             AvailableGhostRoles = availableGhostRoleCount;
         }
-    }
-
-    public sealed class GhostAttemptHandleEvent(MindComponent mind, bool canReturnGlobal) : HandledEntityEventArgs
-    {
-        public MindComponent Mind { get; } = mind;
-        public bool CanReturnGlobal { get; } = canReturnGlobal;
-        public bool Result { get; set; }
     }
 }

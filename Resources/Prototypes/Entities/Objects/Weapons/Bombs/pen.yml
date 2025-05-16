@@ -1,7 +1,7 @@
 - type: entity
   name: pen
   suffix: Exploding
-  parent: PenEmbeddable
+  parent: Pen
   description: A dark ink pen.
   id: PenExploding
   components:
@@ -20,17 +20,13 @@
   - type: DeviceLinkSink
     ports:
       - Trigger
-  - type: EmitSoundOnUse
-    handle: false # don't want the sound to stop the explosion from triggering
 
 - type: entity
-  parent: [BaseItem, BaseSyndicateContraband]
+  parent: BaseItem
   id: PenExplodingBox
   name: exploding pen box
   description: A small box containing an exploding pen. Packaging disintegrates when opened, leaving no evidence behind.
   components:
-  - type: Item
-    size: Tiny
   - type: Sprite
     sprite: Objects/Storage/penbox.rsi
     state: exploding_pen

@@ -37,8 +37,6 @@ public sealed class PAISystem : SharedPAISystem
 
     private void OnUseInHand(EntityUid uid, PAIComponent component, UseInHandEvent args)
     {
-        // Not checking for Handled because ToggleableGhostRoleSystem already marks it as such.
-
         if (!TryComp<MindContainerComponent>(uid, out var mind) || !mind.HasMind)
             component.LastUser = args.User;
     }
@@ -104,16 +102,14 @@ public sealed class PAISystem : SharedPAISystem
     {
         //  Close the instrument interface if it was open
         //  before closing
-        if (HasComp<ActiveInstrumentComponent>(uid))
+        if (HasComp<ActiveInstrumentComponent>(uid) && TryComp<ActorComponent>(uid, out var actor))
         {
-            _instrumentSystem.ToggleInstrumentUi(uid, uid);
+            _instrumentSystem.ToggleInstrumentUi(uid, actor.PlayerSession);
         }
 
         //  Stop instrument
-        if (TryComp<InstrumentComponent>(uid, out var instrument))
-            _instrumentSystem.Clean(uid, instrument);
-
-        if (TryComp(uid, out MetaDataComponent? metadata))
+        if (TryComp<InstrumentComponent>(uid, out var instrument)) _instrumentSystem.Clean(uid, instrument);
+        if (TryComp<MetaDataComponent>(uid, out var metadata))
         {
             var proto = metadata.EntityPrototype;
             if (proto != null)

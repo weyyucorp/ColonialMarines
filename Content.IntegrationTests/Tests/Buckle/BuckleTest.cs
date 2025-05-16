@@ -15,7 +15,7 @@ namespace Content.IntegrationTests.Tests.Buckle
     [TestFixture]
     [TestOf(typeof(BuckleComponent))]
     [TestOf(typeof(StrapComponent))]
-    public sealed partial class BuckleTest
+    public sealed class BuckleTest
     {
         private const string BuckleDummyId = "BuckleDummy";
         private const string StrapDummyId = "StrapDummy";
@@ -29,7 +29,6 @@ namespace Content.IntegrationTests.Tests.Buckle
   components:
   - type: Buckle
   - type: Hands
-  - type: ComplexInteraction
   - type: InputMover
   - type: Body
     prototype: Human
@@ -91,6 +90,7 @@ namespace Content.IntegrationTests.Tests.Buckle
                 {
                     Assert.That(strap, Is.Not.Null);
                     Assert.That(strap.BuckledEntities, Is.Empty);
+                    Assert.That(strap.OccupiedSize, Is.Zero);
                 });
 
                 // Side effects of buckling
@@ -101,7 +101,7 @@ namespace Content.IntegrationTests.Tests.Buckle
                     Assert.That(buckle.Buckled);
 
                     Assert.That(actionBlocker.CanMove(human), Is.False);
-                    Assert.That(actionBlocker.CanChangeDirection(human));
+                    Assert.That(actionBlocker.CanChangeDirection(human), Is.False);
                     Assert.That(standingState.Down(human), Is.False);
                     Assert.That(
                         (xformSystem.GetWorldPosition(human) - xformSystem.GetWorldPosition(chair)).LengthSquared,
@@ -110,6 +110,8 @@ namespace Content.IntegrationTests.Tests.Buckle
 
                     // Side effects of buckling for the strap
                     Assert.That(strap.BuckledEntities, Does.Contain(human));
+                    Assert.That(strap.OccupiedSize, Is.EqualTo(buckle.Size));
+                    Assert.Positive(strap.OccupiedSize);
                 });
 
 #pragma warning disable NUnit2045 // Interdependent asserts.
@@ -119,7 +121,7 @@ namespace Content.IntegrationTests.Tests.Buckle
                 // Trying to unbuckle too quickly fails
                 Assert.That(buckleSystem.TryUnbuckle(human, human, buckleComp: buckle), Is.False);
                 Assert.That(buckle.Buckled);
-                Assert.That(buckleSystem.TryUnbuckle(human, human), Is.False);
+                Assert.That(buckleSystem.ToggleBuckle(human, human, chair, buckle: buckle), Is.False);
                 Assert.That(buckle.Buckled);
 #pragma warning restore NUnit2045
             });
@@ -146,6 +148,7 @@ namespace Content.IntegrationTests.Tests.Buckle
 
                     // Unbuckle, strap
                     Assert.That(strap.BuckledEntities, Is.Empty);
+                    Assert.That(strap.OccupiedSize, Is.Zero);
                 });
 
 #pragma warning disable NUnit2045 // Interdependent asserts.
@@ -156,9 +159,9 @@ namespace Content.IntegrationTests.Tests.Buckle
                 // On cooldown
                 Assert.That(buckleSystem.TryUnbuckle(human, human, buckleComp: buckle), Is.False);
                 Assert.That(buckle.Buckled);
-                Assert.That(buckleSystem.TryUnbuckle(human, human), Is.False);
+                Assert.That(buckleSystem.ToggleBuckle(human, human, chair, buckle: buckle), Is.False);
                 Assert.That(buckle.Buckled);
-                Assert.That(buckleSystem.TryUnbuckle(human, human), Is.False);
+                Assert.That(buckleSystem.ToggleBuckle(human, human, chair, buckle: buckle), Is.False);
                 Assert.That(buckle.Buckled);
 #pragma warning restore NUnit2045
             });
@@ -178,18 +181,20 @@ namespace Content.IntegrationTests.Tests.Buckle
 #pragma warning restore NUnit2045
 
                 // Move away from the chair
-                var oldWorldPosition = xformSystem.GetWorldPosition(chair);
-                xformSystem.SetWorldPosition(human, oldWorldPosition + new Vector2(1000, 1000));
+                var xformQuery = entityManager.GetEntityQuery<TransformComponent>();
+                var oldWorldPosition = xformSystem.GetWorldPosition(chair, xformQuery);
+                xformSystem.SetWorldPosition(human, oldWorldPosition + new Vector2(1000, 1000), xformQuery);
 
                 // Out of range
 #pragma warning disable NUnit2045 // Interdependent asserts.
                 Assert.That(buckleSystem.TryBuckle(human, human, chair, buckleComp: buckle), Is.False);
                 Assert.That(buckleSystem.TryUnbuckle(human, human, buckleComp: buckle), Is.False);
+                Assert.That(buckleSystem.ToggleBuckle(human, human, chair, buckle: buckle), Is.False);
 #pragma warning restore NUnit2045
 
                 // Move near the chair
-                oldWorldPosition = xformSystem.GetWorldPosition(chair);
-                xformSystem.SetWorldPosition(human, oldWorldPosition + new Vector2(0.5f, 0));
+                oldWorldPosition = xformSystem.GetWorldPosition(chair, xformQuery);
+                xformSystem.SetWorldPosition(human, oldWorldPosition + new Vector2(0.5f, 0), xformQuery);
 
                 // In range
 #pragma warning disable NUnit2045 // Interdependent asserts.
@@ -197,10 +202,12 @@ namespace Content.IntegrationTests.Tests.Buckle
                 Assert.That(buckle.Buckled);
                 Assert.That(buckleSystem.TryUnbuckle(human, human, buckleComp: buckle), Is.False);
                 Assert.That(buckle.Buckled);
+                Assert.That(buckleSystem.ToggleBuckle(human, human, chair, buckle: buckle), Is.False);
+                Assert.That(buckle.Buckled);
 #pragma warning restore NUnit2045
 
                 // Force unbuckle
-                buckleSystem.Unbuckle(human, human);
+                Assert.That(buckleSystem.TryUnbuckle(human, human, true, buckleComp: buckle));
                 Assert.Multiple(() =>
                 {
                     Assert.That(buckle.Buckled, Is.False);
@@ -213,8 +220,8 @@ namespace Content.IntegrationTests.Tests.Buckle
                 Assert.That(buckleSystem.TryBuckle(human, human, chair, buckleComp: buckle));
 
                 // Move away from the chair
-                oldWorldPosition = xformSystem.GetWorldPosition(chair);
-                xformSystem.SetWorldPosition(human, oldWorldPosition + new Vector2(1, 0));
+                oldWorldPosition = xformSystem.GetWorldPosition(chair, xformQuery);
+                xformSystem.SetWorldPosition(human, oldWorldPosition + new Vector2(1, 0), xformQuery);
             });
 
             await server.WaitRunTicks(1);
@@ -304,7 +311,7 @@ namespace Content.IntegrationTests.Tests.Buckle
                 // Break our guy's kneecaps
                 foreach (var leg in legs)
                 {
-                    entityManager.DeleteEntity(leg.Id);
+                    xformSystem.DetachParentToNull(leg.Id, entityManager.GetComponent<TransformComponent>(leg.Id));
                 }
             });
 
@@ -321,8 +328,7 @@ namespace Content.IntegrationTests.Tests.Buckle
                     Assert.That(hand.HeldEntity, Is.Null);
                 }
 
-                buckleSystem.Unbuckle(human, human);
-                Assert.That(buckle.Buckled, Is.False);
+                buckleSystem.TryUnbuckle(human, human, true, buckleComp: buckle);
             });
 
             await pair.CleanReturnAsync();
@@ -365,8 +371,9 @@ namespace Content.IntegrationTests.Tests.Buckle
                 });
 
                 // Move the buckled entity away
-                var oldWorldPosition = xformSystem.GetWorldPosition(chair);
-                xformSystem.SetWorldPosition(human, oldWorldPosition + new Vector2(100, 0));
+                var xformQuery = entityManager.GetEntityQuery<TransformComponent>();
+                var oldWorldPosition = xformSystem.GetWorldPosition(chair, xformQuery);
+                xformSystem.SetWorldPosition(human, oldWorldPosition + new Vector2(100, 0), xformQuery);
             });
 
             await PoolManager.WaitUntil(server, () => !buckle.Buckled, 10);
@@ -376,8 +383,9 @@ namespace Content.IntegrationTests.Tests.Buckle
             await server.WaitAssertion(() =>
             {
                 // Move the now unbuckled entity back onto the chair
-                var oldWorldPosition = xformSystem.GetWorldPosition(chair);
-                xformSystem.SetWorldPosition(human, oldWorldPosition);
+                var xformQuery = entityManager.GetEntityQuery<TransformComponent>();
+                var oldWorldPosition = xformSystem.GetWorldPosition(chair, xformQuery);
+                xformSystem.SetWorldPosition(human, oldWorldPosition, xformQuery);
 
                 // Buckle
                 Assert.That(buckleSystem.TryBuckle(human, human, chair, buckleComp: buckle));

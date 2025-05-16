@@ -54,7 +54,6 @@
     instrumentList:
       "Aah": {52: 0}
       "Ooh": {53: 0}
-      "Kweh": {4: 1}
   - type: Sprite
     sprite: Objects/Fun/Instruments/microphone.rsi
     state: icon
@@ -82,8 +81,6 @@
   - type: Tag
     tags:
     - KeyedInstrument
-  - type: StaticPrice
-    price: 90
 
 - type: entity
   parent: BaseHandheldInstrument
@@ -99,8 +96,6 @@
   - type: Tag
     tags:
     - KeyedInstrument
-  - type: Item
-    size: Small
 
 - type: entity
   parent: BaseHandheldInstrument
@@ -113,9 +108,6 @@
   - type: Sprite
     sprite: Objects/Fun/Instruments/woodblock.rsi
     state: icon
-  - type: Tag
-    tags:
-    - PercussionInstrument
 
 - type: entity
   parent: BaseHandheldInstrument
@@ -141,8 +133,7 @@
     respectMidiLimits: false
   - type: Sprite
     sprite: Objects/Fun/Instruments/h_synthesizer.rsi
-    state: supersynth
+    state: icon
   - type: Item
-    heldPrefix: super
     size: Normal
     sprite: Objects/Fun/Instruments/h_synthesizer.rsi

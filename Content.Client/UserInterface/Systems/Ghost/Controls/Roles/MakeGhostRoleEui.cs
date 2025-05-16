@@ -1,5 +1,4 @@
 ﻿using Content.Client.Eui;
-using Content.Server.Ghost.Roles.Raffles;
 using Content.Shared.Eui;
 using Content.Shared.Ghost.Roles;
 using JetBrains.Annotations;
@@ -42,37 +41,27 @@ public sealed class MakeGhostRoleEui : BaseEui
         _window.OpenCentered();
     }
 
-    private void OnMake(NetEntity entity, string name, string description, string rules, bool makeSentient, GhostRoleRaffleSettings? raffleSettings)
+    private void OnMake(NetEntity entity, string name, string description, string rules, bool makeSentient)
     {
-        var session = _playerManager.LocalSession;
-        if (session == null)
+        var player = _playerManager.LocalPlayer;
+        if (player == null)
         {
             return;
         }
 
-        var command = raffleSettings is not null ? "makeghostroleraffled" : "makeghostrole";
-
         var makeGhostRoleCommand =
-            $"{command} " +
+            $"makeghostrole " +
             $"\"{CommandParsing.Escape(entity.ToString())}\" " +
             $"\"{CommandParsing.Escape(name)}\" " +
-            $"\"{CommandParsing.Escape(description)}\" ";
+            $"\"{CommandParsing.Escape(description)}\" " +
+            $"\"{CommandParsing.Escape(rules)}\"";
 
-        if (raffleSettings is not null)
-        {
-            makeGhostRoleCommand += $"{raffleSettings.InitialDuration} " +
-                                    $"{raffleSettings.JoinExtendsDurationBy} " +
-                                    $"{raffleSettings.MaxDuration} ";
-        }
-
-        makeGhostRoleCommand += $"\"{CommandParsing.Escape(rules)}\"";
-
-        _consoleHost.ExecuteCommand(session, makeGhostRoleCommand);
+        _consoleHost.ExecuteCommand(player.Session, makeGhostRoleCommand);
 
         if (makeSentient)
         {
             var makeSentientCommand = $"makesentient \"{CommandParsing.Escape(entity.ToString())}\"";
-            _consoleHost.ExecuteCommand(session, makeSentientCommand);
+            _consoleHost.ExecuteCommand(player.Session, makeSentientCommand);
         }
 
         _window.Close();

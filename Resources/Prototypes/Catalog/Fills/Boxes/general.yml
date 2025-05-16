@@ -4,19 +4,8 @@
   id: BoxCardboard
   description: A cardboard box for storing things.
   components:
-  - type: Item
-    size: Large
-    shape:
-    - 0,0,2,2
-  - type: Storage
-    maxItemSize: Small
-    grid:
-    - 0,0,2,2
   - type: Sprite
     state: box
-  - type: Tag
-    tags:
-    - BoxCardboard
 
 - type: entity
   name: mousetrap box
@@ -39,80 +28,70 @@
   id: BoxLightbulb
   description: This box is shaped on the inside so that only light tubes and bulbs fit.
   components:
+  - type: StorageFill
+    contents:
+      - id: LightBulb
+        amount: 12
   - type: Sprite
     layers:
       - state: box
       - state: light
   - type: Storage
-    grid:
-    - 0,0,5,3
+    maxTotalWeight: 24
     whitelist:
       components:
       - LightBulb
-  - type: StorageFill
-    contents:
-      - id: LightBulb
-        amount: 12
-
-- type: entity
-  name: lightbulb box warm
-  parent: BoxLightbulb
-  id: BoxWarmLightbulb
-  components:
-  - type: StorageFill
-    contents:
-      - id: WarmLightBulb
-        amount: 12
+  - type: Tag
+    tags:
+      - DroneUsable
 
 - type: entity
   name: lighttube box
-  parent: BoxLightbulb
+  parent: BoxCardboard
   id: BoxLighttube
+  description: This box is shaped on the inside so that only light tubes and bulbs fit.
   components:
+  - type: StorageFill
+    contents:
+      - id: LightTube
+        amount: 12
   - type: Sprite
     layers:
       - state: box
       - state: lighttube
-  - type: StorageFill
-    contents:
-      - id: LightTube
-        amount: 12
+  - type: Storage
+    maxTotalWeight: 24
+    whitelist:
+      components:
+      - LightBulb
+  - type: Tag
+    tags:
+      - DroneUsable
 
 - type: entity
   name: mixed lights box
-  parent: BoxLightbulb
+  parent: BoxCardboard
   id: BoxLightMixed
+  description: This box is shaped on the inside so that only light tubes and bulbs fit.
   components:
-  - type: Sprite
-    layers:
-      - state: box
-      - state: lightmixed
   - type: StorageFill
     contents:
       - id: LightTube
         amount: 6
       - id: LightBulb
         amount: 6
-
-- type: entity
-  name: holiday lighttube box
-  parent: BoxLightbulb
-  id: BoxLighttubeHoliday
-  components:
-  - type: StorageFill
-    contents:
-      - id: LightTubeCrystalRed # Its alternating on purpose for the light replacer.
-      - id: LightTubeCrystalGreen
-      - id: LightTubeCrystalRed
-      - id: LightTubeCrystalGreen
-      - id: LightTubeCrystalRed
-      - id: LightTubeCrystalGreen
-      - id: LightTubeCrystalRed
-      - id: LightTubeCrystalGreen
-      - id: LightTubeCrystalRed
-      - id: LightTubeCrystalGreen
-      - id: LightTubeCrystalRed
-      - id: LightTubeCrystalGreen
+  - type: Sprite
+    layers:
+      - state: box
+      - state: lightmixed
+  - type: Storage
+    maxTotalWeight: 24
+    whitelist:
+      components:
+      - LightBulb
+  - type: Tag
+    tags:
+      - DroneUsable
 
 - type: entity
   name: PDA box
@@ -188,18 +167,28 @@
       - id: FoodCondimentPacketKetchup
   - type: Sprite
     layers:
-      - state: box
+      - state: box_olive
       - state: writing
 
 - type: entity
-  parent: BoxHug
+  name: box of hugs
+  parent: BoxCardboard
   id: BoxHugHealing
-  suffix: Medical
+  description: A special box for sensitive people.
   components:
+  - type: Sprite
+    layers:
+      - state: box_hug
+      - state: heart
+  - type: Item
+    heldPrefix: hug
   - type: StorageFill
     contents:
       - id: Brutepack
         amount: 3
+  - type: Tag
+    tags:
+      - BoxHug
 
 - type: entity
   name: inflatable wall box
@@ -217,6 +206,9 @@
     layers:
       - state: box
       - state: inflatable
+  - type: Tag
+    tags:
+      - DroneUsable
 
 
 - type: entity
@@ -229,7 +221,6 @@
     contents:
       - id: ClothingShoesBootsPerformer
       - id: ClothingUniformJumpskirtPerformer
-      - id: ClothingHeadPerformerWig
       - id: FoodMealMemoryleek
         amount: 2
 
@@ -259,9 +250,8 @@
       - id: TrashBag
         amount: 6
   - type: Storage
-    grid:
-    - 0,0,5,3
-    maxItemSize: Large
+    maxTotalWeight: 24
+    maxItemSize: Normal
     whitelist:
       tags:
         - TrashBag
@@ -269,6 +259,9 @@
     layers:
       - state: box
       - state: trashbag
+  - type: Tag
+    tags:
+      - DroneUsable
 
 - type: entity
   name: passenger encryption key box
@@ -371,7 +364,7 @@
 
 - type: entity
   name: syndicate encryption key box
-  parent: [BoxEncryptionKeyPassenger, BaseSyndicateContraband]
+  parent: BoxEncryptionKeyPassenger
   id: BoxEncryptionKeySyndie
   description: Two syndicate encryption keys for the price of one. Miniaturized for ease of use.
   components:
@@ -384,9 +377,30 @@
   - type: Storage
 
 - type: entity
+  name: deathrattle implant box
+  parent: BoxCardboard
+  id: BoxDeathRattleImplants
+  description: Six deathrattle implants and handheld GPS devices for the whole squad.
+  components:
+  - type: Item
+    size: Normal
+  - type: StorageFill
+    contents:
+      - id: DeathRattleImplanter
+        amount: 6
+      - id: HandheldGPSBasic
+        amount: 6
+  - type: Storage
+    maxTotalWeight: 24
+  - type: Sprite
+    layers:
+      - state: box
+      - state: syringe
+
+- type: entity
   name: lead-lined box
   parent: BoxCardboard
-  suffix: DEBUG
+  suffix: Debug
   id: BoxLeadLined
   description: This box stymies the transmission of harmful radiation.
   components:
@@ -399,81 +413,71 @@
   name: candle box
   parent: BoxCardboard
   id: BoxCandle
-  description: This box is specifically moulded to only carry candles.
   components:
   - type: Sprite
     layers:
       - state: box
       - state: candle
   - type: Storage
-    grid:
-    - 0,0,5,3
-    whitelist:
-      tags:
-      - Candle
+    maxTotalWeight: 30
   - type: StorageFill
     contents:
       - id: Candle
-        amount: 4
+        amount: 3
       - id: CandleBlue
-        amount: 2
+        amount: 3
       - id: CandleRed
-        amount: 2
+        amount: 3
       - id: CandleGreen
-        amount: 2
+        amount: 3
       - id: CandlePurple
-        amount: 2
+        amount: 3
 
 - type: entity
   name: small candle box
-  parent: BoxCandle
+  parent: BoxCardboard
   id: BoxCandleSmall
   components:
+  - type: Sprite
+    layers:
+      - state: box
+      - state: candle
+  - type: Storage
+    maxTotalWeight: 30
   - type: StorageFill
     contents:
       - id: CandleSmall
-        amount: 8
+        amount: 5
       - id: CandleBlueSmall
-        amount: 4
+        amount: 5
       - id: CandleRedSmall
-        amount: 4
+        amount: 5
       - id: CandleGreenSmall
-        amount: 4
+        amount: 5
       - id: CandlePurpleSmall
-        amount: 4
+        amount: 5
 
 - type: entity
   name: darts box
   parent: BoxCardboard
   id: BoxDarts
-  description: A box filled with colorful darts.
+  description: This box filled with colorful darts.
   components:
+  - type: Item
+    size: Normal
+  - type: StorageFill
+    contents:
+      - id: Dart
+        amount: 3
+      - id: DartBlue
+        amount: 3
+      - id: DartPurple
+        amount: 3
+      - id: DartYellow
+        amount: 3
+  - type: Storage
+    maxTotalWeight: 24
   - type: Sprite
     layers:
       - state: box
       - state: darts
-  - type: StorageFill
-    contents:
-      - id: Dart
-        amount: 2
-      - id: DartBlue
-        amount: 2
-      - id: DartPurple
-        amount: 2
-      - id: DartYellow
-        amount: 2
-
-- type: entity
-  name: envelope box
-  parent: BoxCardboard
-  id: BoxEnvelope
-  description: A box filled with envelopes.
-  components:
-  - type: Sprite
-    layers:
-      - state: box
-      - state: envelope
-  - type: StorageFill
-    contents:
-      - id: Envelope
-        amount: 9

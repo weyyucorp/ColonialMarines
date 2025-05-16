@@ -1,6 +1,7 @@
 using Content.Shared.Gravity;
 using JetBrains.Annotations;
 using Robust.Shared.Map.Components;
+using Robust.Shared.Utility;
 
 namespace Content.Server.Gravity
 {
@@ -40,7 +41,7 @@ namespace Content.Server.Gravity
                 gravity.Enabled = enabled;
                 var ev = new GravityChangedEvent(uid, enabled);
                 RaiseLocalEvent(uid, ref ev, true);
-                Dirty(uid, gravity);
+                Dirty(gravity);
 
                 if (HasComp<MapGridComponent>(uid))
                 {
@@ -70,7 +71,7 @@ namespace Content.Server.Gravity
             gravity.Enabled = true;
             var ev = new GravityChangedEvent(uid, true);
             RaiseLocalEvent(uid, ref ev, true);
-            Dirty(uid, gravity);
+            Dirty(gravity);
 
             if (HasComp<MapGridComponent>(uid))
             {

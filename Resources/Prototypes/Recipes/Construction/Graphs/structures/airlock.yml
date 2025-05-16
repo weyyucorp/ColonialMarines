@@ -46,7 +46,7 @@
       conditions:
       - !type:EntityAnchored {}
       steps:
-      - component: DoorElectronics
+      - tag: DoorElectronics
         store: board
         name: "door electronics circuit board"
         icon:
@@ -81,9 +81,7 @@
       conditions:
       - !type:EntityAnchored {}
       completed:
-      - !type:EmptyAllContainers
-        pickup: true
-        emptyAtUser: true
+      - !type:EmptyAllContainers {}
       steps:
       - tool: Prying
         doAfter: 5
@@ -104,9 +102,7 @@
       conditions:
       - !type:EntityAnchored {}
       completed:
-      - !type:EmptyAllContainers
-        pickup: true
-        emptyAtUser: true
+      - !type:EmptyAllContainers {}
       - !type:SpawnPrototype
         prototype: SheetRGlass1
         amount: 1
@@ -121,6 +117,7 @@
     actions:
     - !type:SetWiresPanelSecurity
       wiresAccessible: true
+      weldingAllowed: true
     edges:
     - to: glassElectronics
       conditions:
@@ -137,7 +134,7 @@
       steps:
       - tool: Prying
         doAfter: 2
-
+        
     - to: medSecurityUnfinished
       conditions:
       - !type:WirePanel {}
@@ -145,7 +142,7 @@
       - material: Steel
         amount: 2
         doAfter: 2
-
+    
     - to: highSecurityUnfinished
       conditions:
       - !type:WirePanel {}
@@ -153,7 +150,7 @@
       - material: Plasteel
         amount: 2
         doAfter: 2
-
+        
 ## Standard airlock
   - node: airlock
     entity: Airlock
@@ -161,6 +158,7 @@
     actions:
     - !type:SetWiresPanelSecurity
       wiresAccessible: true
+      weldingAllowed: true
     edges:
     - to: wired
       conditions:
@@ -171,13 +169,11 @@
       - !type:WirePanel {}
       - !type:AllWiresCut
       completed:
-      - !type:EmptyAllContainers
-        pickup: true
-        emptyAtUser: true
+      - !type:EmptyAllContainers {}
       steps:
       - tool: Prying
         doAfter: 5
-
+        
     - to: medSecurityUnfinished
       conditions:
       - !type:WirePanel {}
@@ -185,7 +181,7 @@
       - material: Steel
         amount: 2
         doAfter: 2
-
+    
     - to: highSecurityUnfinished
       conditions:
       - !type:WirePanel {}
@@ -199,7 +195,8 @@
     actions:
     - !type:SetWiresPanelSecurity
       wiresAccessible: true
-    edges:
+      weldingAllowed: true
+    edges:   
     - to: medSecurityUnfinished
       conditions:
       - !type:WirePanel {}
@@ -207,7 +204,7 @@
       - material: Steel
         amount: 2
         doAfter: 2
-
+    
     - to: highSecurityUnfinished
       conditions:
       - !type:WirePanel {}
@@ -222,8 +219,9 @@
     - !type:SetWiresPanelSecurity
       examine: wires-panel-component-on-examine-security-level1
       wiresAccessible: false
+      weldingAllowed: false
     edges:
-    - to: glassAirlock
+    - to: glassAirlock 
       completed:
       - !type:GivePrototype
         prototype: SheetSteel1
@@ -235,8 +233,8 @@
       steps:
       - tool: Prying
         doAfter: 4
-
-    - to: airlock
+        
+    - to: airlock 
       completed:
       - !type:GivePrototype
         prototype: SheetSteel1
@@ -248,8 +246,8 @@
       steps:
       - tool: Prying
         doAfter: 4
-
-    - to: highSecDoor
+        
+    - to: highSecDoor 
       completed:
       - !type:GivePrototype
         prototype: SheetSteel1
@@ -261,21 +259,22 @@
       steps:
       - tool: Prying
         doAfter: 4
-
-    - to: medSecurity
-      conditions:
+    
+    - to: medSecurity 
+      conditions:  
       - !type:WirePanel {}
       steps:
       - tool: Welding
         doAfter: 3
-
+      
   - node: medSecurity
     actions:
     - !type:SetWiresPanelSecurity
       examine: wires-panel-component-on-examine-security-level2
       wiresAccessible: false
+      weldingAllowed: false
     edges:
-    - to: medSecurityUnfinished
+    - to: medSecurityUnfinished 
       conditions:
       - !type:WirePanel {}
       steps:
@@ -288,8 +287,9 @@
     - !type:SetWiresPanelSecurity
       examine: wires-panel-component-on-examine-security-level3
       wiresAccessible: false
+      weldingAllowed: false
     edges:
-    - to: glassAirlock
+    - to: glassAirlock 
       completed:
       - !type:GivePrototype
         prototype: SheetPlasteel1
@@ -301,8 +301,8 @@
       steps:
       - tool: Prying
         doAfter: 4
-
-    - to: airlock
+        
+    - to: airlock 
       completed:
       - !type:GivePrototype
         prototype: SheetPlasteel1
@@ -314,8 +314,8 @@
       steps:
       - tool: Prying
         doAfter: 4
-
-    - to: highSecDoor
+        
+    - to: highSecDoor 
       completed:
       - !type:GivePrototype
         prototype: SheetPlasteel1
@@ -327,19 +327,20 @@
       steps:
       - tool: Prying
         doAfter: 4
-
-    - to: highSecurity
-      conditions:
+    
+    - to: highSecurity 
+      conditions:  
       - !type:WirePanel {}
       steps:
       - tool: Welding
         doAfter: 5
-
+      
   - node: highSecurity
     actions:
     - !type:SetWiresPanelSecurity
       examine: wires-panel-component-on-examine-security-level4
       wiresAccessible: false
+      weldingAllowed: false
     edges:
     - to: highSecurityUnfinished
       conditions:
@@ -347,50 +348,52 @@
       steps:
       - tool: Welding
         doAfter: 15
-
+    
     - to: maxSecurity
       conditions:
       - !type:WirePanel {}
-      steps:
+      steps:     
       - material: MetalRod
         amount: 2
         doAfter: 1
 
-## Max security level door: an electric grill is added
+## Max security level door: an electric grill is added        
   - node: maxSecurity
     actions:
     - !type:SetWiresPanelSecurity
       examine: wires-panel-component-on-examine-security-level5
       wiresAccessible: false
+      weldingAllowed: true
     edges:
-    - to: highSecurity
+    - to: highSecurity 
       completed:
       - !type:AttemptElectrocute
       - !type:GivePrototype
         prototype: PartRodMetal1
         amount: 2
-      conditions:
+      conditions:  
       - !type:WirePanel {}
       steps:
       - tool: Cutting
-        doAfter: 0.5
+        doAfter: 0.5 
 
     - to: superMaxSecurityUnfinished
       conditions:
       - !type:WirePanel {}
-      steps:
+      steps:     
       - material: Plasteel
         amount: 2
         doAfter: 2
 
-## Super max security level door: an additional layer of plasteel is added
+## Super max security level door: an additional layer of plasteel is added     
   - node: superMaxSecurityUnfinished
     actions:
     - !type:SetWiresPanelSecurity
       examine: wires-panel-component-on-examine-security-level6
       wiresAccessible: false
+      weldingAllowed: false
     edges:
-    - to: maxSecurity
+    - to: maxSecurity 
       completed:
       - !type:GivePrototype
         prototype: SheetPlasteel1
@@ -400,24 +403,25 @@
       steps:
       - tool: Prying
         doAfter: 4
-
-    - to: superMaxSecurity
-      conditions:
+    
+    - to: superMaxSecurity 
+      conditions:  
       - !type:WirePanel {}
       steps:
       - tool: Welding
         doAfter: 5
-
+      
   - node: superMaxSecurity
     actions:
     - !type:SetWiresPanelSecurity
       examine: wires-panel-component-on-examine-security-level7
-      wiresAccessible: false
+      wiresAccessible: false  
+      weldingAllowed: false
     edges:
-    - to: superMaxSecurityUnfinished
+    - to: superMaxSecurityUnfinished 
       conditions:
       - !type:WirePanel {}
       steps:
       - tool: Welding
-        doAfter: 15
-
+        doAfter: 15        
+ 

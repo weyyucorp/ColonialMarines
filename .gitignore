@@ -306,9 +306,3 @@ Resources/MapImages
 
 # Direnv stuff
 .direnv/
-
-.github
-.sdk
-.runserver.bat
-.runclient.bat
-.build.bat

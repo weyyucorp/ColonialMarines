@@ -9,7 +9,7 @@
   - type: SwappableInstrument
     instrumentList:
       "Clean": {27: 0}
-      "Jazz": {26: 0}
+      "Jazz": {25: 0}
       "Muted": {28: 0}
   - type: Sprite
     sprite: Objects/Fun/Instruments/eguitar.rsi
@@ -21,7 +21,6 @@
     quickEquip: false
     slots:
     - back
-    - suitStorage
     sprite: Objects/Fun/Instruments/eguitar.rsi
   - type: Tag
     tags:
@@ -51,7 +50,6 @@
     quickEquip: false
     slots:
     - back
-    - suitStorage
     sprite: Objects/Fun/Instruments/bassguitar.rsi
   - type: Tag
     tags:
@@ -80,7 +78,6 @@
     quickEquip: false
     slots:
     - back
-    - suitStorage
     sprite: Objects/Fun/Instruments/rockguitar.rsi
   - type: Tag
     tags:
@@ -123,7 +120,6 @@
     quickEquip: false
     slots:
     - back
-    - suitStorage
     sprite: Objects/Fun/Instruments/guitar.rsi
   - type: Wieldable
   - type: Damageable # Smash it! Does 20 damage a hit, but breaks after 1 hit.
@@ -162,7 +158,7 @@
   parent: BaseHandheldInstrument
   id: GuitarlessFretsInstrument
   name: guitarless frets
-  description: Who even needs a body?
+  description: who even needs a body?
   suffix: Admeme #the sound is awful
   components:
   - type: Instrument
@@ -240,9 +236,7 @@
     sprite: Objects/Fun/Instruments/cello.rsi
     state: icon
   - type: Item
-    size: Large
-    shape:
-    - 0,0,1,3
+    size: Normal
     sprite: Objects/Fun/Instruments/cello.rsi
   - type: Tag
     tags:

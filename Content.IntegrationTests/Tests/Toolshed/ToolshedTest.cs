@@ -1,8 +1,7 @@
-#nullable enable
+﻿#nullable enable
 using System.Collections.Generic;
 using Content.IntegrationTests.Pair;
 using Content.Server.Administration.Managers;
-using Robust.Shared.Network;
 using Robust.Shared.Player;
 using Robust.Shared.Toolshed;
 using Robust.Shared.Toolshed.Errors;
@@ -36,18 +35,16 @@ public abstract class ToolshedTest : IInvocationContext
         await TearDown();
     }
 
-    protected virtual Task TearDown()
+    protected virtual async Task TearDown()
     {
-        Assert.That(_expectedErrors, Is.Empty);
+        Assert.IsEmpty(_expectedErrors);
         ClearErrors();
-
-        return Task.CompletedTask;
     }
 
     [SetUp]
     public virtual async Task Setup()
     {
-        Pair = await PoolManager.GetServerClient(new PoolSettings { Connected = Connected });
+        Pair = await PoolManager.GetServerClient(new PoolSettings {Connected = Connected});
         Server = Pair.Server;
 
         if (Connected)
@@ -74,15 +71,15 @@ public abstract class ToolshedTest : IInvocationContext
         return (T) res!;
     }
 
-    protected void ParseCommand(string command, Type? inputType = null, Type? expectedType = null)
+    protected void ParseCommand(string command, Type? inputType = null, Type? expectedType = null, bool once = false)
     {
         var parser = new ParserContext(command, Toolshed);
-        var success = CommandRun.TryParse(parser, inputType, expectedType, out _);
+        var success = CommandRun.TryParse(false, parser, inputType, expectedType, once, out _, out _, out var error);
 
-        if (parser.Error is not null)
-            ReportError(parser.Error);
+        if (error is not null)
+            ReportError(error);
 
-        if (parser.Error is null)
+        if (error is null)
             Assert.That(success, $"Parse failed despite no error being reported. Parsed {command}");
     }
 
@@ -98,7 +95,6 @@ public abstract class ToolshedTest : IInvocationContext
     }
 
     protected ICommonSession? InvocationSession { get; set; }
-    public NetUserId? User => Session?.UserId;
 
     public ICommonSession? Session
     {
@@ -144,7 +140,7 @@ public abstract class ToolshedTest : IInvocationContext
                 );
         }
 
-    done:
+        done:
         _errors.Add(err);
     }
 
@@ -153,26 +149,9 @@ public abstract class ToolshedTest : IInvocationContext
         return _errors;
     }
 
-    public bool HasErrors => _errors.Count > 0;
-
     public void ClearErrors()
     {
         _errors.Clear();
-    }
-
-    public object? ReadVar(string name)
-    {
-        return Variables.GetValueOrDefault(name);
-    }
-
-    public void WriteVar(string name, object? value)
-    {
-        Variables[name] = value;
-    }
-
-    public IEnumerable<string> GetVars()
-    {
-        return Variables.Keys;
     }
 
     public Dictionary<string, object?> Variables { get; } = new();

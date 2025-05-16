@@ -11,47 +11,40 @@
                 <RichTextLabel Name="ReagentName" HorizontalAlignment="Center"/>
             </PanelContainer>
             <BoxContainer Name="RecipesContainer" HorizontalExpand="True">
-                <Collapsible HorizontalExpand="True">
+                <Collapsible Orientation="Vertical" HorizontalExpand="True">
                     <CollapsibleHeading Title="{Loc 'guidebook-reagent-recipes-header'}"/>
                     <CollapsibleBody>
-                        <GridContainer Name="RecipesDescriptionContainer"
+                        <BoxContainer Name="RecipesDescriptionContainer"
                                       Margin="10 0 10 0"
-                                      Columns="1"
-                                      HSeparationOverride="0"
+                                      Orientation="Horizontal"
                                       HorizontalAlignment="Stretch"
-                                      HorizontalExpand="True"/>
-                    </CollapsibleBody>
-                </Collapsible>
-            </BoxContainer>
-            <BoxContainer Name="SourcesContainer" HorizontalExpand="True">
-                <Collapsible HorizontalExpand="True">
-                    <CollapsibleHeading Title="{Loc 'guidebook-reagent-sources-header'}"/>
-                    <CollapsibleBody>
-                        <GridContainer Name="SourcesDescriptionContainer"
-                                       Margin="10 0 10 0"
-                                       Columns="1"
-                                       HSeparationOverride="5"
-                                       HorizontalAlignment="Stretch"
-                                       HorizontalExpand="True"/>
+                                      HorizontalExpand="True">
+                            <BoxContainer Orientation="Vertical" HorizontalExpand="True" VerticalAlignment="Center">
+                                <RichTextLabel Name="ReactantsLabel"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                            </BoxContainer>
+                            <BoxContainer Orientation="Vertical"  VerticalAlignment="Center">
+                                <TextureRect TexturePath="/Textures/Interface/Misc/beakerlarge.png"
+                                             HorizontalAlignment="Center"/>
+                                <Label Name="MixLabel"
+                                       Text="{Loc 'guidebook-reagent-recipes-mix'}"
+                                       HorizontalAlignment="Center"/>
+                            </BoxContainer>
+                            <BoxContainer Orientation="Vertical" HorizontalExpand="True" VerticalAlignment="Center">
+                                <RichTextLabel Name="ProductsLabel"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                            </BoxContainer>
+                        </BoxContainer>
                     </CollapsibleBody>
                 </Collapsible>
             </BoxContainer>
             <BoxContainer Name="EffectsContainer" HorizontalExpand="True">
-                <Collapsible>
+                <Collapsible Orientation="Vertical">
                     <CollapsibleHeading Title="{Loc 'guidebook-reagent-effects-header'}"/>
                     <CollapsibleBody>
                         <BoxContainer Name="EffectsDescriptionContainer"
-                                      Orientation="Vertical"
-                                      Margin="10 0 10 0"
-                                      HorizontalExpand="True"/>
-                    </CollapsibleBody>
-                </Collapsible>
-            </BoxContainer>
-            <BoxContainer Name="PlantMetabolismsContainer" HorizontalExpand="True">
-                <Collapsible>
-                    <CollapsibleHeading Title="{Loc 'guidebook-reagent-plant-metabolisms-header'}"/>
-                    <CollapsibleBody>
-                        <BoxContainer Name="PlantMetabolismsDescriptionContainer"
                                       Orientation="Vertical"
                                       Margin="10 0 10 0"
                                       HorizontalExpand="True"/>

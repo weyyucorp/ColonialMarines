@@ -1,4 +1,3 @@
-# When adding new food also add to random spawner located in Resources\Prototypes\Entities\Markers\Spawners\Random\Food_Drinks\food_meal.yml
 # Base
 
 - type: entity
@@ -7,8 +6,6 @@
   abstract: true
   description: Now that's a nice pasta!
   components:
-  - type: Item
-    storedRotation: -90
   - type: Sprite
     sprite: Objects/Consumable/Food/noodles.rsi
   - type: SolutionContainerManager
@@ -57,10 +54,6 @@
   id: FoodNoodlesCopy
   description: You probably shouldn't try this, you always hear people talking about how bad it is...
   components:
-  - type: Food
-    trash:
-    - FoodPlateSmall
-    - FoodPlateSmall
   - type: FlavorProfile
     flavors:
       - copypasta

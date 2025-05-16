@@ -42,8 +42,8 @@
   - type: Clickable
   - type: InteractionOutline
   - type: FireAlarm
-  - type: AtmosAlertsDevice
-    group: FireAlarm
+  - type: AccessReader
+    access: [ [ "Atmospherics" ] ]
   - type: ContainerFill
     containers:
       board: [ FireAlarmElectronics ]
@@ -62,8 +62,8 @@
       delta: fire_3
   - type: UserInterface
     interfaces:
-      enum.WiresUiKey.Key:
-        type: WiresBoundUserInterface
+    - key: enum.WiresUiKey.Key
+      type: WiresBoundUserInterface
   - type: WiresPanel
   - type: Wires
     boardName: wires-board-name-firealarm
@@ -83,11 +83,8 @@
     graph: FireAlarm
     node: fire_alarm
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
-  - type: GuideHelp
-    guides:
-    - Networking
   - type: Destructible
     thresholds:
       - trigger:
@@ -104,10 +101,7 @@
             acts: [ "Destruction" ]
           - !type:PlaySoundBehavior
             sound:
-              collection: MetalGlassBreak
-              params:
-                volume: -4
-  - type: StationAiWhitelist
+              path: /Audio/Effects/metalbreak.ogg
   placement:
     mode: SnapgridCenter
     snap:

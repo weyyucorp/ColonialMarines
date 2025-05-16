@@ -7,7 +7,7 @@ namespace Content.Shared.Chat.TypingIndicator;
 /// <summary>
 ///     Prototype to store chat typing indicator visuals.
 /// </summary>
-[Prototype]
+[Prototype("typingIndicator")]
 public sealed partial class TypingIndicatorPrototype : IPrototype
 {
     [IdDataField]
@@ -23,6 +23,6 @@ public sealed partial class TypingIndicatorPrototype : IPrototype
     public Vector2 Offset = new(0, 0);
 
     [DataField("shader")]
-    public string Shader = "shaded";
+    public string Shader = "unshaded";
 
 }

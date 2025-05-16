@@ -1,4 +1,4 @@
-# The progenitor. This should only container the most basic components possible.
+﻿# The progenitor. This should only container the most basic components possible.
 # Only put things on here if every mob *must* have it. This includes ghosts.
 - type: entity
   save: false
@@ -8,7 +8,6 @@
   - type: Sprite
     noRot: true
     drawdepth: Mobs
-#  - type: MobCollision # RMC14
   - type: Physics
     bodyType: KinematicController
   - type: Fixtures
@@ -42,15 +41,8 @@
   - type: CameraRecoil
   - type: MindContainer
   - type: MovementSpeedModifier
-  - type: RequireProjectileTarget
-    active: False
-
-- type: entity
-  save: false
-  id: MobPolymorphable
-  abstract: true
-  components:
   - type: Polymorphable
+  - type: StatusIcon
 
 # Used for mobs that have health and can take damage.
 - type: entity
@@ -68,22 +60,8 @@
         damage: 400
       behaviors:
       - !type:GibBehavior { }
-    - trigger:
-        !type:DamageTypeTrigger
-        damageType: Heat
-        damage: 1500
-      behaviors:
-      - !type:SpawnEntitiesBehavior
-        spawnInContainer: true
-        spawn:
-          Ash:
-            min: 1
-            max: 1
-      - !type:BurnBodyBehavior { }
-      - !type:PlaySoundBehavior
-        sound:
-          collection: MeatLaserImpact
   - type: RadiationReceiver
+  - type: Stamina
   - type: MobState
   - type: MobThresholds
     thresholds:
@@ -104,8 +82,6 @@
     - Piercing
     - Heat
     - Shock
-    - Cold
-    - Caustic
   - type: DamageOnHighSpeedImpact
     damage:
       types:
@@ -113,9 +89,6 @@
     soundHit:
       path: /Audio/Effects/hit_kick.ogg
   - type: Pullable
-  - type: LightningTarget
-    priority: 2
-    lightningExplode: false
 
 # Used for mobs that can enter combat mode and can attack.
 - type: entity
@@ -126,8 +99,6 @@
   - type: CombatMode
   - type: MeleeWeapon
     hidden: true
-    soundHit:
-      collection: MetalThud
     damage:
       groups:
         Brute: 5
@@ -140,7 +111,7 @@
   components:
   - type: AtmosExposed
   - type: Temperature
-    heatDamageThreshold: 325
+    heatDamageThreshold: 360
     coldDamageThreshold: 0
     currentTemperature: 310.15
     coldDamage: #per second, scales with temperature & other constants
@@ -149,7 +120,7 @@
     specificHeat: 42
     heatDamage: #per second, scales with temperature & other constants
       types:
-        Heat : 1.5
+        Heat : 0.1
   - type: ThermalRegulator
     metabolismHeat: 800
     radiatedHeat: 100
@@ -157,7 +128,7 @@
     sweatHeatRegulation: 2000
     shiveringHeatRegulation: 2000
     normalBodyTemperature: 310.15
-    thermalRegulationTemperatureThreshold: 2
+    thermalRegulationTemperatureThreshold: 25
   - type: MovedByPressure
 
 # Used for mobs that require regular atmospheric conditions.
@@ -173,9 +144,9 @@
     sweatHeatRegulation: 500
     shiveringHeatRegulation: 500
     normalBodyTemperature: 310.15
-    thermalRegulationTemperatureThreshold: 2
+    thermalRegulationTemperatureThreshold: 25
   - type: Temperature
-    heatDamageThreshold: 325
+    heatDamageThreshold: 360
     coldDamageThreshold: 260
     currentTemperature: 310.15
     specificHeat: 42
@@ -184,7 +155,7 @@
         Cold: 1 #per second, scales with temperature & other constants
     heatDamage:
       types:
-        Heat: 1.5 #per second, scales with temperature & other constants
+        Heat: 1 #per second, scales with temperature & other constants
   - type: Barotrauma
     damage:
       types:
@@ -201,7 +172,7 @@
     canResistFire: true
     damage: #per second, scales with number of fire 'stacks'
       types:
-        Heat: 1.5
+        Heat: 1
   - type: FireVisuals
     sprite: Mobs/Effects/onfire.rsi
     normalState: Generic_mob_burning
@@ -212,7 +183,7 @@
   id: MobRespirator
   abstract: true
   components:
-#  - type: Internals
+  - type: Internals
   - type: Respirator
     damage:
       types:
@@ -233,7 +204,7 @@
   - type: Bloodstream
     bloodlossDamage:
       types:
-        Bloodloss: 0.5
+        Bloodloss: 1
     bloodlossHealDamage:
       types:
         Bloodloss: -1

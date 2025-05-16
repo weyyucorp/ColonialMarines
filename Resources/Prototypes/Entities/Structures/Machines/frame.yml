@@ -37,7 +37,7 @@
         machine_board: !type:Container
         machine_parts: !type:Container
     - type: Damageable
-      damageContainer: StructuralInorganic
+      damageContainer: Inorganic
       damageModifierSet: Metallic
     - type: Destructible
       thresholds:
@@ -45,9 +45,6 @@
           !type:DamageTrigger
           damage: 100
         behaviors:
-        - !type:PlaySoundBehavior
-          sound:
-            collection: MetalBreak
         - !type:ChangeConstructionNodeBehavior
           node: start
         - !type:DoActsBehavior
@@ -92,7 +89,7 @@
         - machine_board
         - machine_parts
     - type: Damageable
-      damageContainer: StructuralInorganic
+      damageContainer: Inorganic
       damageModifierSet: Metallic
     - type: Destructible
       thresholds:
@@ -100,9 +97,6 @@
           !type:DamageTrigger
           damage: 100
         behaviors:
-        - !type:PlaySoundBehavior
-          sound:
-            collection: MetalBreak
         - !type:ChangeConstructionNodeBehavior
           node: missingWires
         - !type:DoActsBehavior
@@ -141,7 +135,7 @@
       graph: Machine
       node: destroyedMachineFrame
     - type: Damageable
-      damageContainer: StructuralInorganic
+      damageContainer: Inorganic
       damageModifierSet: Metallic
     - type: Destructible
       thresholds:

@@ -1,6 +1,6 @@
 - type: entity
   id: JetpackEffect
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: TimedDespawn
     lifetime: 2
@@ -22,8 +22,8 @@
   parent: GasTankBase
   abstract: true
   id: BaseJetpack
-  name: jetpack
-  description: It's a jetpack. It can hold 5 L of gas.
+  name: Jetpack
+  description: It's a jetpack.
   components:
     - type: InputMover
       toParent: true
@@ -40,7 +40,7 @@
       size: Huge
     - type: UserInterface
       interfaces:
-        enum.SharedGasTankUiKey.Key:
+        - key: enum.SharedGasTankUiKey.Key
           type: GasTankBoundUserInterface
     - type: Clothing
       sprite: Objects/Tanks/Jetpacks/blue.rsi
@@ -62,6 +62,7 @@
   id: ActionToggleJetpack
   name: Toggle jetpack
   description: Toggles the jetpack, giving you movement outside the station.
+  noSpawn: true
   components:
   - type: InstantAction
     icon:
@@ -107,7 +108,7 @@
 #Empty black
 - type: entity
   id: JetpackBlack
-  parent: [BaseJetpack, BaseSyndicateContraband]
+  parent: BaseJetpack
   name: jetpack
   suffix: Empty
   components:
@@ -140,7 +141,7 @@
 #Empty captain
 - type: entity
   id: JetpackCaptain
-  parent: [BaseJetpack, BaseGrandTheftContraband]
+  parent: BaseJetpack
   name: captain's jetpack
   suffix: Empty
   components:
@@ -150,15 +151,12 @@
     sprite: Objects/Tanks/Jetpacks/captain.rsi
     slots:
       - Back
-      - SuitStorage
   - type: Item
     sprite: Objects/Tanks/Jetpacks/captain.rsi
     size: Normal
   - type: Tag
     tags:
     - HighRiskItem
-  - type: StealTarget
-    stealGroup: JetpackCaptainFilled
 
 # Filled captain
 - type: entity
@@ -182,7 +180,6 @@
   id: JetpackMini
   parent: BaseJetpack
   name: mini jetpack
-  description: It's a jetpack. It can hold 1.5 L of gas.
   suffix: Empty
   components:
     - type: Item
@@ -194,7 +191,6 @@
       slots:
         - Back
         - suitStorage
-        - Belt
     - type: GasTank
       outputPressure: 42.6
       air:
@@ -220,7 +216,7 @@
 #Empty security
 - type: entity
   id: JetpackSecurity
-  parent: [BaseJetpack, BaseSecurityContraband]
+  parent: BaseJetpack
   name: security jetpack
   suffix: Empty
   components:
@@ -266,7 +262,6 @@
     slots:
       - Back
       - suitStorage
-      - Belt
 
 # Filled void
 - type: entity

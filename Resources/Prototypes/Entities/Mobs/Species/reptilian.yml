@@ -7,12 +7,11 @@
   components:
   - type: HumanoidAppearance
     species: Reptilian
-    hideLayersOnEquip:
-    - Snout
-    - HeadTop
-    - HeadSide
-    undergarmentBottom: UndergarmentBottomBoxersReptilian
   - type: Hunger
+    starvationDamage:
+      types:
+        Cold: 0.5
+        Bloodloss: 0.5
   - type: Puller
     needsHands: false
   - type: Thirst
@@ -22,6 +21,7 @@
   - type: Body
     prototype: Reptilian
     requiredLegs: 2
+  - type: Perishable
   - type: Butcherable
     butcheringType: Spike
     spawned:
@@ -31,27 +31,22 @@
   - type: Speech
     speechSounds: Lizard
     speechVerb: Reptilian
-    allowedEmotes: ['Thump']
-  - type: TypingIndicator
-    proto: lizard
   - type: Vocal
     sounds:
-      Male: MaleReptilian
-      Female: FemaleReptilian
-      Unsexed: MaleReptilian
-  - type: BodyEmotes
-    soundsId: ReptilianBodyEmotes
+      Male: UnisexReptilian
+      Female: UnisexReptilian
+      Unsexed: UnisexReptilian
   - type: Damageable
     damageContainer: Biological
     damageModifierSet: Scale
   - type: MeleeWeapon
     soundHit:
-      collection: AlienClaw
+      path: /Audio/Weapons/pierce.ogg
     angle: 30
-    animation: WeaponArcClaw
+    animation: WeaponArcPunch
     damage:
       types:
-        Slash: 5
+        Piercing: 5
   - type: Temperature
     heatDamageThreshold: 400
     coldDamageThreshold: 285
@@ -62,43 +57,15 @@
         Cold : 0.1 #per second, scales with temperature & other constants
     heatDamage:
       types:
-        Heat : 1.5 #per second, scales with temperature & other constants
-  - type: TemperatureSpeed
-    thresholds:
-      301: 0.8
-      295: 0.6
-      285: 0.4
-  - type: Wagging
-  - type: Inventory
-    speciesId: reptilian
-    femaleDisplacements:
-      jumpsuit:
-        sizeMaps:
-          32:
-            sprite: Mobs/Species/Human/displacement.rsi
-            state: jumpsuit-female
-
+        Heat : 0.1 #per second, scales with temperature & other constants
 
 - type: entity
   parent: BaseSpeciesDummy
   id: MobReptilianDummy
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   description: A dummy reptilian meant to be used in character setup.
   components:
   - type: HumanoidAppearance
     species: Reptilian
-    hideLayersOnEquip:
-    - Snout
-    - HeadTop
-    - HeadSide
-    undergarmentBottom: UndergarmentBottomBoxersReptilian
-  - type: Inventory
-    speciesId: reptilian
-    femaleDisplacements:
-      jumpsuit:
-        sizeMaps:
-          32:
-            sprite: Mobs/Species/Human/displacement.rsi
-            state: jumpsuit-female
 
 #Weh

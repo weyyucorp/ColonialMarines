@@ -1,6 +1,6 @@
 - type: entity
   name: bola
-  parent: [BaseItem, BaseSecurityContraband]
+  parent: BaseItem
   id: Bola
   description: Linked together with some spare cuffs and metal.
   components:
@@ -31,8 +31,7 @@
         damage: 15
       behaviors:
       - !type:PlaySoundBehavior
-        sound:
-          collection: MetalBreak
+        sound: /Audio/Effects/metalbreak.ogg
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
   - type: DamageOnLand
@@ -42,10 +41,9 @@
   - type: Ensnaring
     freeTime: 2.0
     breakoutTime: 3.5 #all bola should generally be fast to remove
-    walkSpeed: 0.5 #makeshift bola shouldn't slow too much
-    sprintSpeed: 0.5
-    staminaDamage: 0 # anything but this is gamebreaking
+    walkSpeed: 0.7 #makeshift bola shouldn't slow too much
+    sprintSpeed: 0.7
+    staminaDamage: 55 # Sudden weight increase sapping stamina
     canThrowTrigger: true
     canMoveBreakout: true
-    maxEnsnares: 1
-  - type: LandAtCursor
+

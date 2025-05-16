@@ -23,20 +23,20 @@ public sealed class ContainerHeldSystem : EntitySystem
 
     private void OnContainerModified(EntityUid uid, ContainerHeldComponent comp, ContainerModifiedMessage args)
     {
-        if (!(HasComp<StorageComponent>(uid)
+        if (!(TryComp<StorageComponent>(uid, out var storage)
               && TryComp<AppearanceComponent>(uid, out var appearance)
               && TryComp<ItemComponent>(uid, out var item)))
         {
             return;
         }
-        if (_storage.GetCumulativeItemAreas(uid) >= comp.Threshold)
+        if (_storage.GetCumulativeItemSizes(uid, storage) >= comp.Threshold)
         {
-            _item.SetHeldPrefix(uid, "full", component: item);
+            _item.SetHeldPrefix(uid, "full", item);
             _appearance.SetData(uid, ToggleVisuals.Toggled, true, appearance);
         }
         else
         {
-            _item.SetHeldPrefix(uid, "empty", component: item);
+            _item.SetHeldPrefix(uid, "empty", item);
             _appearance.SetData(uid, ToggleVisuals.Toggled, false, appearance);
         }
     }

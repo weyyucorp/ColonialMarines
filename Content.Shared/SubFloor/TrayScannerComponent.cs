@@ -9,13 +9,12 @@ public sealed partial class TrayScannerComponent : Component
     /// <summary>
     ///     Whether the scanner is currently on.
     /// </summary>
-    [DataField]
-    public bool Enabled;
+    [ViewVariables, DataField("enabled")] public bool Enabled;
 
     /// <summary>
     ///     Radius in which the scanner will reveal entities. Centered on the <see cref="LastLocation"/>.
     /// </summary>
-    [DataField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("range")]
     public float Range = 4f;
 }
 
@@ -23,11 +22,9 @@ public sealed partial class TrayScannerComponent : Component
 public sealed class TrayScannerState : ComponentState
 {
     public bool Enabled;
-    public float Range;
 
-    public TrayScannerState(bool enabled, float range)
+    public TrayScannerState(bool enabled)
     {
         Enabled = enabled;
-        Range = range;
     }
 }

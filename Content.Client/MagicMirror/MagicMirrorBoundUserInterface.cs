@@ -1,7 +1,6 @@
 using Content.Shared.Humanoid.Markings;
 using Content.Shared.MagicMirror;
 using Robust.Client.GameObjects;
-using Robust.Client.UserInterface;
 
 namespace Content.Client.MagicMirror;
 
@@ -18,7 +17,7 @@ public sealed class MagicMirrorBoundUserInterface : BoundUserInterface
     {
         base.Open();
 
-        _window = this.CreateWindow<MagicMirrorWindow>();
+        _window = new();
 
         _window.OnHairSelected += tuple => SelectHair(MagicMirrorCategory.Hair, tuple.id, tuple.slot);
         _window.OnHairColorChanged += args => ChangeColor(MagicMirrorCategory.Hair, args.marking, args.slot);
@@ -30,6 +29,8 @@ public sealed class MagicMirrorBoundUserInterface : BoundUserInterface
             args => ChangeColor(MagicMirrorCategory.FacialHair, args.marking, args.slot);
         _window.OnFacialHairSlotAdded += delegate () { AddSlot(MagicMirrorCategory.FacialHair); };
         _window.OnFacialHairSlotRemoved += args => RemoveSlot(MagicMirrorCategory.FacialHair, args);
+
+        _window.OpenCentered();
     }
 
     private void SelectHair(MagicMirrorCategory category, string marking, int slot)
@@ -52,11 +53,11 @@ public sealed class MagicMirrorBoundUserInterface : BoundUserInterface
         SendMessage(new MagicMirrorAddSlotMessage(category));
     }
 
-    protected override void UpdateState(BoundUserInterfaceState state)
+    protected override void ReceiveMessage(BoundUserInterfaceMessage message)
     {
-        base.UpdateState(state);
+        base.ReceiveMessage(message);
 
-        if (state is not MagicMirrorUiState data || _window == null)
+        if (message is not MagicMirrorUiData data || _window == null)
         {
             return;
         }

@@ -1,0 +1,100 @@
+﻿- type: entity
+  id: ActionXenoRest
+  parent: ActionXenoBase
+  name: Rest # TODO CM14 description
+  components:
+  - type: InstantAction # TODO CM14 cooldown
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: resting
+    event: !type:XenoRestActionEvent
+
+- type: entity
+  id: ActionXenoWatch
+  parent: ActionXenoBase
+  name: Watch # TODO CM14 description
+  components:
+  - type: InstantAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: watch_xeno
+    event: !type:XenoWatchActionEvent
+
+- type: entity
+  id: ActionXenoPheromones
+  parent: ActionXenoBase
+  name: Emit Pheromones
+  components:
+  - type: InstantAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: emit_pheromones
+    event: !type:XenoPheromonesActionEvent
+
+- type: entity
+  id: ActionXenoHide
+  parent: ActionXenoBase
+  name: Hide
+  components:
+  - type: InstantAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: xenohide
+    event: !type:XenoHideActionEvent
+
+- type: entity
+  id: ActionXenoToggleCrest
+  parent: ActionXenoBase
+  name: Toggle Crest Defense
+  components:
+  - type: InstantAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: crest_defense
+    event: !type:XenoToggleCrestActionEvent
+    useDelay: 2
+  - type: XenoCrestAction
+
+- type: entity
+  id: ActionXenoFortify
+  parent: ActionXenoBase
+  name: Fortify
+  components:
+  - type: InstantAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: fortify
+    event: !type:XenoFortifyActionEvent
+    useDelay: 5
+
+- type: entity
+  id: ActionXenoResinWalker
+  parent: ActionXenoBase
+  name: Resin Walker
+  components:
+  - type: InstantAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: toggle_speed
+    event: !type:XenoResinWalkerActionEvent
+    useDelay: 0.25
+
+- type: entity
+  id: ActionXenoZoom
+  parent: ActionXenoBase
+  name: Toggle Long-Range Sight
+  components:
+  - type: InstantAction
+    itemIconStyle: NoItem
+    icon:
+      sprite: _CM14/Actions/xeno_actions.rsi
+      state: toggle_long_range
+    event: !type:XenoZoomActionEvent
+    useDelay: 0.2

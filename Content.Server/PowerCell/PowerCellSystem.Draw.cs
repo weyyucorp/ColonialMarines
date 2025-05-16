@@ -10,6 +10,8 @@ public sealed partial class PowerCellSystem
      * Handles PowerCellDraw
      */
 
+    private static readonly TimeSpan Delay = TimeSpan.FromSeconds(1);
+
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
@@ -17,13 +19,13 @@ public sealed partial class PowerCellSystem
 
         while (query.MoveNext(out var uid, out var comp, out var slot))
         {
-            if (!comp.Enabled)
+            if (!comp.Drawing)
                 continue;
 
             if (Timing.CurTime < comp.NextUpdateTime)
                 continue;
 
-            comp.NextUpdateTime += comp.Delay;
+            comp.NextUpdateTime += Delay;
 
             if (!TryGetBatteryFromSlot(uid, out var batteryEnt, out var battery, slot))
                 continue;
@@ -31,23 +33,46 @@ public sealed partial class PowerCellSystem
             if (_battery.TryUseCharge(batteryEnt.Value, comp.DrawRate, battery))
                 continue;
 
+            comp.Drawing = false;
             var ev = new PowerCellSlotEmptyEvent();
             RaiseLocalEvent(uid, ref ev);
         }
     }
 
+    private void OnUnpaused(EntityUid uid, PowerCellDrawComponent component, ref EntityUnpausedEvent args)
+    {
+        component.NextUpdateTime += args.PausedTime;
+    }
+
     private void OnDrawChargeChanged(EntityUid uid, PowerCellDrawComponent component, ref ChargeChangedEvent args)
     {
         // Update the bools for client prediction.
-        var canUse = component.UseRate <= 0f || args.Charge > component.UseRate;
+        bool canDraw;
+        bool canUse;
 
-        var canDraw = component.DrawRate <= 0f || args.Charge > 0f;
+        if (component.UseRate > 0f)
+        {
+            canUse = args.Charge > component.UseRate;
+        }
+        else
+        {
+            canUse = true;
+        }
+
+        if (component.DrawRate > 0f)
+        {
+            canDraw = args.Charge > 0f;
+        }
+        else
+        {
+            canDraw = true;
+        }
 
         if (canUse != component.CanUse || canDraw != component.CanDraw)
         {
             component.CanDraw = canDraw;
             component.CanUse = canUse;
-            Dirty(uid, component);
+            Dirty(component);
         }
     }
 
@@ -56,17 +81,11 @@ public sealed partial class PowerCellSystem
         var canDraw = !args.Ejected && HasCharge(uid, float.MinValue);
         var canUse = !args.Ejected && HasActivatableCharge(uid, component);
 
-        if (!canDraw)
-        {
-            var ev = new PowerCellSlotEmptyEvent();
-            RaiseLocalEvent(uid, ref ev);
-        }
-
         if (canUse != component.CanUse || canDraw != component.CanDraw)
         {
             component.CanDraw = canDraw;
             component.CanUse = canUse;
-            Dirty(uid, component);
+            Dirty(component);
         }
     }
 }

@@ -7,9 +7,11 @@
   components:
   - type: HumanoidAppearance
     species: Moth
-    hideLayersOnEquip:
-    - HeadTop
   - type: Hunger
+    starvationDamage:
+      types:
+        Cold: 0.5
+        Bloodloss: 0.5
   - type: Thirst
   - type: Icon
     sprite: Mobs/Species/Moth/parts.rsi
@@ -20,28 +22,16 @@
   - type: Damageable
     damageContainer: Biological
     damageModifierSet: Moth
-  - type: ZombieAccentOverride
-    accent: zombieMoth
   - type: Speech
     speechVerb: Moth
-    allowedEmotes: ['Chitter', 'Squeak']
   - type: TypingIndicator
     proto: moth
+  - type: Perishable
   - type: Butcherable
     butcheringType: Spike
     spawned:
     - id: FoodMeat
       amount: 5
-  - type: Bloodstream
-    bloodReagent: InsectBlood
-  - type: DamageVisuals
-    damageOverlayGroups:
-      Brute:
-        sprite: Mobs/Effects/brute_damage.rsi
-        color: "#808A51"
-      Burn:
-        sprite: Mobs/Effects/burn_damage.rsi
-  - type: MothAccent
   - type: Vocal
     sounds:
       Male: UnisexMoth
@@ -54,9 +44,9 @@
   - type: Flammable
     damage:
       types:
-        Heat: 4.5 # moths burn more easily
+        Heat: 1.5 # moths burn more easily
   - type: Temperature # Moths hate the heat and thrive in the cold.
-    heatDamageThreshold: 320
+    heatDamageThreshold: 335
     coldDamageThreshold: 230
     currentTemperature: 310.15
     specificHeat: 46
@@ -65,12 +55,7 @@
         Cold : 0.05 #per second, scales with temperature & other constants
     heatDamage:
       types:
-        Heat : 3 #per second, scales with temperature & other constants
-  - type: TemperatureSpeed
-    thresholds:
-      289: 0.8
-      275: 0.6
-      250: 0.4
+        Heat : 0.2 #per second, scales with temperature & other constants
   - type: Sprite # sprite again because we want different layer ordering
     noRot: true
     drawdepth: Mobs
@@ -83,10 +68,16 @@
       - map: [ "enum.HumanoidVisualLayers.LArm" ]
       - map: [ "enum.HumanoidVisualLayers.RLeg" ]
       - map: [ "enum.HumanoidVisualLayers.LLeg" ]
-      - map: [ "enum.HumanoidVisualLayers.Underwear" ]
-      - map: [ "enum.HumanoidVisualLayers.Undershirt" ]
-      - map: [ "enum.HumanoidVisualLayers.UndergarmentBottom" ]
-      - map: [ "enum.HumanoidVisualLayers.UndergarmentTop" ]
+      - shader: StencilClear
+        sprite: Mobs/Species/Human/parts.rsi #PJB on stencil clear being on the left leg: "...this is 'fine'" -https://github.com/space-wizards/space-station-14/pull/12217#issuecomment-1291677115
+        # its fine, but its still very stupid that it has to be done like this instead of allowing sprites to just directly insert a stencil clear.
+        # sprite refactor when
+        state: l_leg
+      - shader: StencilMask
+        map: [ "enum.HumanoidVisualLayers.StencilMask" ]
+        sprite: Mobs/Customization/masking_helpers.rsi
+        state: unisex_full
+        visible: false
       - map: [ "jumpsuit" ]
       - map: [ "enum.HumanoidVisualLayers.LHand" ]
       - map: [ "enum.HumanoidVisualLayers.RHand" ]
@@ -101,8 +92,6 @@
       - map: [ "shoes" ]
       - map: [ "ears" ]
       - map: [ "outerClothing" ]
-      - map: [ "enum.WebbingVisualLayers.Base" ]
-      - map: [ "enum.MedalVisualLayers.Base" ]
       - map: [ "eyes" ]
       - map: [ "belt" ]
       - map: [ "enum.HumanoidVisualLayers.Tail" ] #in the utopian future we should probably have a wings enum inserted here so everyhting doesn't break
@@ -121,29 +110,11 @@
         sprite: "Effects/creampie.rsi"
         state: "creampie_moth"
         visible: false
-  - type: Inventory
-    speciesId: moth
-    femaleDisplacements:
-      jumpsuit:
-        sizeMaps:
-          32:
-            sprite: Mobs/Species/Human/displacement.rsi
-            state: jumpsuit-female
-
 
 - type: entity
   parent: BaseSpeciesDummy
   id: MobMothDummy
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: HumanoidAppearance
     species: Moth
-  - type: Inventory
-    speciesId: moth
-    femaleDisplacements:
-      jumpsuit:
-        sizeMaps:
-          32:
-            sprite: Mobs/Species/Human/displacement.rsi
-            state: jumpsuit-female
-

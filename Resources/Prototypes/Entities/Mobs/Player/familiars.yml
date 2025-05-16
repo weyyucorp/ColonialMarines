@@ -10,9 +10,7 @@
     allowSpeech: true
     name: ghost-role-information-remilia-name
     description: ghost-role-information-remilia-description
-    rules: ghost-role-information-familiar-rules
-    mindRoles:
-    - MindRoleGhostRoleFamiliar
+    rules: ghost-role-information-remilia-rules
   - type: GhostTakeoverAvailable
   - type: Grammar
     attributes:
@@ -45,14 +43,10 @@
     allowSpeech: true
     name: ghost-role-information-cerberus-name
     description: ghost-role-information-cerberus-description
-    rules: ghost-role-information-familiar-rules
-    mindRoles:
-    - MindRoleGhostRoleFamiliar
-    raffle:
-      settings: default
+    rules: ghost-role-information-cerberus-rules
   - type: GhostTakeoverAvailable
   - type: MeleeWeapon
-    altDisarm: false
+    angle: 0
     animation: WeaponArcBite
     damage:
       types:
@@ -60,12 +54,9 @@
         Slash: 7
   - type: InputMover
   - type: MobMover
-  - type: HTN
-    rootTask:
-      task: SimpleHostileCompound
   - type: NpcFactionMember
     factions:
-    - Syndicate
+    - SimpleNeutral
   - type: InteractionPopup
     successChance: 0.5
     interactSuccessString: petting-success-corrupted-corgi

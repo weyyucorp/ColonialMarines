@@ -17,7 +17,7 @@ namespace Content.Server.Administration.Commands
         {
             if (shell.Player is not { } player)
             {
-                shell.WriteError(Loc.GetString("shell-cannot-run-command-from-server"));
+                shell.WriteLine("shell-server-cannot");
                 return;
             }
 
@@ -33,23 +33,15 @@ namespace Content.Server.Administration.Commands
                 return;
             }
 
-            var targetNet = new NetEntity(targetId);
+            var target = new EntityUid(targetId);
 
-            if (!_entities.TryGetEntity(targetNet, out var target))
+            if (!target.IsValid() || !_entities.EntityExists(target))
             {
                 shell.WriteLine(Loc.GetString("shell-invalid-entity-id"));
                 return;
             }
 
-            _entities.System<MindSystem>().ControlMob(player.UserId, target.Value);
-        }
-
-        public CompletionResult GetCompletion(IConsoleShell shell, string[] args)
-        {
-            if (args.Length != 1)
-                return CompletionResult.Empty;
-
-            return CompletionResult.FromOptions(CompletionHelper.NetEntities(args[0], entManager: _entities));
+            _entities.System<MindSystem>().ControlMob(player.UserId, target);
         }
     }
 }

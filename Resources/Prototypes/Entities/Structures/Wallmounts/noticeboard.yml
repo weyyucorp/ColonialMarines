@@ -2,12 +2,9 @@
   id: NoticeBoard
   name: notice board
   description: Is there a job for a witcher?
-  placement:
-    mode: SnapgridCenter
   components:
   - type: WallMount
   - type: Sprite
-    drawdepth: WallMountedItems
     sprite: Structures/Wallmounts/noticeboard.rsi
     layers:
       - state: noticeboard
@@ -23,7 +20,7 @@
     anchored: true
   - type: Damageable
     damageModifierSet: Wood
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
   - type: Destructible
     thresholds:
     - trigger:
@@ -32,7 +29,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWoodPlank:
@@ -41,8 +38,7 @@
       - !type:DoActsBehavior
         acts: ["Destruction"]
   - type: Storage
-    grid:
-    - 0,0,4,3
+    maxSlots: 10
     maxItemSize: Small
     whitelist:
       tags:
@@ -51,14 +47,8 @@
         - Write
   - type: UserInterface
     interfaces:
-      enum.StorageUiKey.Key:
-        type: StorageBoundUserInterface
+    - key: enum.StorageUiKey.Key
+      type: StorageBoundUserInterface
   - type: ContainerContainer
     containers:
       storagebase: !type:Container
-  - type: Tag
-    tags:
-    - Wooden
-  - type: Construction
-    graph: NoticeBoard
-    node: noticeBoard

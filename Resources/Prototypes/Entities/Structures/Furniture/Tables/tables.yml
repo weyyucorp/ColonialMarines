@@ -22,7 +22,7 @@
         layer:
         - TableLayer
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: IconSmooth
     key: state
@@ -41,9 +41,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
-          params:
-            volume: -6
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           PartRodMetal1:
@@ -79,7 +77,7 @@
         layer:
         - TableLayer
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Wood
   - type: IconSmooth
     key: state
@@ -98,7 +96,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWoodPlank1:
@@ -122,7 +120,7 @@
     sprite: Structures/Furniture/Tables/frame.rsi
     state: full
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: IconSmooth
     key: state
@@ -141,9 +139,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
-          params:
-            volume: -6
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
@@ -166,7 +162,7 @@
   - type: Icon
     sprite: Structures/Furniture/Tables/generic.rsi
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -182,9 +178,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
-          params:
-            volume: -6
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
@@ -192,9 +186,6 @@
             max: 1
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: metaltable
-    base: state_
   - type: Construction
     graph: Table
     node: Table
@@ -223,9 +214,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
-          params:
-            volume: -6
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
@@ -233,8 +222,6 @@
             max: 2
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: metalreinforcedtable
   - type: Construction
     graph: Table
     node: TableReinforced
@@ -272,16 +259,13 @@
       behaviors:
         - !type:DoActsBehavior
           acts: [ "Destruction" ]
-        - !type:PlaySoundBehavior
-          sound:
-            collection: GlassBreak
     - trigger:
         !type:DamageTrigger
         damage: 5
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: GlassBreak
+          path: /Audio/Effects/glass_break2.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           ShardGlass:
@@ -291,14 +275,9 @@
         node: TableFrame
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: glasstable
   - type: Construction
     graph: Table
     node: TableGlass
-  - type: FootstepModifier
-    footstepSoundCollection:
-      collection: FootstepTile
 
 - type: entity
   id: TableReinforcedGlass
@@ -326,16 +305,13 @@
       behaviors: #excess damage (nuke?). avoid computational cost of spawning entities.
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-      - !type:PlaySoundBehavior
-        sound:
-          collection: GlassBreak
     - trigger:
         !type:DamageTrigger
         damage: 20
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: GlassBreak
+          path: /Audio/Effects/glass_break2.ogg
       - !type:ChangeConstructionNodeBehavior
         node: TableFrame
       - !type:SpawnEntitiesBehavior
@@ -348,14 +324,9 @@
             max: 1
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: reinforcedglasstable
   - type: Construction
     graph: Table
     node: TableReinforcedGlass
-  - type: FootstepModifier
-    footstepSoundCollection:
-      collection: FootstepTile
 
 - type: entity
   id: TablePlasmaGlass
@@ -383,16 +354,13 @@
       behaviors: #excess damage (nuke?). avoid computational cost of spawning entities.
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-      - !type:PlaySoundBehavior
-        sound:
-          collection: GlassBreak
     - trigger:
         !type:DamageTrigger
         damage: 50
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: GlassBreak
+          path: /Audio/Effects/glass_break2.ogg
       - !type:ChangeConstructionNodeBehavior
         node: TableFrame
       - !type:SpawnEntitiesBehavior
@@ -405,57 +373,9 @@
             max: 1
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: plasmaglasstable
   - type: Construction
     graph: Table
     node: TablePlasmaGlass
-  - type: FootstepModifier
-    footstepSoundCollection:
-      collection: FootstepTile
-
-- type: entity
-  id: TableBrass
-  parent: TableBase
-  name: brass table
-  description: A shiny, corrosion resistant brass table. Steampunk!
-  components:
-  - type: Sprite
-    sprite: Structures/Furniture/Tables/brass.rsi
-  - type: Icon
-    sprite: Structures/Furniture/Tables/brass.rsi
-  - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: Metallic
-  - type: Destructible
-    thresholds:
-    - trigger:
-        !type:DamageTrigger
-        damage: 125
-      behaviors:
-      - !type:DoActsBehavior
-        acts: [ "Destruction" ]
-    - trigger:
-        !type:DamageTrigger
-        damage: 25
-      behaviors:
-      - !type:PlaySoundBehavior
-        sound:
-          collection: MetalBreak
-          params:
-            volume: -6
-      - !type:SpawnEntitiesBehavior
-        spawn:
-          SheetBrass1:
-            min: 1
-            max: 1
-      - !type:DoActsBehavior
-        acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: brasstable
-  - type: Construction
-    graph: Table
-    node: TableBrass
 
 - type: entity
   id: TableWood
@@ -477,16 +397,13 @@
       behaviors: #excess damage (nuke?). avoid computational cost of spawning entities.
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-      - !type:PlaySoundBehavior
-        sound:
-          collection: GlassBreak
     - trigger:
         !type:DamageTrigger
         damage: 15
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWoodPlank:
@@ -494,17 +411,12 @@
             max: 1
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: woodtable
   - type: Construction
     graph: Table
     node: TableWood
   - type: Tag
     tags:
     - Wooden
-  - type: FootstepModifier
-    footstepSoundCollection:
-      collection: FootstepWood
 
 - type: entity
   id: TableCarpet
@@ -526,7 +438,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWoodPlank:
@@ -537,17 +449,12 @@
             max: 1
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: woodgambletable
   - type: Construction
     graph: Table
     node: TableCarpet
   - type: Tag
     tags:
     - Wooden
-  - type: FootstepModifier
-    footstepSoundCollection:
-      collection: FootstepCarpet
 
 - type: entity
   id: TableStone
@@ -570,11 +477,6 @@
           path: /Audio/Effects/picaxe2.ogg
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: stonetable
-  - type: FootstepModifier
-    footstepSoundCollection:
-      collection: FootstepFloor
 
 - type: entity
   id: TableWeb
@@ -601,190 +503,9 @@
       Brute:
         path:
           "/Audio/Weapons/slash.ogg"
-  - type: IconSmooth
-    key: webtable
   - type: Construction
     graph: WebStructures
     node: table
-  - type: FootstepModifier
-    footstepSoundCollection:
-      collection: FootstepCarpet
-
-# Fancy tables
-
-- type: entity
-  id: TableFancyBase
-  abstract: true
-  parent: TableBase
-  name: fancy table
-  description: Expensive and rich.
-  components:
-  - type: Damageable
-    damageModifierSet: Wood
-  - type: Destructible
-    thresholds:
-    - trigger:
-        !type:DamageTrigger
-        damage: 25
-      behaviors:
-      - !type:PlaySoundBehavior
-        sound:
-          collection: WoodDestroy
-      - !type:SpawnEntitiesBehavior
-        spawn:
-          MaterialWoodPlank:
-            min: 1
-            max: 1
-          MaterialCloth1:
-            min: 1
-            max: 1
-      - !type:DoActsBehavior
-        acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: fancytable
-  - type: Tag
-    tags:
-    - Wooden
-  - type: FootstepModifier
-    footstepSoundCollection:
-      collection: FootstepCarpet
-
-- type: entity
-  id: TableFancyBlue
-  parent: TableFancyBase
-  suffix: Blue
-  components:
-  - type: Sprite
-    sprite: Structures/Furniture/Tables/Fancy/blue.rsi
-  - type: Icon
-    sprite: Structures/Furniture/Tables/Fancy/blue.rsi
-  - type: Construction
-    graph: Table
-    node: TableFancyBlue
-  - type: IconSmooth
-    key: fancytableblue
-
-- type: entity
-  id: TableFancyCyan
-  parent: TableFancyBase
-  suffix: Cyan
-  components:
-  - type: Sprite
-    sprite: Structures/Furniture/Tables/Fancy/cyan.rsi
-  - type: Icon
-    sprite: Structures/Furniture/Tables/Fancy/cyan.rsi
-  - type: Construction
-    graph: Table
-    node: TableFancyCyan
-  - type: IconSmooth
-    key: fancytablecyan
-
-- type: entity
-  id: TableFancyBlack
-  parent: TableFancyBase
-  suffix: Black
-  components:
-  - type: Sprite
-    sprite: Structures/Furniture/Tables/Fancy/black.rsi
-  - type: Icon
-    sprite: Structures/Furniture/Tables/Fancy/black.rsi
-  - type: Construction
-    graph: Table
-    node: TableFancyBlack
-  - type: IconSmooth
-    key: fancytableblack
-
-- type: entity
-  id: TableFancyRed
-  parent: TableFancyBase
-  suffix: Red
-  components:
-  - type: Sprite
-    sprite: Structures/Furniture/Tables/Fancy/red.rsi
-  - type: Icon
-    sprite: Structures/Furniture/Tables/Fancy/red.rsi
-  - type: Construction
-    graph: Table
-    node: TableFancyRed
-  - type: IconSmooth
-    key: fancytablered
-
-- type: entity
-  id: TableFancyPurple
-  parent: TableFancyBase
-  suffix: Purple
-  components:
-  - type: Sprite
-    sprite: Structures/Furniture/Tables/Fancy/purple.rsi
-  - type: Icon
-    sprite: Structures/Furniture/Tables/Fancy/purple.rsi
-  - type: Construction
-    graph: Table
-    node: TableFancyPurple
-  - type: IconSmooth
-    key: fancytablepurple
-
-- type: entity
-  id: TableFancyPink
-  parent: TableFancyBase
-  suffix: Pink
-  components:
-  - type: Sprite
-    sprite: Structures/Furniture/Tables/Fancy/pink.rsi
-  - type: Icon
-    sprite: Structures/Furniture/Tables/Fancy/pink.rsi
-  - type: Construction
-    graph: Table
-    node: TableFancyPink
-  - type: IconSmooth
-    key: fancytablepink
-
-- type: entity
-  id: TableFancyGreen
-  parent: TableFancyBase
-  suffix: Green
-  components:
-  - type: Sprite
-    sprite: Structures/Furniture/Tables/Fancy/green.rsi
-  - type: Icon
-    sprite: Structures/Furniture/Tables/Fancy/green.rsi
-  - type: Construction
-    graph: Table
-    node: TableFancyGreen
-  - type: IconSmooth
-    key: fancytablegreen
-
-- type: entity
-  id: TableFancyOrange
-  parent: TableFancyBase
-  suffix: Orange
-  components:
-  - type: Sprite
-    sprite: Structures/Furniture/Tables/Fancy/orange.rsi
-  - type: Icon
-    sprite: Structures/Furniture/Tables/Fancy/orange.rsi
-  - type: Construction
-    graph: Table
-    node: TableFancyOrange
-  - type: IconSmooth
-    key: fancytableorange
-
-- type: entity
-  id: TableFancyWhite
-  parent: TableFancyBase
-  suffix: White
-  components:
-  - type: Sprite
-    sprite: Structures/Furniture/Tables/Fancy/white.rsi
-  - type: Icon
-    sprite: Structures/Furniture/Tables/Fancy/white.rsi
-  - type: Construction
-    graph: Table
-    node: TableFancyWhite
-  - type: IconSmooth
-    key: fancytablewhite
-
-#Debug
 
 - type: entity
   id: TableDebug
@@ -823,7 +544,7 @@
     sprite: Structures/Furniture/Tables/counterwood.rsi
     state: full
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Wood
   - type: Destructible
     thresholds:
@@ -839,7 +560,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWoodPlank1:
@@ -847,15 +568,9 @@
             max: 1
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: counterwood
-    base: state_
   - type: Construction
     graph: Table
     node: CounterWood
-  - type: FootstepModifier
-    footstepSoundCollection:
-      collection: FootstepWood
 
 - type: entity
   id: TableCounterMetal
@@ -869,7 +584,7 @@
     sprite: Structures/Furniture/Tables/countermetal.rsi
     state: full
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -885,9 +600,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
-          params:
-            volume: -6
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
@@ -895,9 +608,6 @@
             max: 1
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  - type: IconSmooth
-    key: countermetal
-    base: state_
   - type: Construction
     graph: Table
     node: CounterMetal

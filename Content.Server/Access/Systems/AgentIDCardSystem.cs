@@ -1,14 +1,12 @@
 using Content.Server.Access.Components;
 using Content.Server.Popups;
-using Content.Shared.UserInterface;
+using Content.Server.UserInterface;
 using Content.Shared.Access.Components;
 using Content.Shared.Access.Systems;
 using Content.Shared.Interaction;
 using Content.Shared.StatusIcon;
 using Robust.Server.GameObjects;
 using Robust.Shared.Prototypes;
-using Content.Shared.Roles;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Content.Server.Access.Systems
 {
@@ -32,7 +30,7 @@ namespace Content.Server.Access.Systems
 
         private void OnAfterInteract(EntityUid uid, AgentIDCardComponent component, AfterInteractEvent args)
         {
-            if (args.Target == null || !args.CanReach || !TryComp<AccessComponent>(args.Target, out var targetAccess) || !HasComp<IdCardComponent>(args.Target))
+            if (!TryComp<AccessComponent>(args.Target, out var targetAccess) || !HasComp<IdCardComponent>(args.Target) || args.Target == null)
                 return;
 
             if (!TryComp<AccessComponent>(uid, out var access) || !HasComp<IdCardComponent>(uid))
@@ -42,21 +40,33 @@ namespace Content.Server.Access.Systems
             access.Tags.UnionWith(targetAccess.Tags);
             var addedLength = access.Tags.Count - beforeLength;
 
+            if (addedLength == 0)
+            {
+                _popupSystem.PopupEntity(Loc.GetString("agent-id-no-new", ("card", args.Target)), args.Target.Value, args.User);
+                return;
+            }
+
+            Dirty(access);
+
+            if (addedLength == 1)
+            {
+                _popupSystem.PopupEntity(Loc.GetString("agent-id-new-1", ("card", args.Target)), args.Target.Value, args.User);
+                return;
+            }
+
             _popupSystem.PopupEntity(Loc.GetString("agent-id-new", ("number", addedLength), ("card", args.Target)), args.Target.Value, args.User);
-            if (addedLength > 0)
-                Dirty(uid, access);
         }
 
         private void AfterUIOpen(EntityUid uid, AgentIDCardComponent component, AfterActivatableUIOpenEvent args)
         {
-            if (!_uiSystem.HasUi(uid, AgentIDCardUiKey.Key))
+            if (!_uiSystem.TryGetUi(uid, AgentIDCardUiKey.Key, out var ui))
                 return;
 
             if (!TryComp<IdCardComponent>(uid, out var idCard))
                 return;
 
-            var state = new AgentIDCardBoundUserInterfaceState(idCard.FullName ?? "", idCard.LocalizedJobTitle ?? "", idCard.JobIcon);
-            _uiSystem.SetUiState(uid, AgentIDCardUiKey.Key, state);
+            var state = new AgentIDCardBoundUserInterfaceState(idCard.FullName ?? "", idCard.JobTitle ?? "", component.Icons);
+            _uiSystem.SetUiState(ui, state, args.Session);
         }
 
         private void OnJobChanged(EntityUid uid, AgentIDCardComponent comp, AgentIDCardJobChangedMessage args)
@@ -78,30 +88,16 @@ namespace Content.Server.Access.Systems
         private void OnJobIconChanged(EntityUid uid, AgentIDCardComponent comp, AgentIDCardJobIconChangedMessage args)
         {
             if (!TryComp<IdCardComponent>(uid, out var idCard))
-                return;
-
-            if (!_prototypeManager.TryIndex(args.JobIconId, out var jobIcon))
-                return;
-
-            _cardSystem.TryChangeJobIcon(uid, jobIcon, idCard);
-
-            if (TryFindJobProtoFromIcon(jobIcon, out var job))
-                _cardSystem.TryChangeJobDepartment(uid, job, idCard);
-        }
-
-        private bool TryFindJobProtoFromIcon(JobIconPrototype jobIcon, [NotNullWhen(true)] out JobPrototype? job)
-        {
-            foreach (var jobPrototype in _prototypeManager.EnumeratePrototypes<JobPrototype>())
             {
-                if (jobPrototype.Icon == jobIcon.ID)
-                {
-                    job = jobPrototype;
-                    return true;
-                }
+                return;
             }
 
-            job = null;
-            return false;
+            if (!_prototypeManager.TryIndex<StatusIconPrototype>(args.JobIcon, out var jobIcon))
+            {
+                return;
+            }
+
+            _cardSystem.TryChangeJobIcon(uid, jobIcon, idCard);
         }
     }
 }

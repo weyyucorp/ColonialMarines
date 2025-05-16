@@ -1,23 +1,22 @@
 using Content.Server.Body.Components;
 using Content.Server.Nutrition.EntitySystems;
 using Content.Shared.FixedPoint;
-using Content.Shared.Nutrition.Components;
 using Robust.Shared.Audio;
 using Robust.Shared.Prototypes;
 
 namespace Content.Server.Nutrition.Components;
 
-[RegisterComponent, Access(typeof(FoodSystem), typeof(FoodSequenceSystem))]
+[RegisterComponent, Access(typeof(FoodSystem))]
 public sealed partial class FoodComponent : Component
 {
     [DataField]
     public string Solution = "food";
 
     [DataField]
-    public SoundSpecifier UseSound = new SoundCollectionSpecifier("eating");
+    public SoundSpecifier UseSound = new SoundPathSpecifier("/Audio/Items/eatfood.ogg");
 
     [DataField]
-    public List<EntProtoId> Trash = new();
+    public EntProtoId? Trash;
 
     [DataField]
     public FixedPoint2? TransferAmount = FixedPoint2.New(5);
@@ -60,7 +59,7 @@ public sealed partial class FoodComponent : Component
     /// How long it takes to eat the food personally.
     /// </summary>
     [DataField]
-    public float Delay = 0.5f;
+    public float Delay = 1;
 
     /// <summary>
     ///     This is how many seconds it takes to force feed someone this food.

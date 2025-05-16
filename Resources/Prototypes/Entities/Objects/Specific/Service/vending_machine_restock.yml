@@ -12,6 +12,7 @@
     - state: base
     - state: green_bit
       shader: unshaded
+  - type: ItemCooldown
   - type: MeleeWeapon
     damage:
       types:
@@ -39,7 +40,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:DumpRestockInventory
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
@@ -95,8 +96,8 @@
 - type: entity
   parent: BaseVendingMachineRestock
   id: VendingMachineRestockCondimentStation
-  name: condiment station restock box
-  description: Refill the condiment station. Mmmm, cold sauce.
+  name: Condiment Station restock box
+  description: Refill the Condiment Station. Mmmm, cold sauce.
   components:
   - type: VendingMachineRestock
     canRestock:
@@ -336,7 +337,6 @@
     - SpaceUpInventory
     - SodaInventory
     - DrGibbInventory
-    - SmiteInventory 
   - type: Sprite
     layers:
     - state: base
@@ -461,7 +461,7 @@
   parent: BaseVendingMachineRestock
   id: VendingMachineRestockHappyHonk
   name: Happy Honk restock box
-  description: Place this box full of fun into the restock slot on the Happy Honk Dispenser to begin.
+  description: place this box full of fun into the restock slot on the Happy Honk Dispenser to begin.
   components:
   - type: VendingMachineRestock
     canRestock:

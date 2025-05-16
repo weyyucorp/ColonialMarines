@@ -1,11 +1,8 @@
 using Content.Shared.Atmos;
-using Content.Shared.Light.Components;
 using Content.Shared.Movement.Systems;
-using Content.Shared.Tools;
 using Robust.Shared.Audio;
 using Robust.Shared.Map;
 using Robust.Shared.Prototypes;
-using Robust.Shared.Serialization;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype.Array;
 using Robust.Shared.Utility;
@@ -15,9 +12,6 @@ namespace Content.Shared.Maps
     [Prototype("tile")]
     public sealed partial class ContentTileDefinition : IPrototype, IInheritingPrototype, ITileDefinition
     {
-        [ValidatePrototypeId<ToolQualityPrototype>]
-        public const string PryingToolQuality = "Prying";
-
         public const string SpaceID = "Space";
 
         [ParentDataFieldAttribute(typeof(AbstractPrototypeIdArraySerializer<ContentTileDefinition>))]
@@ -27,7 +21,7 @@ namespace Content.Shared.Maps
         [AbstractDataFieldAttribute]
         public bool Abstract { get; private set; }
 
-        [IdDataField] public string ID { get; private set; } = string.Empty;
+        [IdDataField] public string ID { get; } = string.Empty;
 
         public ushort TileId { get; private set; }
 
@@ -44,13 +38,14 @@ namespace Content.Shared.Maps
         [DataField("baseTurf")]
         public string BaseTurf { get; private set; } = string.Empty;
 
-        [DataField]
-        public PrototypeFlags<ToolQualityPrototype> DeconstructTools { get; set; } = new();
+        [DataField("canCrowbar")] public bool CanCrowbar { get; private set; }
 
-        /// <remarks>
-        /// Legacy AF but nice to have.
-        /// </remarks>
-        public bool CanCrowbar => DeconstructTools.Contains(PryingToolQuality);
+        /// <summary>
+        /// Whether this tile can be pried by an advanced prying tool if not pryable otherwise.
+        /// </summary>
+        [DataField("canAxe")] public bool CanAxe { get; private set; }
+
+        [DataField("canWirecutter")] public bool CanWirecutter { get; private set; }
 
         /// <summary>
         /// These play when the mob has shoes on.
@@ -69,7 +64,7 @@ namespace Content.Shared.Maps
         /// <summary>
         /// This controls what variants the `variantize` command is allowed to use.
         /// </summary>
-        [DataField("placementVariants")] public float[] PlacementVariants { get; set; } = { 1f };
+        [DataField("placementVariants")] public float[] PlacementVariants { get; set; } = new [] { 1f };
 
         [DataField("thermalConductivity")] public float ThermalConductivity = 0.04f;
 
@@ -79,11 +74,7 @@ namespace Content.Shared.Maps
         [DataField("itemDrop", customTypeSerializer:typeof(PrototypeIdSerializer<EntityPrototype>))]
         public string ItemDropPrototypeName { get; private set; } = "FloorTileItemSteel";
 
-        // TODO rename data-field in yaml
-        /// <summary>
-        /// Whether or not the tile is exposed to the map's atmosphere.
-        /// </summary>
-        [DataField("isSpace")] public bool MapAtmosphere { get; private set; }
+        [DataField("isSpace")] public bool IsSpace { get; private set; }
 
         /// <summary>
         ///     Friction override for mob mover in <see cref="SharedMoverController"/>

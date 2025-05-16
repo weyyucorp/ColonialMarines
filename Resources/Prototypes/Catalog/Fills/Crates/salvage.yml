@@ -12,7 +12,6 @@
       - id: OxygenTankFilled
       - id: FireExtinguisher
       - id: ClothingShoesBootsMag
-      - id: HandHeldMassScanner
       - id: Pickaxe
       - id: Welder
       - id: Wrench
@@ -26,7 +25,7 @@
 - type: entity
   id: CrateSalvageAssortedGoodies
   suffix: Filled, Salvage Random
-  categories: [ HideSpawnMenu ] # You should use SalvageMaterialCrateSpawner instead
+  noSpawn: true # You should use SalvageMaterialCrateSpawner instead
   parent: CrateGenericSteel
   components:
   - type: StorageFill
@@ -79,8 +78,6 @@
       - id: Skub
         prob: 0.001
       - id: ClothingHeadHatCatEars
-        prob: 0.01
-      - id: ClothingHeadHatDogEars
         prob: 0.01
         # TRAITOR EQUIPMENT (0.01%)
       - id: Telecrystal10

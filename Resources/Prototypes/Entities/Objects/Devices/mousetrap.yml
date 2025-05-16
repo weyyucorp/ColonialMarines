@@ -12,17 +12,16 @@
           map: ["base"]
     - type: StepTrigger
       intersectRatio: 0.2
-      requiredTriggeredSpeed: 2
+      requiredTriggeredSpeed: 0
     - type: Mousetrap
     - type: TriggerOnStepTrigger
-    - type: PreventableStepTrigger
+    - type: ShoesRequiredStepTrigger
     - type: DamageUserOnTrigger
       damage:
         types:
           Blunt: 2 # base damage, scales based on mass
     - type: EmitSoundOnUse
       sound: "/Audio/Items/Handcuffs/cuff_end.ogg"
-      handle: false
     - type: EmitSoundOnTrigger
       sound: "/Audio/Items/snap.ogg"
     - type: Item
@@ -55,6 +54,9 @@
           mask:
             - ItemMask
     - type: Rotatable
+    - type: Tag
+      tags:
+        - DroneUsable
 
 - type: entity
   name: mousetrap
@@ -63,9 +65,5 @@
   id: MousetrapArmed
   description: Useful for catching rodents sneaking into your kitchen.
   components:
-  - type: Sprite
-    layers:
-    - state: mousetraparmed
-      map: ["base"]
-  - type: Mousetrap
-    isActive: true
+    - type: Mousetrap
+      isActive: true

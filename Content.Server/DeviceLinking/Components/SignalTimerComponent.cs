@@ -1,58 +1,42 @@
 using Content.Shared.DeviceLinking;
 using Robust.Shared.Audio;
-using Robust.Shared.Prototypes;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 
 namespace Content.Server.DeviceLinking.Components;
 
 [RegisterComponent]
 public sealed partial class SignalTimerComponent : Component
 {
-    [DataField]
+    [DataField("delay"), ViewVariables(VVAccess.ReadWrite)]
     public double Delay = 5;
 
     /// <summary>
     ///     This shows the Label: text box in the UI.
     /// </summary>
-    [DataField]
+    [DataField("canEditLabel"), ViewVariables(VVAccess.ReadWrite)]
     public bool CanEditLabel = true;
 
     /// <summary>
     ///     The label, used for TextScreen visuals currently.
     /// </summary>
-    [DataField]
-    public string Label = string.Empty;
-
-    /// <summary>
-    ///     Default max width of a label (how many letters can this render?)
-    /// </summary>
-    [DataField]
-    public int MaxLength = 5;
+    [DataField("label"), ViewVariables(VVAccess.ReadWrite)]
+    public string Label = "";
 
     /// <summary>
     ///     The port that gets signaled when the timer triggers.
     /// </summary>
-    [DataField]
-    public ProtoId<SourcePortPrototype> TriggerPort = "Timer";
+    [DataField("triggerPort", customTypeSerializer: typeof(PrototypeIdSerializer<SourcePortPrototype>)), ViewVariables(VVAccess.ReadWrite)]
+    public string TriggerPort = "Timer";
 
     /// <summary>
     ///     The port that gets signaled when the timer starts.
     /// </summary>
-    [DataField]
-    public ProtoId<SourcePortPrototype> StartPort = "Start";
-
-    [DataField]
-    public ProtoId<SinkPortPrototype> Trigger = "Trigger";
+    [DataField("startPort", customTypeSerializer: typeof(PrototypeIdSerializer<SourcePortPrototype>)), ViewVariables(VVAccess.ReadWrite)]
+    public string StartPort = "Start";
 
     /// <summary>
     ///     If not null, this timer will play this sound when done.
     /// </summary>
-    [DataField]
+    [DataField("doneSound"), ViewVariables(VVAccess.ReadWrite)]
     public SoundSpecifier? DoneSound;
-
-    /// <summary>
-    ///     The maximum duration in seconds
-    ///     When a larger number is in the input box, the display will start counting down from this one instead
-    /// </summary>
-    [DataField]
-    public Double MaxDuration = 3599; // 59m 59s
 }

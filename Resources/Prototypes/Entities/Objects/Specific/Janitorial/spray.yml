@@ -5,12 +5,6 @@
   suffix: Empty
   description: A spray bottle with an unscrewable top.
   components:
-  - type: Drink
-    solution: spray
-    ignoreEmpty: true
-    useSound:
-      path: /Audio/Effects/spray3.ogg
-    transferAmount: 10
   - type: Tag
     tags:
     - Spray
@@ -30,17 +24,13 @@
     solution: spray
   - type: SolutionTransfer
     canChangeTransferAmount: true
-  - type: SolutionItemStatus
-    solution: spray
-  - type: UseDelay
+  - type: ItemCooldown
   - type: Spray
     transferAmount: 10
     sprayVelocity: 2
     spraySound:
       path: /Audio/Effects/spray2.ogg
   - type: TrashOnSolutionEmpty
-    solution: spray
-  - type: ExaminableSolution
     solution: spray
 
 - type: entity
@@ -99,12 +89,14 @@
   - type: Tag
     tags:
       - Spray
+      - DroneUsable #They don't have any other chem stuff on their whitelist so they can't refill it
+
 # Vapor
 
 - type: entity
   id: Vapor
   name: "vapor"
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: SolutionContainerManager
     solutions:
@@ -136,7 +128,7 @@
 - type: entity
   id: BigVapor
   parent: Vapor
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: Sprite
     sprite: Effects/chempuff.rsi

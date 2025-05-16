@@ -1,11 +1,11 @@
-- type: entity
+﻿- type: entity
   parent: [BaseStructure, ConstructibleMachine] # Not a BaseMachinePowered since we don't want the anchorable component
   id: CryoPod
   name: cryo pod
   description: A special machine intended to create a safe environment for the use of chemicals that react in cold environments.
   components:
   - type: Sprite
-    sprite: Structures/Machines/Medical/cryopod.rsi
+    sprite: Structures/Machines/cryogenics.rsi
     drawdepth: Mobs
     noRot: true
     offset: 0, 0.5
@@ -54,8 +54,8 @@
     boardName: wires-board-name-cryopod
     layoutId: CryoPod
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallic
+    damageContainer: Inorganic
+    damageModifierSet: Metallic
   - type: Destructible
     thresholds:
     - trigger:
@@ -63,9 +63,6 @@
         damage: 100
       behaviors:
         - !type:EmptyAllContainersBehaviour
-        - !type:PlaySoundBehavior
-          sound:
-            collection: WindowShatter
         - !type:ChangeConstructionNodeBehavior
           node: machineFrame
         - !type:DoActsBehavior
@@ -79,26 +76,21 @@
         !type:PortablePipeNode
         nodeGroupID: Pipe
         pipeDirection: South
-  - type: AtmosMonitoringConsoleDevice
-    navMapBlip: Thermoregulator
   - type: ItemSlots
     slots:
       beakerSlot:
         whitelist:
           components:
             - FitsInDispenser
-  - type: ItemToggle
-  - type: HealthAnalyzer
-    scanDelay: 0
   - type: UserInterface
     interfaces:
-      enum.HealthAnalyzerUiKey.Key:
+      - key: enum.HealthAnalyzerUiKey.Key
         type: HealthAnalyzerBoundUserInterface
-      enum.WiresUiKey.Key:
+      - key: enum.WiresUiKey.Key
         type: WiresBoundUserInterface
   - type: ActivatableUI
     key: enum.HealthAnalyzerUiKey.Key
-    requiresComplex: false
+    requireHands: false
   - type: ActivatableUIRequiresPower
   - type: PointLight
     color: "#3a807f"

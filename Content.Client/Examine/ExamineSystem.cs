@@ -1,12 +1,8 @@
-using System.Linq;
-using System.Numerics;
-using System.Threading;
 using Content.Client.Verbs;
+using Content.Shared.Eye.Blinding;
 using Content.Shared.Examine;
 using Content.Shared.IdentityManagement;
 using Content.Shared.Input;
-using Content.Shared.Interaction.Events;
-using Content.Shared.Item;
 using Content.Shared.Verbs;
 using JetBrains.Annotations;
 using Robust.Client.GameObjects;
@@ -17,8 +13,15 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input.Binding;
 using Robust.Shared.Map;
 using Robust.Shared.Utility;
+using System.Linq;
+using System.Numerics;
+using System.Threading;
+using Content.Shared.Eye.Blinding.Components;
+using Robust.Client;
 using static Content.Shared.Interaction.SharedInteractionSystem;
 using static Robust.Client.UserInterface.Controls.BoxContainer;
+using Content.Shared.Interaction.Events;
+using Content.Shared.Item;
 using Direction = Robust.Shared.Maths.Direction;
 
 namespace Content.Client.Examine
@@ -30,12 +33,13 @@ namespace Content.Client.Examine
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IEyeManager _eyeManager = default!;
         [Dependency] private readonly VerbSystem _verbSystem = default!;
-        [Dependency] private readonly SpriteSystem _sprite = default!;
+        [Dependency] private readonly IBaseClient _client = default!;
 
         public const string StyleClassEntityTooltip = "entity-tooltip";
 
         private EntityUid _examinedEntity;
         private EntityUid _lastExaminedEntity;
+        private EntityUid _playerEntity;
         private Popup? _examineTooltipOpen;
         private ScreenCoordinates _popupPos;
         private CancellationTokenSource? _requestCancelTokenSource;
@@ -43,8 +47,6 @@ namespace Content.Client.Examine
 
         public override void Initialize()
         {
-            base.Initialize();
-
             UpdatesOutsidePrediction = true;
 
             SubscribeLocalEvent<GetVerbsEvent<ExamineVerb>>(AddExamineVerb);
@@ -64,19 +66,21 @@ namespace Content.Client.Examine
         {
             if (!args.User.Valid)
                 return;
+            if (_playerManager.LocalPlayer == null)
+                return;
             if (_examineTooltipOpen == null)
                 return;
 
-            if (item == _examinedEntity && args.User == _playerManager.LocalEntity)
+            if (item == _examinedEntity && args.User == _playerManager.LocalPlayer.ControlledEntity)
                 CloseTooltip();
         }
 
         public override void Update(float frameTime)
         {
             if (_examineTooltipOpen is not {Visible: true}) return;
-            if (!_examinedEntity.Valid || _playerManager.LocalEntity is not { } player) return;
+            if (!_examinedEntity.Valid || !_playerEntity.Valid) return;
 
-            if (!CanExamine(player, _examinedEntity))
+            if (!CanExamine(_playerEntity, _examinedEntity))
                 CloseTooltip();
         }
 
@@ -114,8 +118,9 @@ namespace Content.Client.Examine
                 return false;
             }
 
-            if (_playerManager.LocalEntity is not { } player ||
-                !CanExamine(player, entity))
+            _playerEntity = _playerManager.LocalPlayer?.ControlledEntity ?? default;
+
+            if (_playerEntity == default || !CanExamine(_playerEntity, entity))
             {
                 return false;
             }
@@ -144,7 +149,7 @@ namespace Content.Client.Examine
 
         private void OnExamineInfoResponse(ExamineSystemMessages.ExamineInfoResponseMessage ev)
         {
-            var player = _playerManager.LocalEntity;
+            var player = _playerManager.LocalPlayer?.ControlledEntity;
             if (player == null)
                 return;
 
@@ -210,16 +215,14 @@ namespace Content.Client.Examine
             var vBox = new BoxContainer
             {
                 Name = "ExaminePopupVbox",
-                Orientation = LayoutOrientation.Vertical,
-                MaxWidth = _examineTooltipOpen.MaxWidth
+                Orientation = LayoutOrientation.Vertical
             };
             panel.AddChild(vBox);
 
             var hBox = new BoxContainer
             {
                 Orientation = LayoutOrientation.Horizontal,
-                SeparationOverride = 5,
-                Margin = new Thickness(6, 0, 6, 0)
+                SeparationOverride = 5
             };
 
             vBox.AddChild(hBox);
@@ -229,7 +232,8 @@ namespace Content.Client.Examine
                 var spriteView = new SpriteView
                 {
                     OverrideDirection = Direction.South,
-                    SetSize = new Vector2(32, 32)
+                    SetSize = new Vector2(32, 32),
+                    Margin = new Thickness(2, 0, 2, 0),
                 };
                 spriteView.SetEntity(target);
                 hBox.AddChild(spriteView);
@@ -237,17 +241,19 @@ namespace Content.Client.Examine
 
             if (knowTarget)
             {
-                var itemName = FormattedMessage.EscapeText(Identity.Name(target, EntityManager, player));
-                var labelMessage = FormattedMessage.FromMarkupPermissive($"[bold]{itemName}[/bold]");
-                var label = new RichTextLabel();
-                label.SetMessage(labelMessage);
-                hBox.AddChild(label);
+                hBox.AddChild(new Label
+                {
+                    Text = Identity.Name(target, EntityManager, player),
+                    HorizontalExpand = true,
+                });
             }
             else
             {
-                var label = new RichTextLabel();
-                label.SetMessage(FormattedMessage.FromMarkupOrThrow("[bold]???[/bold]"));
-                hBox.AddChild(label);
+                hBox.AddChild(new Label
+                {
+                    Text = "???",
+                    HorizontalExpand = true,
+                });
             }
 
             panel.Measure(Vector2Helpers.Infinity);
@@ -299,26 +305,8 @@ namespace Content.Client.Examine
             {
                 Name = "ExamineButtonsHBox",
                 Orientation = LayoutOrientation.Horizontal,
-                HorizontalAlignment = Control.HAlignment.Stretch,
-                VerticalAlignment = Control.VAlignment.Bottom,
-            };
-
-            var hoverExamineBox = new BoxContainer
-            {
-                Name = "HoverExamineHBox",
-                Orientation = LayoutOrientation.Horizontal,
-                HorizontalAlignment = Control.HAlignment.Left,
-                VerticalAlignment = Control.VAlignment.Center,
-                HorizontalExpand = true
-            };
-
-            var clickExamineBox = new BoxContainer
-            {
-                Name = "ClickExamineHBox",
-                Orientation = LayoutOrientation.Horizontal,
                 HorizontalAlignment = Control.HAlignment.Right,
-                VerticalAlignment = Control.VAlignment.Center,
-                HorizontalExpand = true
+                VerticalAlignment = Control.VAlignment.Bottom,
             };
 
             // Examine button time
@@ -333,17 +321,10 @@ namespace Content.Client.Examine
                 if (!examine.ShowOnExamineTooltip)
                     continue;
 
-                var button = new ExamineButton(examine, _sprite);
+                var button = new ExamineButton(examine);
 
-                if (examine.HoverVerb)
-                {
-                    hoverExamineBox.AddChild(button);
-                }
-                else
-                {
-                    button.OnPressed += VerbButtonPressed;
-                    clickExamineBox.AddChild(button);
-                }
+                button.OnPressed += VerbButtonPressed;
+                buttonsHBox.AddChild(button);
             }
 
             var vbox = _examineTooltipOpen?.GetChild(0).GetChild(0);
@@ -360,8 +341,6 @@ namespace Content.Client.Examine
             {
                 vbox.Children.Remove(hbox.First());
             }
-            buttonsHBox.AddChild(hoverExamineBox);
-            buttonsHBox.AddChild(clickExamineBox);
             vbox.AddChild(buttonsHBox);
         }
 
@@ -377,21 +356,23 @@ namespace Content.Client.Examine
 
         public void DoExamine(EntityUid entity, bool centeredOnCursor = true, EntityUid? userOverride = null)
         {
-            var playerEnt = userOverride ?? _playerManager.LocalEntity;
+            var playerEnt = userOverride ?? _playerManager.LocalPlayer?.ControlledEntity;
             if (playerEnt == null)
                 return;
 
             FormattedMessage message;
 
-            OpenTooltip(playerEnt.Value, entity, centeredOnCursor, false);
+            // Basically this just predicts that we can't make out the entity if we have poor vision.
+            var canSeeClearly = !HasComp<BlurryVisionComponent>(playerEnt);
 
-            // Always update tooltip info from client first.
-            // If we get it wrong, server will correct us later anyway.
-            // This will usually be correct (barring server-only components, which generally only adds, not replaces text)
-            message = GetExamineText(entity, playerEnt);
-            UpdateTooltipInfo(playerEnt.Value, entity, message);
-
-            if (!IsClientSide(entity))
+            OpenTooltip(playerEnt.Value, entity, centeredOnCursor, false, knowTarget: canSeeClearly);
+            if (IsClientSide(entity)
+                || _client.RunLevel == ClientRunLevel.SinglePlayerGame) // i.e. a replay
+            {
+                message = GetExamineText(entity, playerEnt);
+                UpdateTooltipInfo(playerEnt.Value, entity, message);
+            }
+            else
             {
                 // Ask server for extra examine info.
                 if (entity != _lastExaminedEntity)
@@ -402,6 +383,7 @@ namespace Content.Client.Examine
             }
 
             RaiseLocalEvent(entity, new ClientExaminedEvent(entity, playerEnt.Value));
+
             _lastExaminedEntity = entity;
         }
 

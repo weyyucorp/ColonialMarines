@@ -2,9 +2,7 @@
 
 - type: entity
   id: WeldingFuelTank
-  parent: [StorageTank, StructureWheeled]
-  name: fuel tank
-  description: A fuel tank. It's used to store high amounts of fuel.
+  parent: StorageTank
   suffix: Empty
   components:
   - type: StaticPrice
@@ -25,14 +23,14 @@
   - type: ReagentTank
     tankType: Fuel
   - type: DamageOnToolInteract
-    tools: Welding
+    tools:
+    - Welding
     weldingDamage:
       types:
         Heat: 10
-  - type: PacifismDangerousAttack
   - type: Explosive
     explosionType: Default
-    totalIntensity: 60 # Mediocre explosion. Not enough to do any meaningful structural damage to anything other then windows, provided you're only using one tank.
+    totalIntensity: 120 # ~ 5 tile radius
 
 - type: entity
   id: WeldingFuelTankFull
@@ -47,10 +45,8 @@
           Quantity: 1500
 
 - type: entity
-  parent: [StorageTankBig, WeldingFuelTank] # StorageTankBig must come first, or else the desnity won't get inherited.
+  parent: WeldingFuelTank
   id: WeldingFuelTankHighCapacity
-  name: high-capacity fuel tank
-  description: A highly pressurized fuel tank made to hold gargantuan amounts of welding fuel.
   suffix: Full
   components:
   - type: StaticPrice
@@ -74,15 +70,13 @@
         maxVol: 5000
   - type: Explosive
     explosionType: Default
-    totalIntensity: 120
+    totalIntensity: 140
 
 # Water
 
 - type: entity
   id: WaterTank
-  parent: [StorageTank, StructureWheeled]
-  name: water tank
-  description: A water tank. It's used to store high amounts of water.
+  parent: StorageTank
   suffix: Empty
   components:
   - type: StaticPrice
@@ -114,10 +108,8 @@
           Quantity: 1500
 
 - type: entity
-  parent: StorageTank
+  parent: WaterTankFull
   id: WaterCooler
-  name: water cooler
-  description: Seems like a good place to stand and waste time. It has a stock of paper cups on the side.
   components:
   - type: Sprite
     sprite: Structures/Storage/tanks.rsi
@@ -126,7 +118,6 @@
       - state: watercooler-2-1
         map: ["enum.SolutionContainerLayers.Fill"]
         visible: false
-  - type: Appearance
   - type: SolutionContainerVisuals
     maxFillLevels: 4
     fillBaseName: watercooler-2-
@@ -136,41 +127,12 @@
         reagents:
         - ReagentId: Water
           Quantity: 500
-  - type: ContainerContainer
-    containers:
-      bin-container: !type:Container
-  - type: Bin
-    initialContents:
-    - DrinkWaterCup
-    - DrinkWaterCup
-    - DrinkWaterCup
-    - DrinkWaterCup
-    - DrinkWaterCup
-    - DrinkWaterCup
-    - DrinkWaterCup
-    - DrinkWaterCup
-    - DrinkWaterCup
-    - DrinkWaterCup
-    whitelist:
-      requireAll: true
-      components:
-      - FitsInDispenser
-      tags:
-      - Trash
-  - type: ExaminableSolution
-    solution: tank
-  - type: StaticPrice
-    price: 500
 
 - type: entity
-  parent: [StorageTankBig, WaterTank]
+  parent: StorageTank
   id: WaterTankHighCapacity
-  name: high-capacity water tank
-  description: A highly pressurized water tank made to hold gargantuan amounts of water.
   suffix: Full
   components:
-  - type: StaticPrice
-    price: 2500
   - type: Sprite
     sprite: Structures/Storage/tanks.rsi
     layers:
@@ -198,7 +160,7 @@
 
 - type: entity
   id: GenericTank
-  parent: [StorageTank, StructureWheeled]
+  parent: StorageTank
   suffix: Empty
   components:
     - type: StaticPrice
@@ -216,3 +178,4 @@
       fillBaseName: watertank-2-
     - type: ExaminableSolution
       solution: tank
+
