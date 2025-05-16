@@ -1,7 +1,5 @@
 <p align="center"> <img alt="Space Station 14" width="400" height="400" src="https://github.com/CM-14/CM-14/assets/121047731/46f1dcad-1714-41b6-a9e9-7db7b440e466" /></p>
 
-The design goal of this fork is to attempt to replicate the feel and experience of CM13, while using SS14 as a foundation.
-
 If you want to host or create content for CM14, this is the repo you need. It contains both RobustToolbox and the content pack for development of new content packs.
 
 ## Links
